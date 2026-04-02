@@ -7,6 +7,7 @@ import {
     TrendingUp, Info, AlertCircle, CheckCircle2,
     Lightbulb, Activity, Droplets
 } from 'lucide-react';
+import { hasModulePermission } from '../utils/permissions';
 
 interface MasterItem {
     id: number;
@@ -114,6 +115,11 @@ export default function TaxMaster({ onAuthError }: TaxMasterProps) {
     const [editingItem, setEditingItem] = useState<any>(null);
     const [isAdding, setIsAdding] = useState(false);
     const [selectedUserForPerms, setSelectedUserForPerms] = useState<UserRecord | null>(null);
+
+    const currentUser = React.useMemo(() => JSON.parse(localStorage.getItem('gp_user') || '{}'), []);
+    const canAdd = hasModulePermission(currentUser, 'taxMaster', 'add');
+    const canEdit = hasModulePermission(currentUser, 'taxMaster', 'edit');
+    const canDelete = hasModulePermission(currentUser, 'taxMaster', 'delete');
 
     useEffect(() => {
         fetchInitialData();
@@ -375,9 +381,11 @@ export default function TaxMaster({ onAuthError }: TaxMasterProps) {
                                         </div>
                                     </div>
 
-                                    <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all hover-lift" style={{ marginTop: '2rem' }}>
-                                        बदल जतन करा
-                                    </button>
+                                    {canEdit && (
+                                        <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all hover-lift" style={{ marginTop: '2rem' }}>
+                                            बदल जतन करा
+                                        </button>
+                                    )}
                                 </div>
                             </form>
 
@@ -473,9 +481,11 @@ export default function TaxMaster({ onAuthError }: TaxMasterProps) {
                                             </div>
                                         )}
 
-                                        <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all hover-lift">
-                                            बदल जतन करा
-                                        </button>
+                                        {canEdit && (
+                                            <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all hover-lift">
+                                                बदल जतन करा
+                                            </button>
+                                        )}
                                     </div>
                                 </form>
 
@@ -513,9 +523,11 @@ export default function TaxMaster({ onAuthError }: TaxMasterProps) {
                                     <h3 className="text-lg font-black text-slate-800 tracking-tight">वस्ती व वॉर्ड सूची</h3>
                                     <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">प्रणालीमधील सर्व नोंदणीकृत वस्त्या</p>
                                 </div>
-                                <button onClick={() => { setIsAdding(true); setEditingItem(null); }} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all hover-lift">
-                                    <Plus className="w-4 h-4" /> नवीन वस्ती जोडा
-                                </button>
+                                {canAdd && (
+                                    <button onClick={() => { setIsAdding(true); setEditingItem(null); }} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all hover-lift">
+                                        <Plus className="w-4 h-4" /> नवीन वस्ती जोडा
+                                    </button>
+                                )}
                             </div>
 
                             <div className="bg-white rounded-[2.5rem] premium-shadow-blue border border-indigo-50/50 overflow-hidden">
@@ -542,12 +554,16 @@ export default function TaxMaster({ onAuthError }: TaxMasterProps) {
                                                 </td>
                                                 <td className="px-8 py-5 text-right">
                                                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                                                        <button onClick={() => { setEditingItem(item); setIsAdding(true); }} className="w-8 h-8 flex items-center justify-center text-amber-600 bg-white border border-amber-100 rounded-lg hover:bg-amber-600 hover:text-white transition-all">
-                                                            <Edit2 className="w-3.5 h-3.5" />
-                                                        </button>
-                                                        <button onClick={() => deleteItem('wasti', item.id)} className="w-8 h-8 flex items-center justify-center text-rose-600 bg-white border border-rose-100 rounded-lg hover:bg-rose-600 hover:text-white transition-all">
-                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                        </button>
+                                                        {canEdit && (
+                                                            <button onClick={() => { setEditingItem(item); setIsAdding(true); }} className="w-8 h-8 flex items-center justify-center text-amber-600 bg-white border border-amber-100 rounded-lg hover:bg-amber-600 hover:text-white transition-all">
+                                                                <Edit2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        )}
+                                                        {canDelete && (
+                                                            <button onClick={() => deleteItem('wasti', item.id)} className="w-8 h-8 flex items-center justify-center text-rose-600 bg-white border border-rose-100 rounded-lg hover:bg-rose-600 hover:text-white transition-all">
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -566,9 +582,11 @@ export default function TaxMaster({ onAuthError }: TaxMasterProps) {
                                     <h3 className="text-lg font-black text-slate-800 tracking-tight">कर आकारणी दर पत्रक</h3>
                                     <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">प्रकार आणि वस्तीनिहाय दर रचना</p>
                                 </div>
-                                <button onClick={() => { setIsAdding(true); setEditingItem(null); }} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all hover-lift">
-                                    <Plus className="w-4 h-4" /> नवीन दर जोडा
-                                </button>
+                                {canAdd && (
+                                    <button onClick={() => { setIsAdding(true); setEditingItem(null); }} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all hover-lift">
+                                        <Plus className="w-4 h-4" /> नवीन दर जोडा
+                                    </button>
+                                )}
                             </div>
                             <div className="bg-white rounded-[2.5rem] premium-shadow-blue border border-indigo-50/50 overflow-hidden">
                                 <table className="w-full text-left">
@@ -598,12 +616,16 @@ export default function TaxMaster({ onAuthError }: TaxMasterProps) {
                                                 <td className="px-6 py-5 text-right font-black text-indigo-600">{rate.openSpaceTaxRate}%</td>
                                                 <td className="px-8 py-5 text-right">
                                                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                                                        <button onClick={() => { setEditingItem(rate); setIsAdding(true); }} className="w-8 h-8 flex items-center justify-center text-amber-600 bg-white border border-amber-100 rounded-lg hover:bg-amber-600 hover:text-white transition-all">
-                                                            <Edit2 className="w-3.5 h-3.5" />
-                                                        </button>
-                                                        <button onClick={() => deleteItem('tax', rate.id)} className="w-8 h-8 flex items-center justify-center text-rose-600 bg-white border border-rose-100 rounded-lg hover:bg-rose-600 hover:text-white transition-all">
-                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                        </button>
+                                                        {canEdit && (
+                                                            <button onClick={() => { setEditingItem(rate); setIsAdding(true); }} className="w-8 h-8 flex items-center justify-center text-amber-600 bg-white border border-amber-100 rounded-lg hover:bg-amber-600 hover:text-white transition-all">
+                                                                <Edit2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        )}
+                                                        {canDelete && (
+                                                            <button onClick={() => deleteItem('tax', rate.id)} className="w-8 h-8 flex items-center justify-center text-rose-600 bg-white border border-rose-100 rounded-lg hover:bg-rose-600 hover:text-white transition-all">
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -622,9 +644,11 @@ export default function TaxMaster({ onAuthError }: TaxMasterProps) {
                                     <h3 className="text-lg font-black text-slate-800 tracking-tight">रेडी रेकनर दर (शासन प्रमाणित)</h3>
                                     <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">वर्षनिहाय मूल्यांकन दर रचना</p>
                                 </div>
-                                <button onClick={() => { setIsAdding(true); setEditingItem(null); }} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all hover-lift">
-                                    <Plus className="w-4 h-4" /> नवीन रेडी रेकनर दर जोडा
-                                </button>
+                                {canAdd && (
+                                    <button onClick={() => { setIsAdding(true); setEditingItem(null); }} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all hover-lift">
+                                        <Plus className="w-4 h-4" /> नवीन रेडी रेकनर दर जोडा
+                                    </button>
+                                )}
                             </div>
                             <div className="bg-white rounded-[2.5rem] premium-shadow-blue border border-indigo-50/50 overflow-hidden">
                                 <table className="w-full text-left">
@@ -650,12 +674,16 @@ export default function TaxMaster({ onAuthError }: TaxMasterProps) {
                                                 <td className="px-6 py-5 text-xs text-slate-400 font-bold uppercase tracking-wider">{rr.unit_mr}</td>
                                                 <td className="px-8 py-5 text-right">
                                                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                                                        <button onClick={() => { setEditingItem(rr); setIsAdding(true); }} className="w-8 h-8 flex items-center justify-center text-amber-600 bg-white border border-amber-100 rounded-lg hover:bg-amber-600 hover:text-white transition-all">
-                                                            <Edit2 className="w-3.5 h-3.5" />
-                                                        </button>
-                                                        <button onClick={() => deleteItem('rr', rr.id)} className="w-8 h-8 flex items-center justify-center text-rose-600 bg-white border border-rose-100 rounded-lg hover:bg-rose-600 hover:text-white transition-all">
-                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                        </button>
+                                                        {canEdit && (
+                                                            <button onClick={() => { setEditingItem(rr); setIsAdding(true); }} className="w-8 h-8 flex items-center justify-center text-amber-600 bg-white border border-amber-100 rounded-lg hover:bg-amber-600 hover:text-white transition-all">
+                                                                <Edit2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        )}
+                                                        {canDelete && (
+                                                            <button onClick={() => deleteItem('rr', rr.id)} className="w-8 h-8 flex items-center justify-center text-rose-600 bg-white border border-rose-100 rounded-lg hover:bg-rose-600 hover:text-white transition-all">
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -674,21 +702,27 @@ export default function TaxMaster({ onAuthError }: TaxMasterProps) {
                                     <h3 className="text-lg font-black text-slate-800 tracking-tight">घसारा (Depreciation) दर तालिका</h3>
                                     <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">इमारतीचे वैय आणि घसारा प्रमाण</p>
                                 </div>
-                                <button onClick={() => { setIsAdding(true); setEditingItem(null); }} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all hover-lift">
-                                    <Plus className="w-4 h-4" /> नवीन घसारा दर जोडा
-                                </button>
+                                {canAdd && (
+                                    <button onClick={() => { setIsAdding(true); setEditingItem(null); }} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all hover-lift">
+                                        <Plus className="w-4 h-4" /> नवीन घसारा दर जोडा
+                                    </button>
+                                )}
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {depreciationRates.map((d) => (
                                     <div key={d.id} className="bg-white rounded-[2rem] p-6 premium-shadow-blue border border-indigo-50/50 hover-lift group relative overflow-hidden">
                                         <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full -mr-12 -mt-12 transition-all group-hover:scale-110" />
                                         <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                                            <button onClick={() => { setEditingItem(d); setIsAdding(true); }} className="w-8 h-8 flex items-center justify-center text-amber-600 bg-white/80 backdrop-blur border border-amber-100 rounded-lg hover:bg-amber-600 hover:text-white transition-all">
-                                                <Edit2 className="w-3.5 h-3.5" />
-                                            </button>
-                                            <button onClick={() => deleteItem('depreciation', d.id)} className="w-8 h-8 flex items-center justify-center text-rose-600 bg-white/80 backdrop-blur border border-rose-100 rounded-lg hover:bg-rose-600 hover:text-white transition-all">
-                                                <Trash2 className="w-3.5 h-3.5" />
-                                            </button>
+                                            {canEdit && (
+                                                <button onClick={() => { setEditingItem(d); setIsAdding(true); }} className="w-8 h-8 flex items-center justify-center text-amber-600 bg-white/80 backdrop-blur border border-amber-100 rounded-lg hover:bg-amber-600 hover:text-white transition-all">
+                                                    <Edit2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            )}
+                                            {canDelete && (
+                                                <button onClick={() => deleteItem('depreciation', d.id)} className="w-8 h-8 flex items-center justify-center text-rose-600 bg-white/80 backdrop-blur border border-rose-100 rounded-lg hover:bg-rose-600 hover:text-white transition-all">
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            )}
                                         </div>
                                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 relative z-10">वयोगट (Years)</p>
                                         <div className="flex items-end gap-3 mb-6 relative z-10">
@@ -709,9 +743,11 @@ export default function TaxMaster({ onAuthError }: TaxMasterProps) {
                                                 <h3 className="text-lg font-black text-slate-800 tracking-tight">वापरकर्ता व्यवस्थापन (User Management)</h3>
                                                 <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">प्रणाली वापरकर्ते आणि त्यांच्या भूमिका</p>
                                             </div>
-                                            <button onClick={() => { setIsAdding(true); setEditingItem(null); setNewItem({ role: 'operator' }); }} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all hover-lift">
-                                                <Plus className="w-4 h-4" /> नवीन वापरकर्ता जोडा
-                                            </button>
+                                            {canAdd && (
+                                                <button onClick={() => { setIsAdding(true); setEditingItem(null); setNewItem({ role: 'operator' }); }} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all hover-lift">
+                                                    <Plus className="w-4 h-4" /> नवीन वापरकर्ता जोडा
+                                                </button>
+                                            )}
                                         </div>
 
                                         <div className="bg-white rounded-[2.5rem] premium-shadow-blue border border-indigo-50/50 overflow-hidden">

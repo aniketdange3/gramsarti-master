@@ -1,13 +1,14 @@
-import { API_BASE_URL } from '@/config';
 import React, { useState, useMemo } from 'react';
-import { Search, Printer, ArrowLeft, Eye, Filter, FileDown, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Search, Printer, ArrowLeft, Eye, Filter, Plus, Edit2, Trash2 } from 'lucide-react';
 import { PropertyRecord, WASTI_NAMES, DEFAULT_SECTION } from '../types';
 import { PANCHAYAT_CONFIG } from '../panchayatConfig';
 import NamunaTable8 from '../components/NamunaTable8';
-import { generateNamuna8PDF } from '../utils/pdfGenerator';
+
 import PropertyForm from '../components/PropertyForm';
 import { matchesSearch } from '../utils/transliterate';
 import { TransliterationInput } from '../components/TransliterationInput';
+import Namuna8PrintFormat from '../components/Namuna8PrintFormat';
+import { hasModulePermission } from '../utils/permissions';
 
 interface Namuna8Props {
     records: PropertyRecord[];
@@ -15,10 +16,9 @@ interface Namuna8Props {
     onClearSelected: () => void;
     fetchRecords: () => void;
     taxRates: any[];
-    onAuthError?: () => void;
 }
 
-export default function Namuna8({ records, selectedId, onClearSelected, fetchRecords, taxRates, onAuthError }: Namuna8Props) {
+export default function Namuna8({ records, selectedId, onClearSelected, fetchRecords, taxRates }: Namuna8Props) {
     const [viewId, setViewId] = useState<string | null>(selectedId);
     const [filterWasti, setFilterWasti] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
@@ -26,15 +26,17 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
     const [showForm, setShowForm] = useState(false);
     const [visibleFloorCount, setVisibleFloorCount] = useState(1);
     const [dynamicWastis, setDynamicWastis] = useState<string[]>([]);
+    const [printRecord, setPrintRecord] = useState<PropertyRecord | null>(null);
+
+    const currentUser = useMemo(() => JSON.parse(localStorage.getItem('gp_user') || '{}'), []);
+    const canAdd = hasModulePermission(currentUser, 'namuna8', 'add');
+    const canEdit = hasModulePermission(currentUser, 'namuna8', 'edit');
+    const canDelete = hasModulePermission(currentUser, 'namuna8', 'delete');
 
     React.useEffect(() => {
         const fetchWastis = async () => {
             try {
-                const token = localStorage.getItem('gp_token');
-                const res = await fetch(`${API_BASE_URL}/api/master/items/WASTI`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.status === 401 && onAuthError) onAuthError();
+                const res = await fetch(`http://${window.location.hostname}:5000/api/master/items/WASTI`);
                 const data = await res.json();
                 setDynamicWastis(data.map((i: any) => i.item_value_mr));
             } catch (err) { console.error(err); }
@@ -42,7 +44,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
         fetchWastis();
     }, []);
 
-    const API_URL = `${API_BASE_URL}/api/properties`;
+    const API_URL = `http://${window.location.hostname}:5000/api/properties`;
 
     const filteredRecords = useMemo(() => {
         let res = records;
@@ -57,16 +59,11 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
 
     const handleSave = async (updatedRecord: PropertyRecord) => {
         try {
-            const token = localStorage.getItem('gp_token');
             const res = await fetch(API_URL, {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedRecord)
             });
-            if (res.status === 401 && onAuthError) onAuthError();
             if (res.ok) {
                 fetchRecords();
                 setShowForm(false);
@@ -80,12 +77,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
     const handleDelete = async (id: string) => {
         if (!window.confirm('ही नोंद कायमची हटवायची आहे का?')) return;
         try {
-            const token = localStorage.getItem('gp_token');
-            const res = await fetch(`${API_URL}/${id}`, { 
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.status === 401 && onAuthError) onAuthError();
+            const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
             if (res.ok) {
                 fetchRecords();
                 if (viewId === id) {
@@ -105,8 +97,40 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
         setShowForm(true);
     };
 
+
+    const handlePrint = (id: string) => {
+        const record = records.find(r => r.id === id);
+        if (record) setPrintRecord(record);
+    };
+
+
     const existingLayouts = useMemo(() => Array.from(new Set(records.map(r => r.layoutName).filter(Boolean))), [records]);
     const existingKhasras = useMemo(() => Array.from(new Set(records.map(r => r.khasraNo).filter(Boolean))), [records]);
+
+
+    // ─── PRINT SELECTED RECORD VIEW ─────────────────────────────────────────
+    if (printRecord) {
+        return (
+            <div className="flex flex-col h-full bg-gray-100 no-print-bg">
+                <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center gap-3 no-print shadow-sm sticky top-0 z-50">
+                    <button onClick={() => setPrintRecord(null)}
+                        className="flex items-center gap-2 text-sm font-bold text-gray-600 px-4 py-2 rounded-xl hover:bg-gray-100 border border-gray-200 transition-all">
+                        <ArrowLeft className="w-4 h-4" /> यादीकडे परत
+                    </button>
+                    <div className="flex-1" />
+                    <button onClick={() => window.print()}
+                        className="flex items-center gap-2 text-sm font-bold text-white bg-primary px-5 py-2 rounded-xl hover:bg-primary-dark transition-all">
+                        <Printer className="w-4 h-4" /> प्रिंट करा
+                    </button>
+                </div>
+                <div className="flex-1 overflow-auto p-4 flex justify-center no-print-bg">
+                    <div className="w-full">
+                        <Namuna8PrintFormat records={[printRecord]} />
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // ─── SINGLE RECORD DETAIL VIEW ─────────────────────────────────────────
     if (viewId && selectedRecord) {
@@ -123,35 +147,50 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
                         {selectedRecord.ownerName} • अ.क्र. {selectedRecord.srNo}
                     </h2>
                     <div className="flex-1" />
-                    <button onClick={() => handleEdit(selectedRecord)}
-                        className="flex items-center gap-2 text-sm font-bold text-amber-600 border border-amber-200 bg-amber-50 px-4 py-2 rounded-xl hover:bg-amber-100 transition-all">
-                        <Edit2 className="w-4 h-4" /> सुधारा
-                    </button>
-                    <button onClick={async () => await generateNamuna8PDF([selectedRecord], selectedRecord.wastiName || '')}
+                    {canEdit && (
+                        <button onClick={() => handleEdit(selectedRecord)}
+                            className="flex items-center gap-2 text-sm font-bold text-amber-600 border border-amber-200 bg-amber-50 px-4 py-2 rounded-xl hover:bg-amber-100 transition-all">
+                            <Edit2 className="w-4 h-4" /> सुधारा
+                        </button>
+                    )}
+                    {/* <button onClick={() => window.print()}
                         className="flex items-center gap-2 text-sm font-bold text-white bg-gray-800 px-5 py-2 rounded-xl hover:bg-black transition-all">
-                        <FileDown className="w-4 h-4" /> PDF डाउनलोड
-                    </button>
+                        <Printer className="w-4 h-4" /> PDF / प्रिंट
+                    </button> */}
                     <button onClick={() => window.print()}
                         className="flex items-center gap-2 text-sm font-bold text-white bg-primary px-5 py-2 rounded-xl hover:bg-primary-dark transition-all">
                         <Printer className="w-4 h-4" /> प्रिंट
                     </button>
                 </div>
 
-                {/* Print styles — A4 landscape, black & white */}
+                {/* Print styles — A4 landscape, refined for official reporting */}
                 <style>{`
                     @media print {
                         .no-print { display: none !important; }
-                        body, html { background: white !important; }
-                        * { color: black !important; background: transparent !important;
-                            -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                        th { background: #1e1e1e !important; color: white !important; }
-                        tr:nth-child(even) td { background: #f5f5f5 !important; }
+                        body, html { 
+                            background: white !important; 
+                            margin: 0 !important; 
+                            padding: 0 !important;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        .print-only { display: block !important; }
+                        
+                        /* High-fidelity table printing */
+                        table { border-collapse: collapse !important; width: 100% !important; }
+                        th, td { border: 1px solid black !important; color: black !important; }
+                        th { background: #f0f0f0 !important; font-weight: bold !important; }
                     }
-                    @page { size: A4 landscape; margin: 10mm; }
+                    @page { 
+                        size: A4 landscape; 
+                        margin: 8mm 5mm 8mm 5mm; 
+                    }
                 `}</style>
 
-                <div className="overflow-auto flex-1 p-4 bg-white">
-                    <NamunaTable8 records={[selectedRecord]} filterWasti={selectedRecord.wastiName} />
+                <div className="overflow-auto flex-1 p-4 bg-gray-100 no-print-bg">
+                    <div className="w-full flex justify-center">
+                        <Namuna8PrintFormat records={[selectedRecord]} />
+                    </div>
                 </div>
 
                 {showForm && (
@@ -164,7 +203,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
                         existingLayouts={existingLayouts}
                         existingKhasras={existingKhasras}
                         taxRates={taxRates}
-                        onAuthError={onAuthError}
+
                     />
                 )}
             </div>
@@ -175,7 +214,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
     // ─── MAIN LIST VIEW (High-Fidelity Register) ──────────────────────
     return (
         <div className="flex flex-col h-full bg-slate-50 overflow-hidden">
-            <div className="bg-white border-b border-slate-200 px-4 xl:px-6 py-3 xl:py-4 shadow-sm no-print shrink-0 relative z-10">
+            <div className="bg-white border-b border-gray-100 px-6 py-4 shadow-sm no-print shrink-0">
                 <div className="flex flex-wrap items-center gap-4">
                     <div className="flex-1">
                         <h2 className="text-xl font-black text-gray-800 flex items-center gap-2">
@@ -207,26 +246,26 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <button onClick={() => { setEditingRecord(null); setShowForm(true); setVisibleFloorCount(1); }}
-                            className="flex items-center gap-2 text-sm font-black text-white bg-primary px-4 py-2 rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all active:scale-95">
-                            <Plus className="w-4 h-4" /> नवीन नोंद
-                        </button>
-                        <button onClick={async () => await generateNamuna8PDF(filteredRecords, filterWasti)}
-                            className="flex items-center gap-2 text-sm font-black text-white bg-gradient-to-r from-rose-600 to-pink-600 px-4 py-2 rounded-xl shadow-lg shadow-rose-100 hover:from-rose-700 hover:to-pink-700 transition-all active:scale-95">
-                            <FileDown className="w-4 h-4" /> रजिस्टर PDF
-                        </button>
+                        {canAdd && (
+                            <button onClick={() => { setEditingRecord(null); setShowForm(true); setVisibleFloorCount(1); }}
+                                className="flex items-center gap-2 text-sm font-black text-white bg-primary px-4 py-2.5 rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all active:scale-95">
+                                <Plus className="w-4 h-4" /> नवीन नोंद
+                            </button>
+                        )}
+
                     </div>
                 </div>
             </div>
 
-            <div className="flex-1 overflow-hidden p-4 xl:p-6 pb-0 xl:pb-0 flex flex-col">
-                <div className="bg-white rounded-t-2xl shadow-sm border border-slate-200 border-b-0 overflow-hidden flex-1 flex flex-col">
+            <div className="flex-1 overflow-auto p-6">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-visible min-w-fit">
                     <NamunaTable8
                         records={filteredRecords}
                         filterWasti={filterWasti}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
+                        onEdit={canEdit ? handleEdit : undefined}
+                        onDelete={canDelete ? handleDelete : undefined}
                         onView={setViewId}
+                        onPrint={handlePrint}
                         showActions={true}
                     />
                 </div>
@@ -243,7 +282,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
                     existingLayouts={existingLayouts}
                     existingKhasras={existingKhasras}
                     taxRates={taxRates}
-                    onAuthError={onAuthError}
+
                 />
             )}
         </div>

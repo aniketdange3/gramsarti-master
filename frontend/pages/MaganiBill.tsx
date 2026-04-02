@@ -4,6 +4,7 @@ import { AlertTriangle, FileWarning, Send, ChevronRight, CheckCircle2, ArrowRigh
 import MaganiBillDocument from '../components/MaganiBillDocument';
 import { generateMaganiBillPDF } from '../utils/pdfGenerator';
 import { PropertyRecord } from '../types';
+import { hasModulePermission } from '../utils/permissions';
 
 interface Toast { id: number; message: string; type: 'success' | 'error' }
 
@@ -21,6 +22,10 @@ export default function MaganiBill({ onAuthError }: MaganiBillProps) {
 
     // View State
     const [viewingBill, setViewingBill] = useState<any | null>(null);
+
+    const currentUser = React.useMemo(() => JSON.parse(localStorage.getItem('gp_user') || '{}'), []);
+    const canAdd = hasModulePermission(currentUser, 'magani', 'add');
+    const canEdit = hasModulePermission(currentUser, 'magani', 'edit');
 
     const BASE = `${API_BASE_URL}`;
     const token = localStorage.getItem('gp_token') || '';
@@ -175,22 +180,26 @@ export default function MaganiBill({ onAuthError }: MaganiBillProps) {
                                 <p className="text-xs text-gray-400">{defaulters.length} मालमत्ता बाकी</p>
                             </div>
                             <div className="flex gap-2">
-                                <button onClick={selectAll}
-                                    className="px-3 py-2 bg-primary/5 text-primary rounded-xl text-xs font-bold hover:bg-primary/10 transition-colors">
-                                    {selected.size === defaulters.length ? 'सर्व काढा' : 'सर्व निवडा'}
-                                </button>
-                                <button onClick={generateBills} disabled={loading || selected.size === 0}
-                                    className="flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-rose-600 to-red-600 text-white rounded-xl text-xs font-bold shadow-md disabled:opacity-50 hover:from-rose-700 hover:to-red-700 transition-all">
-                                    {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
-                                    मागणी बिल तयार करा ({selected.size})
-                                </button>
+                                {canAdd && (
+                                    <>
+                                        <button onClick={selectAll}
+                                            className="px-3 py-2 bg-primary/5 text-primary rounded-xl text-xs font-bold hover:bg-primary/10 transition-colors">
+                                            {selected.size === defaulters.length ? 'सर्व काढा' : 'सर्व निवडा'}
+                                        </button>
+                                        <button onClick={generateBills} disabled={loading || selected.size === 0}
+                                            className="flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-rose-600 to-red-600 text-white rounded-xl text-xs font-bold shadow-md disabled:opacity-50 hover:from-rose-700 hover:to-red-700 transition-all">
+                                            {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
+                                            मागणी बिल तयार करा ({selected.size})
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead className="bg-slate-50 text-xs font-bold text-gray-500 uppercase">
                                     <tr>
-                                        <th className="py-3 px-4"><input type="checkbox" checked={selected.size === defaulters.length && defaulters.length > 0} onChange={selectAll} /></th>
+                                        {canAdd && <th className="py-3 px-4"><input type="checkbox" checked={selected.size === defaulters.length && defaulters.length > 0} onChange={selectAll} /></th>}
                                         <th className="py-3 px-4 text-left">अ.क्र.</th>
                                         <th className="py-3 px-4 text-left">मालक</th>
                                         <th className="py-3 px-4 text-left">वस्ती</th>
@@ -201,8 +210,8 @@ export default function MaganiBill({ onAuthError }: MaganiBillProps) {
                                 </thead>
                                 <tbody>
                                     {defaulters.map(d => (
-                                        <tr key={d.id} className="border-t border-gray-50 hover:bg-slate-50 cursor-pointer" onClick={() => toggleSelect(d.id)}>
-                                            <td className="py-3 px-4"><input type="checkbox" checked={selected.has(d.id)} readOnly /></td>
+                                        <tr key={d.id} className="border-t border-gray-50 hover:bg-slate-50 cursor-pointer" onClick={() => canAdd && toggleSelect(d.id)}>
+                                            {canAdd && <td className="py-3 px-4"><input type="checkbox" checked={selected.has(d.id)} readOnly /></td>}
                                             <td className="py-3 px-4 font-bold text-gray-700">{d.srNo}</td>
                                             <td className="py-3 px-4 font-bold text-gray-800">{d.ownerName}</td>
                                             <td className="py-3 px-4 text-gray-500">{d.wastiName}</td>
@@ -212,7 +221,7 @@ export default function MaganiBill({ onAuthError }: MaganiBillProps) {
                                         </tr>
                                     ))}
                                     {defaulters.length === 0 && (
-                                        <tr><td colSpan={7} className="py-10 text-center text-gray-400 font-medium">सर्व मालमत्ता कर भरला आहे 🎉</td></tr>
+                                        <tr><td colSpan={canAdd ? 7 : 6} className="py-10 text-center text-gray-400 font-medium">सर्व मालमत्ता कर भरला आहे 🎉</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -262,7 +271,7 @@ export default function MaganiBill({ onAuthError }: MaganiBillProps) {
                                                         className="p-1.5 bg-primary/5 hover:bg-primary/10 text-primary rounded-lg transition-colors" title="बिल पहा">
                                                         <Eye className="w-4 h-4" />
                                                     </button>
-                                                    {b.status !== 'Paid' && b.notice_stage !== 'Legal' && (
+                                                    {canEdit && b.status !== 'Paid' && b.notice_stage !== 'Legal' && (
                                                         <button onClick={() => advanceNotice(b.id)} className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition-colors" title="पुढील नोटीस">
                                                             <ArrowRightCircle className="w-4 h-4" />
                                                         </button>

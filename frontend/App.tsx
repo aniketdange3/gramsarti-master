@@ -12,8 +12,10 @@ import PaymentEntry from './pages/PaymentEntry';
 import MaganiBill from './pages/MaganiBill';
 import Reports from './pages/Reports';
 import TaxMaster from './pages/TaxMaster';
+import Ferfar from './pages/Ferfar';
+import Sidebar from './components/Sidebar';
 
-type ViewType = 'dashboard' | 'namuna8' | 'namuna9' | 'taxMaster' | 'payments' | 'magani' | 'reports' | 'roleAccess';
+type ViewType = 'dashboard' | 'namuna8' | 'namuna9' | 'taxMaster' | 'payments' | 'magani' | 'reports' | 'roleAccess' | 'ferfar';
 
 const ROLE_LABELS: Record<string, string> = {
   super_admin: 'सुपर अ‍ॅडमिन',
@@ -33,6 +35,7 @@ export default function App() {
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
   const [taxRates, setTaxRates] = useState<any[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [checkedIn, setCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState<string | null>(null);
@@ -197,7 +200,7 @@ export default function App() {
         return;
       }
       const data = await response.json();
-      
+
       if (!Array.isArray(data)) {
         console.error('Invalid records data format:', data);
         setRecords([]);
@@ -222,6 +225,22 @@ export default function App() {
     }
   };
 
+  const handleUpdateLocalRecord = (updatedRecord: any) => {
+    setRecords(prev => {
+      const index = prev.findIndex(r => r.id === updatedRecord.id);
+      if (index !== -1) {
+        const newRecords = [...prev];
+        newRecords[index] = { ...updatedRecord };
+        return newRecords;
+      }
+      return [updatedRecord, ...prev];
+    });
+  };
+
+  const handleRemoveLocalRecord = (id: string) => {
+    setRecords(prev => prev.filter(r => r.id !== id));
+  };
+
   // ── If not logged in, show Login page ──
   if (!isLoggedIn) {
     return <Login onLogin={handleLogin} />;
@@ -231,9 +250,10 @@ export default function App() {
     { id: 'dashboard', label: 'डैशबोर्ड', sublabel: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, color: 'from-violet-500 to-indigo-600' },
     { id: 'namuna8', label: 'नमुना ८', sublabel: 'Assessment Register', icon: <FileText className="w-5 h-5" />, color: 'from-sky-500 to-blue-600' },
     { id: 'namuna9', label: 'नमुना ९', sublabel: 'Tax Notice', icon: <Receipt className="w-5 h-5" />, color: 'from-emerald-500 to-green-600' },
-    { id: 'payments', label: 'कर वसुली', sublabel: 'Payment Entry', icon: <IndianRupee className="w-5 h-5" />, color: 'from-teal-500 to-cyan-600', allowedRoles: ['super_admin', 'gram_sevak', 'operator', 'gram_sachiv', 'bill_operator'] },
-    { id: 'magani', label: 'मागणी बिल', sublabel: 'Recovery System', icon: <FileWarning className="w-5 h-5" />, color: 'from-rose-500 to-red-600', allowedRoles: ['super_admin', 'gram_sevak', 'operator', 'gram_sachiv'] },
-    { id: 'reports', label: 'अहवाल', sublabel: 'Reports', icon: <BarChart3 className="w-5 h-5" />, color: 'from-purple-500 to-fuchsia-600', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
+    // { id: 'payments', label: 'कर वसुली', sublabel: 'Payment Entry', icon: <IndianRupee className="w-5 h-5" />, color: 'from-teal-500 to-cyan-600', allowedRoles: ['super_admin', 'gram_sevak', 'operator', 'gram_sachiv', 'bill_operator'] },
+    // { id: 'magani', label: 'मागणी बिल', sublabel: 'Recovery System', icon: <FileWarning className="w-5 h-5" />, color: 'from-rose-500 to-red-600', allowedRoles: ['super_admin', 'gram_sevak', 'operator', 'gram_sachiv'] },
+    // { id: 'reports', label: 'अहवाल', sublabel: 'Reports', icon: <BarChart3 className="w-5 h-5" />, color: 'from-purple-500 to-fuchsia-600', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
+    { id: 'ferfar', label: 'फेरफार नोंदवही', sublabel: 'Mutation Register', icon: <FileText className="w-5 h-5" />, color: 'from-fuchsia-500 to-purple-600', allowedRoles: ['super_admin', 'gram_sevak', 'operator'] },
     { id: 'roleAccess', label: 'रोल अ‍ॅक्सेस', sublabel: 'Role Access', icon: <Shield className="w-5 h-5" />, color: 'from-rose-600 to-rose-400', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
     { id: 'taxMaster', label: 'प्रणाली संचलन केंद्र', sublabel: 'Tax Master', icon: <Settings className="w-5 h-5" />, color: 'from-amber-500 to-orange-500', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
   ];
@@ -244,78 +264,15 @@ export default function App() {
     setSidebarOpen(false);
   };
 
-  const Sidebar = () => (
-    <aside className="w-68 h-full flex flex-col shadow-premium-blue relative z-10 no-print" style={{
-      background: 'linear-gradient(180deg, #3730a3 0%, #4f46e5 100%)',
-    }}>
-      {/* Logo Area */}
-      <div className="p-7 border-b border-white/10 glass-dark m-3 rounded-2xl">
-        <div className="flex items-center gap-3">
-          <div className="bg-white p-1.5 rounded-xl shadow-lg shadow-indigo-900/50">
-            <img src="/images/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
-          </div>
-          <div>
-            <h1 className="font-black text-white text-xl leading-tight tracking-tight">GramSarthi</h1>
-            <p className="text-white/40 text-[9px] font-black tracking-widest uppercase">Property Tax AI</p>
-          </div>
-        </div>
-
-        {/* Status indicator */}
-        <div className="mt-5 flex items-center gap-3 bg-white/5 rounded-xl px-3 py-2 border border-white/5">
-          <div className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </div>
-          <span className="text-[10px] text-white/60 font-black uppercase tracking-wider">सिस्टम सक्रिय</span>
-          <div className="ml-auto bg-white/10 px-1.5 py-0.5 rounded text-[10px] text-white/50 font-bold">{records.length}</div>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 p-4 py-2 space-y-1.5 overflow-y-auto hide-scrollbar">
-        {navItems.filter(item => {
-          // Admin/Gram Sachiv/Gram Sevak always see all modules
-          const isAdminRole = user?.role === 'super_admin' || user?.role === 'gram_sachiv' || user?.role === 'gram_sevak';
-          if (isAdminRole) return true;
-          // Check role restriction
-          if (item.allowedRoles && !item.allowedRoles.includes(user?.role)) return false;
-          // Check module access
-          const allowedModules = (user?.allowed_modules || 'dashboard').split(',');
-          return allowedModules.includes(item.id);
-        }).map(item => {
-          const isActive = activeView === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => handleNavClick(item.id)}
-              className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl font-bold transition-all duration-300 group relative border ${isActive
-                ? 'bg-white text-indigo-700 border-white shadow-xl shadow-indigo-900/20'
-                : 'text-indigo-100/60 border-transparent hover:bg-white/5 hover:text-white'
-                }`}
-            >
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm ${isActive ? `bg-gradient-to-br ${item.color} text-white` : 'bg-white/10 text-indigo-200/50 group-hover:bg-white/20'
-                }`}>
-                {item.icon}
-              </div>
-              <div className="text-left flex-1">
-                <div className="text-sm leading-tight">{item.label}</div>
-                <div className={`text-[10px] font-medium transition-opacity ${isActive ? 'text-indigo-700/60' : 'text-indigo-100/30 group-hover:opacity-100'}`}>{item.sublabel}</div>
-              </div>
-              {isActive && (
-                <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 ring-4 ring-indigo-600/20"></div>
-              )}
-            </button>
-          );
-        })}
-      </nav>
-    </aside>
-  );
 
   return (
     <div className="min-h-screen bg-background flex" style={{ fontFamily: '"Noto Sans Devanagari", sans-serif' }}>
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex shrink-0 no-print h-screen sticky top-0">
-        <Sidebar />
+      <div className={`hidden md:flex shrink-0 no-print h-screen sticky top-0 transition-all duration-300 ease-in-out ${desktopSidebarOpen ? 'w-72' : 'w-0 opacity-0 overflow-hidden'
+        }`}>
+        <div className="w-72">
+          <Sidebar user={user} activeView={activeView} onNavClick={handleNavClick} totalRecords={records.length} navItems={navItems as any} />
+        </div>
       </div>
 
       {/* Mobile Overlay */}
@@ -336,7 +293,7 @@ export default function App() {
           >
             <X className="w-5 h-5 text-gray-700" />
           </button>
-          <Sidebar />
+          <Sidebar user={user} activeView={activeView} onNavClick={handleNavClick} totalRecords={records.length} navItems={navItems as any} />
         </div>
       </div>
 
@@ -350,6 +307,14 @@ export default function App() {
               className="md:hidden p-2 hover:bg-slate-100 rounded-xl transition-colors"
             >
               <Menu className="w-6 h-6 text-slate-700" />
+            </button>
+
+            <button
+              onClick={() => setDesktopSidebarOpen(!desktopSidebarOpen)}
+              className="hidden md:flex p-2.5 hover:bg-slate-100 rounded-xl transition-all active:scale-90 border border-slate-200 shadow-sm bg-white"
+              title={desktopSidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
+            >
+              {desktopSidebarOpen ? <X className="w-5 h-5 text-slate-600" /> : <Menu className="w-5 h-5 text-indigo-600" />}
             </button>
 
             <div className="hidden md:flex flex-col">
@@ -488,6 +453,8 @@ export default function App() {
           <Dashboard
             records={records}
             fetchRecords={fetchRecords}
+            onUpdateLocalRecord={handleUpdateLocalRecord}
+            onRemoveLocalRecord={handleRemoveLocalRecord}
             taxRates={taxRates}
             onViewRecord={handleViewRecord}
             onAuthError={handleLogout}
@@ -501,6 +468,8 @@ export default function App() {
             selectedId={selectedRecordId}
             onClearSelected={() => setSelectedRecordId(null)}
             fetchRecords={fetchRecords}
+            onUpdateLocalRecord={handleUpdateLocalRecord}
+            onRemoveLocalRecord={handleRemoveLocalRecord}
             taxRates={taxRates}
             onAuthError={handleLogout}
           />
@@ -510,12 +479,19 @@ export default function App() {
             records={records}
             selectedId={selectedRecordId}
             fetchRecords={fetchRecords}
+            onUpdateLocalRecord={handleUpdateLocalRecord}
+            onRemoveLocalRecord={handleRemoveLocalRecord}
             taxRates={taxRates}
             onAuthError={handleLogout}
           />
         )}
         {activeView === 'payments' && (
-          <PaymentEntry records={records} fetchRecords={fetchRecords} onAuthError={handleLogout} />
+          <PaymentEntry
+            records={records}
+            fetchRecords={fetchRecords}
+            onUpdateLocalRecord={handleUpdateLocalRecord}
+            onAuthError={handleLogout}
+          />
         )}
         {activeView === 'magani' && (
           <MaganiBill onAuthError={handleLogout} />
@@ -525,6 +501,9 @@ export default function App() {
         )}
         {activeView === 'taxMaster' && (
           <TaxMaster onAuthError={handleLogout} />
+        )}
+        {activeView === 'ferfar' && (
+          <Ferfar records={records} fetchRecords={fetchRecords} />
         )}
 
         {/* Edit Profile Modal */}

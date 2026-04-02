@@ -5,10 +5,12 @@ import { PropertyRecord, WASTI_NAMES } from '../types';
 import { matchesSearch } from '../utils/transliterate';
 import { TransliterationInput } from '../components/TransliterationInput';
 import { calculateBill } from '../utils/billCalculations';
+import { hasModulePermission } from '../utils/permissions';
 
 interface PaymentEntryProps {
     records: PropertyRecord[];
     fetchRecords: () => void;
+    onUpdateLocalRecord: (record: any) => void;
     onAuthError?: () => void;
 }
 
@@ -23,7 +25,7 @@ const MODE_ICONS: Record<string, React.ReactNode> = {
 
 interface Toast { id: number; message: string; type: 'success' | 'error' }
 
-export default function PaymentEntry({ records, fetchRecords, onAuthError }: PaymentEntryProps) {
+export default function PaymentEntry({ records, fetchRecords, onUpdateLocalRecord, onAuthError }: PaymentEntryProps) {
     const [search, setSearch] = useState('');
     const [selectedProp, setSelectedProp] = useState<PropertyRecord | null>(null);
     const [amount, setAmount] = useState('');
@@ -37,6 +39,10 @@ export default function PaymentEntry({ records, fetchRecords, onAuthError }: Pay
     const [payments, setPayments] = useState<any[]>([]);
     const [toasts, setToasts] = useState<Toast[]>([]);
     const [viewReceipt, setViewReceipt] = useState<any>(null);
+
+    const currentUser = useMemo(() => JSON.parse(localStorage.getItem('gp_user') || '{}'), []);
+    const canAdd = hasModulePermission(currentUser, 'payments', 'add');
+    const canEdit = hasModulePermission(currentUser, 'payments', 'edit');
 
     const BASE = `${API_BASE_URL}`;
     const token = localStorage.getItem('gp_token') || '';
@@ -96,9 +102,16 @@ export default function PaymentEntry({ records, fetchRecords, onAuthError }: Pay
             }
             if (!res.ok) throw new Error(data.error);
             addToast(`✅ पावती ${data.receipt_no} — ₹${Number(amount).toLocaleString()}`, 'success');
+            
+            // Optimistically update the record's paid amount in the local state
+            const updatedProp = {
+                ...selectedProp,
+                paidAmount: (Number(selectedProp.paidAmount) || 0) + Number(amount)
+            };
+            onUpdateLocalRecord(updatedProp);
+
             setAmount(''); setChequeNo(''); setChequeBank(''); setUpiRef(''); setReceiptBook(''); setRemarks('');
             setSelectedProp(null); setSearch('');
-            fetchRecords();
             fetchPayments();
         } catch (err: any) {
             addToast(err.message || 'Payment failed', 'error');
@@ -133,8 +146,9 @@ export default function PaymentEntry({ records, fetchRecords, onAuthError }: Pay
             <div className="flex-1 overflow-y-auto p-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Left: Payment Form */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">
-                        <h3 className="font-black text-gray-800 flex items-center gap-2"><IndianRupee className="w-5 h-5 text-primary" /> नवीन भरणा</h3>
+                    {canAdd ? (
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">
+                            <h3 className="font-black text-gray-800 flex items-center gap-2"><IndianRupee className="w-5 h-5 text-primary" /> नवीन भरणा</h3>
 
                         {/* Property search */}
                         <div>
@@ -250,6 +264,11 @@ export default function PaymentEntry({ records, fetchRecords, onAuthError }: Pay
                             {saving ? 'जतन होत आहे...' : 'भरणा नोंदवा व पावती तयार करा'}
                         </button>
                     </div>
+                    ) : (
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center justify-center">
+                            <p className="text-gray-400 font-bold text-center">तुम्हाला भरणा नोंदवण्याची परवानगी नाही</p>
+                        </div>
+                    )}
 
                     {/* Right: Recent Payments */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

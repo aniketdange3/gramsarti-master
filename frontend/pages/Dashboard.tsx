@@ -11,6 +11,7 @@ import { TransliterationInput } from '../components/TransliterationInput';
 import PropertyForm from '../components/PropertyForm';
 import { generateMaganiBillPDF } from '../utils/pdfGenerator';
 import { CustomDropdown } from '../components/CustomDropdown';
+import { hasModulePermission } from '../utils/permissions';
 
 
 // Custom sorter for Khasra numbers: Marathi first, then English, numeric 1 to end
@@ -88,6 +89,8 @@ const StatCard = ({ title, value, icon, gradient, textColor }: {
 interface DashboardProps {
     records: PropertyRecord[];
     fetchRecords: () => void;
+    onUpdateLocalRecord: (record: any) => void;
+    onRemoveLocalRecord: (id: string) => void;
     taxRates: any[];
     onViewRecord: (id: string, view: 'namuna8' | 'namuna9') => void;
     onAuthError?: () => void;
@@ -95,7 +98,7 @@ interface DashboardProps {
     key?: string;
 }
 
-export default function Dashboard({ records, fetchRecords, taxRates, onViewRecord, onAuthError, initialTab }: DashboardProps) {
+export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, onRemoveLocalRecord, taxRates, onViewRecord, onAuthError, initialTab }: DashboardProps) {
     const [showForm, setShowForm] = useState(false);
     const [editingRecord, setEditingRecord] = useState<PropertyRecord | null>(null);
     const [viewingRecord, setViewingRecord] = useState<PropertyRecord | null>(null);
@@ -122,9 +125,9 @@ export default function Dashboard({ records, fetchRecords, taxRates, onViewRecor
 
     const currentUser = useMemo(() => JSON.parse(localStorage.getItem('gp_user') || '{}'), []);
     const isAdmin = currentUser.role === 'super_admin' || currentUser.role === 'gram_sachiv' || currentUser.role === 'gram_sevak';
-    const canView = isAdmin || !!currentUser.can_view;
-    const canEdit = isAdmin || !!currentUser.can_edit;
-    const canDelete = isAdmin || !!currentUser.can_delete;
+    const canView = hasModulePermission(currentUser, 'dashboard', 'view');
+    const canEdit = hasModulePermission(currentUser, 'dashboard', 'edit');
+    const canDelete = hasModulePermission(currentUser, 'dashboard', 'delete');
 
     const fetchUserRequests = useCallback(async () => {
         if (!isAdmin) return;
@@ -394,7 +397,11 @@ export default function Dashboard({ records, fetchRecords, taxRates, onViewRecor
         setSaving(true);
         const isNew = !editingRecord;
         const maxSrNo = records.reduce((max, r) => Math.max(max, Number(r.srNo) || 0), 0);
-        const finalRecord = isNew ? { ...record, srNo: maxSrNo + 1 } : record;
+        const finalRecord = isNew ? { 
+            ...record, 
+            srNo: maxSrNo + 1, 
+            id: record.id && record.id !== '' ? record.id : 'prop_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now()
+        } : record;
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
@@ -402,7 +409,9 @@ export default function Dashboard({ records, fetchRecords, taxRates, onViewRecor
                 body: JSON.stringify(finalRecord)
             });
             if (response.ok) {
-                fetchRecords();
+                // If it was a new record, the server might have generated an ID, but 
+                // for simplicity and sync, we use the finalRecord we sent as it has our ID.
+                onUpdateLocalRecord(finalRecord);
                 setShowForm(false);
                 setEditingRecord(null);
                 addToast(isNew ? 'नवीन नोंद यशस्वीरित्या जतन केली!' : 'नोंद अद्यतनित केली!', 'success');
@@ -422,7 +431,7 @@ export default function Dashboard({ records, fetchRecords, taxRates, onViewRecor
         try {
             const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
             if (response.ok) {
-                fetchRecords();
+                onRemoveLocalRecord(id);
                 addToast('नोंद हटवली गेली.', 'info');
             }
         } catch (error) {
@@ -752,8 +761,7 @@ export default function Dashboard({ records, fetchRecords, taxRates, onViewRecor
                                                 <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest">ईमेल / संपर्क</th>
                                                 <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest">भूमिका</th>
                                                 <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest">कर्मचारी आयडी</th>
-                                                <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest text-center">परवानग्या</th>
-                                                <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest">स्थिती</th>
+                                                <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest text-center">स्थिती</th>
                                                 <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest text-center">कृती</th>
                                             </tr>
                                         </thead>
@@ -775,28 +783,6 @@ export default function Dashboard({ records, fetchRecords, taxRates, onViewRecor
                                                         </span>
                                                     </td>
                                                     <td className="px-4 py-3 text-xs font-bold text-slate-500 italic">{user.employee_id}</td>
-                                                    <td className="px-4 py-3">
-                                                        <div className="flex items-center justify-center gap-3">
-                                                            {(['can_view', 'can_edit', 'can_delete'] as const).map(perm => {
-                                                                const labels: Record<string, string> = { can_view: 'पहा', can_edit: 'संपादन', can_delete: 'हटवा' };
-                                                                const colors: Record<string, string> = { can_view: 'bg-blue-500', can_edit: 'bg-amber-500', can_delete: 'bg-rose-500' };
-                                                                const isOn = !!user[perm];
-                                                                const isAdminUser = user.role === 'super_admin' || user.role === 'gram_sachiv';
-                                                                return (
-                                                                    <div key={perm} className="flex flex-col items-center gap-1">
-                                                                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider">{labels[perm]}</span>
-                                                                        <button
-                                                                            onClick={() => !isAdminUser && handleTogglePermission(user.id, perm, !isOn)}
-                                                                            disabled={isAdminUser}
-                                                                            className={`relative w-9 h-5 rounded-full transition-all duration-200 ${isAdminUser ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${isOn ? colors[perm] : 'bg-slate-200'}`}
-                                                                        >
-                                                                            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-200 ${isOn ? 'left-[18px]' : 'left-0.5'}`} />
-                                                                        </button>
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </td>
                                                     <td className="px-4 py-3">
                                                         <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${user.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                                                                 user.status === 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-100' :
@@ -1178,9 +1164,9 @@ export default function Dashboard({ records, fetchRecords, taxRates, onViewRecor
 
 
             {editingManagedUser && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
-                        <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 xl:p-8 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[95vh] flex flex-col">
+                        <div className="px-8 xl:px-10 py-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
                             <div>
                                 <h3 className="text-xl font-black text-slate-800 tracking-tight">वापरकर्ता संपादित करा</h3>
                                 <p className="text-xs font-bold text-slate-500 mt-1">वापरकर्त्याचे तपशील आणि परवानग्या अद्यतनित करा.</p>
@@ -1189,9 +1175,16 @@ export default function Dashboard({ records, fetchRecords, taxRates, onViewRecor
                                 <X className="w-5 h-5 text-slate-400" />
                             </button>
                         </div>
-                        <form onSubmit={handleUpdateUser} className="p-8 space-y-4 overflow-y-auto">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1.5 col-span-2">
+                        <form onSubmit={handleUpdateUser} className="flex-1 flex flex-col min-h-0">
+                            <div className="flex-1 overflow-y-auto p-8 xl:p-10 flex flex-col gap-10">
+                                {/* Top Section: Personal Info */}
+                                <div className="space-y-6">
+                                    <div>
+                                        <h4 className="text-base font-black text-slate-800 tracking-tight">वैयक्तिक माहिती (Personal Info)</h4>
+                                        <p className="text-xs font-bold text-slate-400 mt-1">वापरकर्त्याची मूलभूत माहिती अद्यतनित करा.</p>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-5">
+                                        <div className="space-y-1.5 col-span-2">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">पूर्ण नाव</label>
                                     <input
                                         type="text"
@@ -1271,81 +1264,140 @@ export default function Dashboard({ records, fetchRecords, taxRates, onViewRecor
                                 <div className="space-y-1.5 col-span-2">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">पत्ता</label>
                                     <textarea
-                                        rows={2}
+                                        rows={3}
                                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-500 outline-none transition-all resize-none"
                                         value={editingManagedUser.address || ''}
                                         onChange={e => setEditingManagedUser({ ...editingManagedUser, address: e.target.value })}
                                     />
                                 </div>
-                            </div>
-
-                            {/* Permission Checkboxes */}
-                            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3">परवानग्या (Permissions)</label>
-                                <div className="flex gap-6">
+                                    
+                                {/* Permission Checkboxes - Hidden as we use module level now */}
+                                <div className="hidden">
                                     {([['can_view', 'पहा (View)', 'bg-blue-500'], ['can_edit', 'संपादन (Edit)', 'bg-amber-500'], ['can_delete', 'हटवा (Delete)', 'bg-rose-500']] as [string, string, string][]).map(([field, label, color]) => (
-                                        <label key={field} className="flex items-center gap-2.5 cursor-pointer group">
-                                            <div
-                                                className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${editingManagedUser[field] ? `${color} border-transparent` : 'border-slate-300 bg-white group-hover:border-slate-400'}`}
-                                                onClick={() => setEditingManagedUser({ ...editingManagedUser, [field]: !editingManagedUser[field] })}
-                                            >
-                                                {editingManagedUser[field] && (
-                                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                                                )}
-                                            </div>
-                                            <span className="text-xs font-bold text-slate-700">{label}</span>
-                                        </label>
+                                        <input key={field} type="checkbox" checked={editingManagedUser[field]} onChange={() => setEditingManagedUser({ ...editingManagedUser, [field]: !editingManagedUser[field] })} />
                                     ))}
                                 </div>
                             </div>
+                            </div>
 
-                            {/* Module Access Checkboxes */}
-                            <div className="bg-indigo-50/50 rounded-2xl p-5 border border-indigo-100">
-                                <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-3">मॉड्यूल ऍक्सेस (Module Access)</label>
-                                <div className="grid grid-cols-2 gap-2.5">
+                            {/* Bottom Section: Module Permissions */}
+                            <div className="space-y-6 flex flex-col min-w-0">
+                            <div>
+                                <h4 className="text-base font-black text-slate-800 tracking-tight">परवानग्या (Module Permissions)</h4>
+                                <p className="text-xs font-bold text-slate-400 mt-1">प्रत्येक मॉड्यूलसाठी View, Edit आणि Delete अधिकार सेट करा.</p>
+                            </div>
+                            
+                            <div className="bg-slate-50/70 rounded-[2rem] p-6 border border-slate-100 flex-1 overflow-y-auto">
+                                <div className="space-y-3.5">
                                     {([
-                                        ['dashboard', 'डैशबोर्ड', 'from-violet-500 to-indigo-600'],
-                                        ['namuna8', 'नमुना ८', 'from-sky-500 to-blue-600'],
-                                        ['namuna9', 'नमुना ९', 'from-emerald-500 to-green-600'],
-                                        ['payments', 'कर वसुली', 'from-teal-500 to-cyan-600'],
-                                        ['magani', 'मागणी बिल', 'from-rose-500 to-red-600'],
-                                        ['reports', 'अहवाल', 'from-purple-500 to-fuchsia-600'],
-                                        ['taxMaster', 'सेटिंग्ज', 'from-amber-500 to-orange-500'],
+                                        ['dashboard', 'डैशबोर्ड (Dashboard)', 'from-violet-500 to-indigo-600'],
+                                        ['namuna8', 'नमुना ८ (Namuna 8)', 'from-sky-500 to-blue-600'],
+                                        ['namuna9', 'नमुना ९ (Namuna 9)', 'from-emerald-500 to-green-600'],
+                                        ['payments', 'कर वसुली (Payments)', 'from-teal-500 to-cyan-600'],
+                                        ['magani', 'मागणी बिल (Magani)', 'from-rose-500 to-red-600'],
+                                        ['reports', 'अहवाल (Reports)', 'from-purple-500 to-fuchsia-600'],
+                                        ['taxMaster', 'सेटिंग्ज (Settings)', 'from-amber-500 to-orange-500'],
                                     ] as [string, string, string][]).map(([moduleId, label, gradient]) => {
-                                        const currentModules = (editingManagedUser.allowed_modules || 'dashboard').split(',');
-                                        const isChecked = currentModules.includes(moduleId);
-                                        const toggleModule = () => {
-                                            const updated = isChecked
-                                                ? currentModules.filter((m: string) => m !== moduleId).join(',') || 'dashboard'
-                                                : [...currentModules, moduleId].join(',');
-                                            setEditingManagedUser({ ...editingManagedUser, allowed_modules: updated });
+                                        let permsObj: Record<string, any> = {};
+                                        try {
+                                            if (editingManagedUser.allowed_modules?.startsWith('{')) {
+                                                permsObj = JSON.parse(editingManagedUser.allowed_modules);
+                                            } else {
+                                                const legacyMods = (editingManagedUser.allowed_modules || '').split(',');
+                                                legacyMods.forEach((m: string) => {
+                                                    permsObj[m] = { view: true, add: false, edit: !!editingManagedUser.can_edit, delete: !!editingManagedUser.can_delete };
+                                                });
+                                            }
+                                        } catch (e) { permsObj = {}; }
+
+                                        const modPerms = permsObj[moduleId] || { view: false, add: false, edit: false, delete: false };
+
+                                        const updateModulePerm = (action: 'view'|'add'|'edit'|'delete', value: boolean) => {
+                                            const newPerms = { ...permsObj };
+                                            if (!newPerms[moduleId]) newPerms[moduleId] = { view: false, add: false, edit: false, delete: false };
+                                            newPerms[moduleId][action] = value;
+                                            
+                                            // Handle implicit logic
+                                            if (value && (action === 'add' || action === 'edit' || action === 'delete')) newPerms[moduleId].view = true;
+                                            
+                                            setEditingManagedUser({ ...editingManagedUser, allowed_modules: JSON.stringify(newPerms) });
                                         };
+
+                                        const isAllSelected = modPerms.view && modPerms.add && modPerms.edit && modPerms.delete;
+                                        
+                                        const toggleAll = (checked: boolean) => {
+                                            const newPerms = { ...permsObj };
+                                            newPerms[moduleId] = { view: checked, add: checked, edit: checked, delete: checked };
+                                            setEditingManagedUser({ ...editingManagedUser, allowed_modules: JSON.stringify(newPerms) });
+                                        };
+
                                         return (
-                                            <label key={moduleId} className="flex items-center gap-2.5 cursor-pointer group p-2 rounded-xl hover:bg-white/60 transition-all">
-                                                <div
-                                                    className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${isChecked ? `bg-gradient-to-br ${gradient} border-transparent` : 'border-slate-300 bg-white group-hover:border-indigo-300'}`}
-                                                    onClick={toggleModule}
-                                                >
-                                                    {isChecked && (
-                                                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                                                    )}
+                                            <div key={moduleId} className="group flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-500/5 transition-all">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br ${gradient} shadow-sm group-hover:scale-110 transition-transform duration-300`}>
+                                                        <span className="text-white text-base font-black">{label.charAt(0)}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-sm font-black text-slate-800 block">{label}</span>
+                                                        <span className="text-[10px] font-bold text-slate-400 mt-0.5 block uppercase tracking-widest">{moduleId} ACCESS</span>
+                                                    </div>
                                                 </div>
-                                                <span className="text-xs font-bold text-slate-700">{label}</span>
-                                            </label>
+                                                <div className="flex items-center gap-5 bg-slate-50/80 px-5 py-3 rounded-[1.25rem] border border-slate-100">
+                                                    {/* Select All */}
+                                                    <label className="flex items-center gap-2 cursor-pointer group/chk pr-5 border-r border-slate-200">
+                                                        <div className={`w-5 h-5 rounded-[6px] flex items-center justify-center border-2 transition-all ${isAllSelected ? 'bg-indigo-500 border-indigo-500 shadow-md shadow-indigo-500/20' : 'bg-white border-slate-300 group-hover/chk:border-indigo-400'}`}>
+                                                            {isAllSelected && <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                                                        </div>
+                                                        <input type="checkbox" className="hidden" checked={isAllSelected} onChange={e => toggleAll(e.target.checked)} />
+                                                        <span className="text-xs font-black text-slate-800">सर्व (All)</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2 cursor-pointer group/chk">
+                                                        <div className={`w-5 h-5 rounded-[6px] flex items-center justify-center border-2 transition-all ${modPerms.view ? 'bg-blue-500 border-blue-500 shadow-md shadow-blue-500/20' : 'bg-white border-slate-300 group-hover/chk:border-blue-400'}`}>
+                                                            {modPerms.view && <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                                                        </div>
+                                                        <input type="checkbox" className="hidden" checked={modPerms.view} onChange={e => updateModulePerm('view', e.target.checked)} />
+                                                        <span className="text-xs font-black text-slate-600">View</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2 cursor-pointer group/chk">
+                                                        <div className={`w-5 h-5 rounded-[6px] flex items-center justify-center border-2 transition-all ${modPerms.add ? 'bg-emerald-500 border-emerald-500 shadow-md shadow-emerald-500/20' : 'bg-white border-slate-300 group-hover/chk:border-emerald-400'}`}>
+                                                            {modPerms.add && <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                                                        </div>
+                                                        <input type="checkbox" className="hidden" checked={modPerms.add} onChange={e => updateModulePerm('add', e.target.checked)} />
+                                                        <span className="text-xs font-black text-slate-600">Add</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2 cursor-pointer group/chk">
+                                                        <div className={`w-5 h-5 rounded-[6px] flex items-center justify-center border-2 transition-all ${modPerms.edit ? 'bg-amber-500 border-amber-500 shadow-md shadow-amber-500/20' : 'bg-white border-slate-300 group-hover/chk:border-amber-400'}`}>
+                                                            {modPerms.edit && <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                                                        </div>
+                                                        <input type="checkbox" className="hidden" checked={modPerms.edit} onChange={e => updateModulePerm('edit', e.target.checked)} />
+                                                        <span className="text-xs font-black text-slate-600">Edit</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2 cursor-pointer group/chk">
+                                                        <div className={`w-5 h-5 rounded-[6px] flex items-center justify-center border-2 transition-all ${modPerms.delete ? 'bg-rose-500 border-rose-500 shadow-md shadow-rose-500/20' : 'bg-white border-slate-300 group-hover/chk:border-rose-400'}`}>
+                                                            {modPerms.delete && <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                                                        </div>
+                                                        <input type="checkbox" className="hidden" checked={modPerms.delete} onChange={e => updateModulePerm('delete', e.target.checked)} />
+                                                        <span className="text-xs font-black text-slate-600">Delete</span>
+                                                    </label>
+                                                </div>
+                                            </div>
                                         );
                                     })}
                                 </div>
                             </div>
+                        </div>
+                    </div>
 
-                            <div className="pt-2 flex gap-3">
-                                <button type="submit" className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 active:scale-95 transition-all">
-                                    जतन करा
-                                </button>
-                                <button type="button" onClick={() => setEditingManagedUser(null)} className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-200 active:scale-95 transition-all">
-                                    रद्द करा
-                                </button>
-                            </div>
-                        </form>
+                    {/* Footer Actions */}
+                    <div className="px-8 xl:px-10 py-5 bg-slate-50 border-t border-slate-100 flex justify-end gap-4 shrink-0">
+                        <button type="button" onClick={() => setEditingManagedUser(null)} className="px-8 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-50 hover:border-slate-300 active:scale-95 transition-all flex items-center justify-center gap-2">
+                            <X className="w-5 h-5" /> रद्द करा
+                        </button>
+                        <button type="submit" className="px-8 py-3.5 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+                            <CheckCircle2 className="w-5 h-5" /> बदल जतन करा
+                        </button>
+                    </div>
+                </form>
                     </div>
                 </div>
             )}

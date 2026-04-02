@@ -268,15 +268,7 @@ export function matchesSearch(record: any, searchTerm: string): boolean {
     const propertyTypesStr = propertyTypesArr.join(' ');
 
     const fieldsToSearch = [
-        record.occupantName || '',
         record.ownerName || '',
-        record.plotNo || '',
-        record.wastiName || '',
-        record.wardNo || '',
-        record.layoutName || '',
-        record.khasraNo || '',
-        String(record.srNo || ''),
-        propertyTypesStr,
     ];
 
     for (const field of fieldsToSearch) {

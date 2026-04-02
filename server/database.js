@@ -215,10 +215,8 @@ const initializeDatabase = async () => {
             //             ['surcharge_health', 'DECIMAL(10,2) DEFAULT 0'],
             //             surcharge_road DECIMAL(10,2) DEFAULT 0,
             //             surcharge_employment DECIMAL(10,2) DEFAULT 0,
+            ['ownerName', 'TEXT DEFAULT NULL'],
             ['remarksNotes', 'TEXT DEFAULT NULL'],
-            //             billNo VARCHAR(100) DEFAULT NULL,
-            // ['billBookNo', 'VARCHAR(100) DEFAULT NULL'],
-            // ['lastBillDate', 'VARCHAR(100) DEFAULT NULL'],
             ['receiptNo', 'VARCHAR(100) DEFAULT NULL'],
             ['receiptBook', 'VARCHAR(100) DEFAULT NULL'],
             ['paymentDate', 'VARCHAR(100) DEFAULT NULL'],
@@ -322,6 +320,7 @@ const initializeDatabase = async () => {
         if (rows[0].count === 0) {
             const initialRates = [
                 { propertyType: 'आर.सी.सी', wastiName: 'All', buildingRate: 21296, buildingTaxRate: 1.20, landRate: 0, openSpaceTaxRate: 0 },
+                { propertyType: 'विटा सिमेंट', wastiName: 'All', buildingRate: 14000, buildingTaxRate: 1.20, landRate: 0, openSpaceTaxRate: 0 },
                 { propertyType: 'खाली जागा', wastiName: 'शंकरपुर', buildingRate: 0, buildingTaxRate: 0, landRate: 7800, openSpaceTaxRate: 1.50 },
                 { propertyType: 'खाली जागा', wastiName: 'गोटाळ पांजरी', buildingRate: 0, buildingTaxRate: 0, landRate: 5450, openSpaceTaxRate: 1.50 },
                 { propertyType: 'खाली जागा', wastiName: 'वेळाहरी', buildingRate: 0, buildingTaxRate: 0, landRate: 6200, openSpaceTaxRate: 1.50 }
@@ -538,11 +537,12 @@ const initializeDatabase = async () => {
                 { year_range: 'सन २०१६-१७ ते २०२१-२२ पर्यंत', item_name_mr: 'शंकरपूर वार्ड क्र. १', valuation_rate: 7800, tax_rate: 1.50, unit_mr: 'चौ. मी.' },
                 { year_range: 'सन २०१६-१७ ते २०२१-२२ पर्यंत', item_name_mr: 'गोटाळपांजरी वार्ड क्र २', valuation_rate: 5000, tax_rate: 1.50, unit_mr: 'चौ. मी.' },
                 { year_range: 'सन २०१६-१७ ते २०२१-२२ पर्यंत', item_name_mr: 'वेळा (हरिश्चंद्र) वार्ड क्र ३', valuation_rate: 6000, tax_rate: 1.50, unit_mr: 'चौ. मी.' },
-                // सन २०२२-२३ पासून
-                { year_range: 'सन २०२२-२३ पासून', item_name_mr: 'बांधकाम', valuation_rate: 21296, tax_rate: 1.20, unit_mr: 'चौ. मी.' },
-                { year_range: 'सन २०२२-२३ पासून', item_name_mr: 'शंकरपूर वार्ड क्र. १', valuation_rate: 7800, tax_rate: 1.50, unit_mr: 'चौ. मी.' },
-                { year_range: 'सन २०२२-२३ पासून', item_name_mr: 'गोटाळ पांजरी वार्ड क्र २', valuation_rate: 5450, tax_rate: 1.50, unit_mr: 'चौ. मी.' },
                 { year_range: 'सन २०२२-२३ पासून', item_name_mr: 'वेळा (हरिश्चंद्र) वार्ड क्र ३', valuation_rate: 6200, tax_rate: 1.50, unit_mr: 'चौ. मी.' },
+                // सन २०२५-२६ पासून
+                { year_range: 'सन २०२५-२६ पासून', item_name_mr: 'आर.सी.सी (बांधकाम)', valuation_rate: 21296, tax_rate: 1.20, unit_mr: 'चौ. मी.' },
+                { year_range: 'सन २०२५-२६ पासून', item_name_mr: 'शंकरपूर वार्ड क्र. १ (खाली जागा)', valuation_rate: 7800, tax_rate: 1.50, unit_mr: 'चौ. मी.' },
+                { year_range: 'सन २०२५-२६ पासून', item_name_mr: 'गोटाळपांजरी वार्ड क्र २ (खाली जागा)', valuation_rate: 5450, tax_rate: 1.50, unit_mr: 'चौ. मी.' },
+                { year_range: 'सन २०२५-२६ पासून', item_name_mr: 'वेळा (हरिश्चंद्र) वार्ड क्र ३ (खाली जागा)', valuation_rate: 6200, tax_rate: 1.50, unit_mr: 'चौ. मी.' },
             ];
             for (const r of initialRR) {
                 await connection.query(`INSERT INTO ready_reckoner_rates (year_range, item_name_mr, valuation_rate, tax_rate, unit_mr) VALUES (?, ?, ?, ?, ?)`,
@@ -591,6 +591,27 @@ const initializeDatabase = async () => {
             );
         }
         console.log('System config table ready');
+
+        // ──────────────────────────────────────────────
+        // 16. FERFAR REQUESTS TABLE
+        // ──────────────────────────────────────────────
+        console.log('Ensuring ferfar_requests table exists...');
+        await connection.query(`CREATE TABLE IF NOT EXISTS ferfar_requests (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            property_id VARCHAR(255) NOT NULL,
+            old_owner_name VARCHAR(255) NOT NULL,
+            new_owner_name VARCHAR(255) NOT NULL,
+            applicant_name VARCHAR(255) DEFAULT NULL,
+            applicant_mobile VARCHAR(20) DEFAULT NULL,
+            status ENUM('PENDING', 'APPROVED', 'REJECTED') DEFAULT 'PENDING',
+            remarks TEXT DEFAULT NULL,
+            document_proof VARCHAR(255) DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            approved_at TIMESTAMP NULL DEFAULT NULL,
+            approved_by INT DEFAULT NULL,
+            FOREIGN KEY(property_id) REFERENCES properties(id) ON DELETE CASCADE
+        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+        console.log('Ferfar requests table ready');
 
         await connection.query('SET FOREIGN_KEY_CHECKS = 1');
         connection.release();

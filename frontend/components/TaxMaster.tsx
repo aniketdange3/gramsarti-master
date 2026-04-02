@@ -12,26 +12,49 @@ interface TaxRate {
     openSpaceTaxRate: number;
 }
 
+interface ReadyReckonerRate {
+    id: number;
+    year_range: string;
+    item_name_mr: string;
+    valuation_rate: number;
+    tax_rate: number;
+    unit_mr: string;
+}
+
 export const TaxMaster = ({ onClose }: { onClose: () => void }) => {
     const [rates, setRates] = useState<TaxRate[]>([]);
+    const [rrRates, setRrRates] = useState<ReadyReckonerRate[]>([]);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editForm, setEditForm] = useState<Partial<TaxRate>>({});
+    
+    // RR States
+    const [editingRrId, setEditingRrId] = useState<number | null>(null);
+    const [rrEditForm, setRrEditForm] = useState<Partial<ReadyReckonerRate>>({});
+    const [showAddRr, setShowAddRr] = useState(false);
+    const [newRr, setNewRr] = useState<Partial<ReadyReckonerRate>>({ 
+        year_range: '', item_name_mr: '', valuation_rate: 0, tax_rate: 0, unit_mr: 'चौ. मी.' 
+    });
+
     const [loading, setLoading] = useState(true);
 
     const API_URL = `${API_BASE_URL}/api/tax-rates`;
+    const RR_API_URL = `${API_BASE_URL}/api/master/ready-reckoner`;
 
     useEffect(() => {
-        fetchRates();
+        fetchData();
     }, []);
 
-    const fetchRates = async () => {
+    const fetchData = async () => {
+        setLoading(true);
         try {
-            const res = await fetch(API_URL);
-            const data = await res.json();
-            setRates(data);
+            const [taxRes, rrRes] = await Promise.all([
+                fetch(API_URL),
+                fetch(RR_API_URL)
+            ]);
+            setRates(await taxRes.json());
+            setRrRates(await rrRes.json());
         } catch (err) {
-            console.error('Error fetching rates:', err);
-            alert('Error fetching rates');
+            console.error('Error fetching data:', err);
         } finally {
             setLoading(false);
         }
@@ -58,7 +81,7 @@ export const TaxMaster = ({ onClose }: { onClose: () => void }) => {
             if (res.ok) {
                 setEditingId(null);
                 setEditForm({});
-                fetchRates();
+                fetchData();
             } else {
                 alert('Failed to update rate');
             }
@@ -68,37 +91,65 @@ export const TaxMaster = ({ onClose }: { onClose: () => void }) => {
         }
     };
 
+    const handleRrSave = async () => {
+        if (!editingRrId) return;
+        try {
+            const res = await fetch(`${RR_API_URL}/${editingRrId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(rrEditForm),
+            });
+            if (res.ok) {
+                setEditingRrId(null);
+                setRrEditForm({});
+                fetchData();
+            }
+        } catch (err) {
+            console.error('Error updating RR rate:', err);
+        }
+    };
+
+    const handleAddRr = async () => {
+        try {
+            const res = await fetch(RR_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newRr),
+            });
+            if (res.ok) {
+                setShowAddRr(false);
+                setNewRr({ year_range: '', item_name_mr: '', valuation_rate: 0, tax_rate: 0, unit_mr: 'चौ. मी.' });
+                fetchData();
+            }
+        } catch (err) {
+            console.error('Error adding RR rate:', err);
+        }
+    };
+
+    const handleRrDelete = async (id: number) => {
+        if (!window.confirm('हे दर हटवायचे आहेत का?')) return;
+        try {
+            const res = await fetch(`${RR_API_URL}/${id}`, { method: 'DELETE' });
+            if (res.ok) fetchData();
+        } catch (err) {
+            console.error('Error deleting RR rate:', err);
+        }
+    };
+
     const handleChange = (field: keyof TaxRate, value: any) => {
         setEditForm(prev => ({ ...prev, [field]: value }));
     };
 
-    // Ready Reckoner Rate card data (static reference from the image)
-    const readyReckoner = [
-        {
-            period: 'सन 2015-16 पर्यंत',
-            rates: [
-                { label: 'सर्व', value: '(.20 पैसे) / चौ फुट' }
-            ]
-        },
-        {
-            period: 'सन 2016-17 ते 2021-22 पर्यंत',
-            rates: [
-                { label: 'बांधकाम', value: '14000 / (1.20 पैसे) / चौ मी.' },
-                { label: 'शंकरपूर वार्ड क्र. 1', value: '7800 / (1.50 पैसे) / चौ मी.' },
-                { label: 'गोटाळपांजरी वार्ड क्र 2', value: '5000 / (1.50 पैसे) / चौ मी.' },
-                { label: 'वेळा (हरिश्चंद्र) वार्ड क्र 3', value: '6000 / (1.50 पैसे) / चौ मी.' },
-            ]
-        },
-        {
-            period: 'सन 2022-23 पासून',
-            rates: [
-                { label: 'बांधकाम', value: '21296 / (1.20 पैसे) / चौ मी.' },
-                { label: 'शंकरपूर वार्ड क्र. 1', value: '7800 / (1.50 पैसे) / चौ मी.' },
-                { label: 'गोटाळपांजरी वार्ड क्र 2', value: '5450 / (1.50 पैसे) / चौ मी.' },
-                { label: 'वेळा (हरिश्चंद्र) वार्ड क्र 3', value: '6200 / (1.50 पैसे) / चौ मी.' },
-            ]
-        }
-    ];
+    const handleRrChange = (field: keyof ReadyReckonerRate, value: any) => {
+        setRrEditForm(prev => ({ ...prev, [field]: value }));
+    };
+
+    // Grouping for display
+    const groupedRr = rrRates.reduce((acc: any, rate) => {
+        if (!acc[rate.year_range]) acc[rate.year_range] = [];
+        acc[rate.year_range].push(rate);
+        return acc;
+    }, {});
 
     return (
         <div className="flex flex-col h-full bg-slate-50">
@@ -108,27 +159,94 @@ export const TaxMaster = ({ onClose }: { onClose: () => void }) => {
             </div>
 
             <div className="flex-1 p-6 overflow-y-auto space-y-6">
-                {/* Ready Reckoner Rate Card */}
                 <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                    <div className="p-4 bg-amber-50 border-b border-amber-100">
-                        <h3 className="text-lg font-bold text-amber-800">📋 रेडीरेकणर दर (Ready Reckoner Rates)</h3>
-                        <p className="text-xs text-amber-600 mt-1">संदर्भासाठी — सध्याचे आणि मागील दर</p>
+                    <div className="p-4 bg-amber-50 border-b border-amber-100 flex justify-between items-center">
+                        <div>
+                            <h3 className="text-lg font-bold text-amber-800">📋 रेडीरेकणर दर (Ready Reckoner Rates)</h3>
+                            <p className="text-xs text-amber-600 mt-1">शासन प्रमाणित वार्षिक दर प्रणाली</p>
+                        </div>
+                        <button 
+                            onClick={() => setShowAddRr(!showAddRr)} 
+                            className="bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-amber-700 transition-colors shadow-sm"
+                        >
+                            <Plus className="w-3.5 h-3.5" /> नवीन दर जोडा
+                        </button>
                     </div>
-                    <div className="p-4 space-y-4">
-                        {readyReckoner.map((period, pIdx) => (
-                            <div key={pIdx} className="rounded-lg border overflow-hidden">
-                                <div className="bg-gray-100 px-4 py-2 font-bold text-sm text-gray-700 border-b">
-                                    {period.period}
+
+                    {showAddRr && (
+                        <div className="p-4 bg-amber-50/30 border-b border-amber-100 animate-in slide-in-from-top duration-200">
+                             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                <input type="text" placeholder="कालावधी (उदा. २०२२-२३)" className="border rounded-lg px-2 py-1.5 text-xs font-bold" value={newRr.year_range} onChange={e => setNewRr({...newRr, year_range: e.target.value})} />
+                                <input type="text" placeholder="क्षेत्र / वस्ती" className="border rounded-lg px-2 py-1.5 text-xs font-bold" value={newRr.item_name_mr} onChange={e => setNewRr({...newRr, item_name_mr: e.target.value})} />
+                                <input type="number" placeholder="मूल्यांकन दर" className="border rounded-lg px-2 py-1.5 text-xs font-bold" value={newRr.valuation_rate} onChange={e => setNewRr({...newRr, valuation_rate: Number(e.target.value)})} />
+                                <input type="number" step="0.01" placeholder="कर दर" className="border rounded-lg px-2 py-1.5 text-xs font-bold" value={newRr.tax_rate} onChange={e => setNewRr({...newRr, tax_rate: Number(e.target.value)})} />
+                                <div className="flex gap-2">
+                                    <select className="border rounded-lg px-2 py-1.5 text-xs font-bold flex-1" value={newRr.unit_mr} onChange={e => setNewRr({...newRr, unit_mr: e.target.value})}>
+                                        <option value="चौ. मी.">चौ. मी.</option>
+                                        <option value="चौ. फूट">चौ. फूट</option>
+                                    </select>
+                                    <button onClick={handleAddRr} className="bg-green-600 text-white p-1.5 rounded-lg hover:bg-green-700"><Plus className="w-4 h-4"/></button>
                                 </div>
-                                <div className="divide-y">
-                                    {period.rates.map((rate, rIdx) => (
-                                        <div key={rIdx} className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50">
-                                            <span className="text-sm font-medium text-gray-700">{rate.label}</span>
-                                            <span className="text-sm font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full">
-                                                = {rate.value}
-                                            </span>
-                                        </div>
-                                    ))}
+                             </div>
+                        </div>
+                    )}
+
+                    <div className="p-4 space-y-4">
+                        {Object.entries(groupedRr).map(([year, rates]: [string, any], pIdx) => (
+                            <div key={pIdx} className="rounded-lg border overflow-hidden">
+                                <div className="bg-gray-100 px-4 py-2 font-bold text-sm text-gray-700 border-b flex justify-between">
+                                    <span>{year}</span>
+                                </div>
+                                <div className="divide-y overflow-x-auto">
+                                    <table className="w-full text-xs text-left">
+                                        <thead>
+                                            <tr className="bg-gray-50/50">
+                                                <th className="px-4 py-2 font-black text-gray-400 uppercase tracking-tighter w-1/3">क्षेत्र / वर्णन</th>
+                                                <th className="px-4 py-2 font-black text-gray-400 uppercase tracking-tighter">मूल्यांकन (रु.)</th>
+                                                <th className="px-4 py-2 font-black text-gray-400 uppercase tracking-tighter">कर दर (पैसे)</th>
+                                                <th className="px-4 py-2 font-black text-gray-400 uppercase tracking-tighter">एकक</th>
+                                                <th className="px-4 py-2 font-black text-gray-400 uppercase tracking-tighter text-right">क्रिया</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {rates.map((rate: ReadyReckonerRate) => (
+                                                <tr key={rate.id} className="hover:bg-gray-50/50 transition-colors">
+                                                    <td className="px-4 py-2 font-bold text-slate-700 uppercase">
+                                                        {editingRrId === rate.id ? <input type="text" className="w-full border p-1 rounded" value={rrEditForm.item_name_mr} onChange={e => setRrEditForm({...rrEditForm, item_name_mr: e.target.value})} /> : rate.item_name_mr}
+                                                    </td>
+                                                    <td className="px-4 py-2 text-indigo-600 font-bold">
+                                                        {editingRrId === rate.id ? <input type="number" className="w-20 border p-1 rounded" value={rrEditForm.valuation_rate} onChange={e => setRrEditForm({...rrEditForm, valuation_rate: Number(e.target.value)})} /> : `₹${rate.valuation_rate}`}
+                                                    </td>
+                                                    <td className="px-4 py-2 text-emerald-600 font-bold">
+                                                        {editingRrId === rate.id ? <input type="number" step="0.01" className="w-16 border p-1 rounded" value={rrEditForm.tax_rate} onChange={e => setRrEditForm({...rrEditForm, tax_rate: Number(e.target.value)})} /> : rate.tax_rate}
+                                                    </td>
+                                                    <td className="px-4 py-2 text-gray-500 font-medium">
+                                                        {editingRrId === rate.id ? (
+                                                            <select className="border p-1 rounded" value={rrEditForm.unit_mr} onChange={e => setRrEditForm({...rrEditForm, unit_mr: e.target.value})}>
+                                                                <option value="चौ. मी.">चौ. मी.</option>
+                                                                <option value="चौ. फूट">चौ. फूट</option>
+                                                            </select>
+                                                        ) : rate.unit_mr}
+                                                    </td>
+                                                    <td className="px-4 py-2 text-right">
+                                                        <div className="flex justify-end gap-1.5">
+                                                            {editingRrId === rate.id ? (
+                                                                <>
+                                                                    <button onClick={handleRrSave} className="text-green-600 hover:bg-green-50 p-1 rounded"><Save className="w-3.5 h-3.5" /></button>
+                                                                    <button onClick={() => setEditingRrId(null)} className="text-slate-400 hover:bg-slate-50 p-1 rounded"><X className="w-3.5 h-3.5" /></button>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <button onClick={() => { setEditingRrId(rate.id); setRrEditForm(rate); }} className="text-indigo-600 hover:bg-indigo-50 p-1 rounded"><Edit2 className="w-3.5 h-3.5" /></button>
+                                                                    <button onClick={() => handleRrDelete(rate.id)} className="text-rose-500 hover:bg-rose-50 p-1 rounded"><Trash2 className="w-3.5 h-3.5" /></button>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         ))}

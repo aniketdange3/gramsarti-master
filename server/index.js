@@ -61,6 +61,9 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/magani', maganiRoutes);
 app.use('/api/attendance', attendanceRoutes);
 
+const ferfarRoutes = require('./routes/ferfar.routes');
+app.use('/api/ferfar', ferfarRoutes);
+
 app.get('/test-root', (req, res) => {
     res.send('Root is reachable');
 });
@@ -83,9 +86,33 @@ app.get('/api/properties/khasras', async (req, res) => {
     }
 });
 
+// Simple in-memory cache for properties
+let propertiesCache = null;
+let propertiesEtag = null;
+
+const clearPropertiesCache = () => {
+    propertiesCache = null;
+    propertiesEtag = null;
+    console.log('[CACHE] Properties cache cleared.');
+};
+
 // Get all properties with their sections
 app.get('/api/properties', async (req, res) => {
     console.log('GET /api/properties request received');
+
+    // Check ETag
+    if (propertiesEtag && req.headers['if-none-match'] === propertiesEtag) {
+        console.log('[CACHE] Returning 304 Not Modified');
+        return res.status(304).end();
+    }
+
+    // Check Memory Cache
+    if (propertiesCache) {
+        console.log('[CACHE] Returning cached properties (Length: ' + propertiesCache.length + ')');
+        res.setHeader('ETag', propertiesEtag);
+        return res.json(propertiesCache);
+    }
+
     const query = `
     SELECT p.*, s.floorIndex, s.propertyType, s.lengthFt, s.widthFt, s.areaSqFt, s.areaSqMt, 
            s.landRate, s.buildingRate, s.depreciationRate, s.weightage, s.buildingValue, 
@@ -144,7 +171,13 @@ app.get('/api/properties', async (req, res) => {
             }
         });
 
-        res.json(Object.values(propertiesMap));
+        // Cache the result
+        propertiesCache = Object.values(propertiesMap);
+        propertiesEtag = `W/"${Date.now()}-${propertiesCache.length}"`;
+        console.log(`[CACHE] Data cached with ETag ${propertiesEtag}`);
+
+        res.setHeader('ETag', propertiesEtag);
+        res.json(propertiesCache);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -185,16 +218,21 @@ app.post('/api/properties', async (req, res) => {
         console.log(`Deleted sections: ${delSections.affectedRows}, Deleted properties: ${delProp.affectedRows}`);
         */
 
-        // To allow "storing both" when IDs might conflict, we ensure a unique ID is used for every new entry
-        // if the user wants to keep the old one. 
-        // We will generate a new ID if we are doing a "Save" that should be a new record.
-        const newPropertyId = Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-        console.log(`[DUPLICATE] Storing data with new ID: ${newPropertyId}`);
+        // Use existing ID if provided (for updates), otherwise generate a new one
+        const finalId = (property.id && String(property.id).trim() !== '') ? 
+            property.id : 
+            (Math.random().toString(36).substr(2, 9) + '_' + Date.now());
+            
+        console.log(`[DATA UPDATE] Persistence operation for ID: ${finalId}`);
+
+        // Perform clean overwrite for updates
+        await connection.query('DELETE FROM property_sections WHERE propertyId = ?', [finalId]);
+        await connection.query('DELETE FROM properties WHERE id = ?', [finalId]);
 
         const propertyQuery = `INSERT INTO properties (id, srNo, wardNo, khasraNo, layoutName, plotNo, occupantName, ownerName, hasConstruction, openSpace, propertyTax, openSpaceTax, streetLightTax, healthTax, generalWaterTax, specialWaterTax, wasteCollectionTax, penaltyAmount, totalTaxAmount, arrearsAmount, paidAmount, wastiName, createdAt, receiptNo, receiptBook, paymentDate, propertyId, constructionYear, propertyAge, readyReckonerLand, readyReckonerBuilding, readyReckonerComposite, depreciationAmount, remarksNotes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
         const propertyParams = [
-            newPropertyId, property.srNo, property.wardNo, property.khasraNo, property.layoutName,
+            finalId, property.srNo, property.wardNo, property.khasraNo, property.layoutName,
             property.plotNo, property.occupantName, property.ownerName, property.hasConstruction ? 1 : 0,
             property.openSpace, property.propertyTax, property.openSpaceTax, property.streetLightTax,
             property.healthTax, property.generalWaterTax, property.specialWaterTax, property.wasteCollectionTax || 0,
@@ -228,7 +266,7 @@ app.post('/api/properties', async (req, res) => {
         for (const [index, section] of validSections.entries()) {
             console.log(`[DB] Saving Valid Section ${index}: ${section.propertyType}`);
             await connection.query(sectionQuery, [
-                newPropertyId,
+                finalId,
                 index, // Use loop index as the new floorIndex for clean ordering
                 section.propertyType, section.lengthFt, section.widthFt,
                 section.areaSqFt, section.areaSqMt, section.landRate, section.buildingRate,
@@ -240,6 +278,7 @@ app.post('/api/properties', async (req, res) => {
         console.log('All sections inserted successfully');
 
         await connection.commit();
+        clearPropertiesCache();
         console.log('**************************************************');
         console.log(`[DATA UPDATE] Property ${property.id} (${property.ownerName}) successfully saved/updated at ${new Date().toLocaleString()}`);
         console.log('**************************************************');
@@ -365,8 +404,10 @@ app.post('/api/properties/import', async (req, res) => {
         }
 
         await connection.commit();
+        clearPropertiesCache();
         console.log(`Import complete: ${importedCount} records inserted successfully`);
         res.status(201).json({ message: `Successfully imported ${importedCount} records` });
+    } catch (err) {
         if (connection) await connection.rollback();
         console.error('Import error:', err);
         if (err.code === 'ER_DUP_ENTRY') {
@@ -386,6 +427,7 @@ app.post('/api/properties/import', async (req, res) => {
 app.delete('/api/properties/:id', async (req, res) => {
     try {
         await db.query('DELETE FROM properties WHERE id = ?', [req.params.id]);
+        clearPropertiesCache();
         res.json({ message: 'Property deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -438,6 +480,7 @@ app.post('/api/properties/cleanup-duplicates', async (req, res) => {
         }
         
         await connection.commit();
+        if (removedCount > 0) clearPropertiesCache();
         console.log(`[CLEANUP] Removed ${removedCount} exact duplicate records.`);
         res.json({ message: `Successfully removed ${removedCount} exact duplicate records.`, removedCount });
     } catch (err) {

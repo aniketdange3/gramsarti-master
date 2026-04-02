@@ -1,6 +1,5 @@
 export interface BillCalculation {
     arrearsBase: number;
-    penaltyAmount: number;
     arrearsTotal: number;
     currentTaxBase: number;
     discountAmount: number;
@@ -10,10 +9,8 @@ export interface BillCalculation {
 }
 
 /**
- * Calculates penalty and discount for Magani Bill.
- * - Penalty: 5% of arrears (मागील थकबाकी) fix 
+ * Calculates discount for Magani Bill.
  * - Discount: 5% of current year tax (चालू कर) if paid before September 30th
- * check first date then calcuted amount
  * 
  * @param arrearsAmount Existing arrears from record
  * @param currentTaxAmount Current year tax amount
@@ -27,17 +24,11 @@ export const calculateBill = (
     const arrearsBase = Number(arrearsAmount) || 0;
     const currentTaxBase = Number(currentTaxAmount) || 0;
 
-    // 5% Penalty on Arrears  aniket danage namuna 9 calculation
-    const penaltyAmount = Math.round(arrearsBase * 0.05);
-    const arrearsTotal = arrearsBase + penaltyAmount;
+    // Arrears total is just the base amount as penalty is removed
+    const arrearsTotal = arrearsBase;
 
     // Check Discount Eligibility: Before or on September 30th of the current financial year
-    // In India, financial year starts April 1st. 
-    // If payment is made between April 1st and September 30th, it's eligible for discount on current year tax.
     const month = referenceDate.getMonth(); // 0-indexed (0=Jan, 3=Apr, 8=Sep)
-    const day = referenceDate.getDate();
-
-    // Eligibility: April (3) to September (8)
     const isDiscountEligible = month >= 3 && month <= 8;
 
     const discountAmount = isDiscountEligible ? Math.round(currentTaxBase * 0.05) : 0;
@@ -47,7 +38,6 @@ export const calculateBill = (
 
     return {
         arrearsBase,
-        penaltyAmount,
         arrearsTotal,
         currentTaxBase,
         discountAmount,

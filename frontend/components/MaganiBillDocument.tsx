@@ -93,10 +93,6 @@ export default function MaganiBillDocument({ record }: Props) {
                             { name: 'कचरा गाडी कर', arrears: 0, current: record.wasteCollectionTax, field: 'wasteCollectionTax' },
                             { name: 'सामान्य पाणी कर', arrears: 0, current: record.generalWaterTax, field: 'genWater' },
                             { name: 'विशेष पाणी कर', arrears: 0, current: record.specialWaterTax, field: 'specWater' },
-                            { name: 'उशिरा कर (५% दंड)', arrears: calc.penaltyAmount, current: 0, field: 'penalty' },
-                            { name: 'नोटीस फी', arrears: 0, current: 0, field: 'notice' },
-                            { name: 'अधिकाऱ्याची (वॉरंटी फी)', arrears: 0, current: 0, field: 'warranty' },
-                            { name: 'इतर', arrears: 0, current: 0, field: 'other' }
                         ].map((tax, idx) => (
                             <tr key={idx} className="border-b border-black">
                                 <td className="border-r border-black p-1.5 font-bold px-4">{tax.name}</td>

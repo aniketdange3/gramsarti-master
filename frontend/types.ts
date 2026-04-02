@@ -81,6 +81,9 @@ export interface PropertyRecord {
   // billBookNo?: string;
   // lastBillDate?: string;
 
+  // Ferfar status display cache
+  hasPendingFerfar?: boolean;
+
   // New detailed fields for Rule 32(1) - Namuna 8
   //   citySurveyNo?: string;
   constructionYear?: string;
@@ -128,7 +131,7 @@ export const DEFAULT_SECTION: PropertySection = {
   wardNo: "वॉर्ड क्रमांक",
   khasraNo: "खसरा नंबर / सी टी नंबर",
   layoutName: "लेआउटचे नाव", // New label
-  plotNo: "प्लॉट क्रमांक",
+  plotNo: "प्लॉट क्रमांक/मालमत्ता क्र.",
   occupantName: "भोगवटाधारकाचे नाव",
   ownerName: "मालकाचे नाव",
   hasConstruction: "बांधकाम आहे का",
@@ -184,4 +187,25 @@ export const DEFAULT_SECTION: PropertySection = {
   receiptBook: "पावती बुक क्र.",
   paymentDate: "दिनांक",
 };
+
+export interface FerfarRequest {
+  id: number;
+  property_id: string;
+  old_owner_name: string;
+  new_owner_name: string;
+  applicant_name?: string;
+  applicant_mobile?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  remarks?: string;
+  document_proof?: string;
+  created_at: string;
+  approved_at?: string;
+  approved_by?: number;
+  // Joined fields from properties
+  srNo?: number;
+  wardNo?: string;
+  wastiName?: string;
+  plotNo?: string;
+}
+
 

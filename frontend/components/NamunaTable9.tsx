@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Edit2, Trash2, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Eye, Edit2, Trash2, ChevronLeft, ChevronRight, CheckCircle2, Printer } from 'lucide-react';
 import { PropertyRecord } from '../types';
 import { PANCHAYAT_CONFIG } from '../panchayatConfig';
 
@@ -10,10 +10,9 @@ interface Props {
     onDelete?: (id: string) => void;
     onView?: (id: string) => void;
     showActions?: boolean;
-    selectedIds?: Set<string>;
-    toggleSelectOne?: (id: string) => void;
-    toggleSelectAll?: (ids: string[]) => void;
+    onPrint?: (id: string) => void;
 }
+
 
 const MN = (v: number | string | undefined) =>
     String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
@@ -31,7 +30,16 @@ const HEADS = [
 
 const PAGE_SIZE = 50;
 
-export default function NamunaTable9({ records, filterWasti, onEdit, onDelete, onView, showActions = false, selectedIds = new Set(), toggleSelectOne, toggleSelectAll }: Props) {
+export default function NamunaTable9({
+    records,
+    filterWasti,
+    onEdit,
+    onDelete,
+    onView,
+    onPrint,
+    showActions = false
+}: Props) {
+
     const [page, setPage] = useState(1);
     const [showAll, setShowAll] = useState(false);
 
@@ -105,33 +113,24 @@ export default function NamunaTable9({ records, filterWasti, onEdit, onDelete, o
                             <th rowSpan={2} className="border border-black p-1 text-left">घरमालकाचे नाव</th>
                             <th rowSpan={2} className="border border-black p-1">प्लॉट नं. / <br /> मालमत्ता नं.</th>
                             <th rowSpan={2} className="border border-black p-1 text-left">कराची नावे</th>
-                            <th colSpan={4} className="border border-black p-1">मागणी (रु.)</th>
+                            <th colSpan={3} className="border border-black p-1">मागणी (रु.)</th>
                             <th rowSpan={2} className="border border-black p-1">पावती क्र. <br /> बुक क्र.</th>
                             <th rowSpan={2} className="border border-black p-1">तारीख</th>
                             <th rowSpan={2} className="border border-black p-1 text-left">कराची नावे</th>
-                            <th colSpan={4} className="border border-black p-1">वसुली (रु.)</th>
+                            <th colSpan={3} className="border border-black p-1">वसुली (रु.)</th>
                             <th rowSpan={2} className="border border-black p-1">बाकी</th>
                         </tr>
                         <tr className="hidden print:table-row bg-[#ecfccb] text-black text-center text-[8px] font-semibold">
                             <th className="border border-black p-0.5">मागील</th>
                             <th className="border border-black p-0.5">चालू</th>
-                            <th className="border border-black p-0.5">दंड</th>
                             <th className="border border-black p-0.5 font-bold">एकूण मागणी</th>
                             <th className="border border-black p-0.5">मागील</th>
                             <th className="border border-black p-0.5">चालू</th>
-                            <th className="border border-black p-0.5">दंड</th>
                             <th className="border border-black p-0.5 font-bold">एकूण वसुली</th>
                         </tr>
                         {/* Simplified UI Header (Screen Only) - MODERNIZED */}
                         <tr className="no-print bg-slate-50 text-slate-600 border-b-2 border-slate-200 sticky top-0 z-20 backdrop-blur-sm bg-white/90">
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest w-[40px] text-center">
-                                <input
-                                    type="checkbox"
-                                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                                    checked={pageRecords.length > 0 && pageRecords.every(r => selectedIds.has(r.id))}
-                                    onChange={() => toggleSelectAll?.(pageRecords.map(r => r.id))}
-                                />
-                            </th>
+
                             <th className="px-3 py-3 text-center text-[10px] font-black uppercase w-[50px] tracking-widest">अ.क्र.</th>
                             <th className="px-3 py-3 text-left text-[11px] font-black uppercase tracking-wider w-[100px]">वस्ती</th>
                             <th className="px-3 py-3 text-left text-[11px] font-black uppercase tracking-wider w-[80px]">खसरा</th>
@@ -144,9 +143,15 @@ export default function NamunaTable9({ records, filterWasti, onEdit, onDelete, o
                             <th className="px-3 py-3 text-right text-[11px] font-black uppercase tracking-wider min-w-[100px]">चालू मागणी</th>
                             <th className="px-3 py-3 text-right text-[11px] font-black uppercase tracking-wider min-w-[100px]">एकूण मागणी</th>
                             <th className="px-3 py-3 text-left text-[11px] font-black uppercase tracking-wider min-w-[90px]">पावती तपशील</th>
-                            <th className="px-3 py-3 text-right text-[11px] font-black uppercase tracking-wider min-w-[100px]">भरलेली रक्कम</th>
+                            <th className="px-3 py-3 text-right text-[11px] font-black uppercase tracking-wider min-w-[100px]">मागील वसुली</th>
+                            <th className="px-3 py-3 text-right text-[11px] font-black uppercase tracking-wider min-w-[100px]">चालू वसुली</th>
+                            <th className="px-3 py-3 text-right text-[11px] font-black uppercase tracking-wider min-w-[100px]">एकूण वसुली</th>
                             <th className="px-3 py-3 text-right text-[11px] font-black uppercase tracking-wider min-w-[120px]">एकूण बाकी</th>
-                            {showActions && <th className="px-3 py-3 text-center text-[11px] font-black uppercase tracking-wider w-[100px]">कृती</th>}
+                            {showActions && (
+                                <th className="no-print px-3 py-3 text-center text-[11px] font-black uppercase tracking-wider w-[120px] sticky right-0 z-30 bg-slate-50/90 backdrop-blur-sm border-l border-slate-200 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]">
+                                    कृती
+                                </th>
+                            )}
                         </tr>
                     </thead>
 
@@ -154,12 +159,16 @@ export default function NamunaTable9({ records, filterWasti, onEdit, onDelete, o
                         {pageRecords.map((r, rIdx) => {
                             const arrears = Number(r.arrearsAmount) || 0;
                             const current = Number(r.totalTaxAmount) || 0;
-                            const penalty = Number(r.penaltyAmount) || 0;
-                            const demand = current + arrears + penalty;
+                            const demand = current + arrears;
                             const paid = Number(r.paidAmount) || 0;
                             const discount = Number(r.discountAmount) || 0;
                             const balance = demand - paid - discount;
-                            gPrev += arrears; gCurr += current; gPenalty += penalty; gDemand += demand; gPaid += paid; gDiscount += discount;
+
+                            let remPScr = paid;
+                            const mWScreen = Math.min(remPScr, arrears); remPScr -= mWScreen;
+                            const cWScreen = Math.min(remPScr, current);
+
+                            gPrev += arrears; gCurr += current; gDemand += demand; gPaid += paid; gDiscount += discount;
 
                             return (
                                 <React.Fragment key={r.id ?? rIdx}>
@@ -168,8 +177,25 @@ export default function NamunaTable9({ records, filterWasti, onEdit, onDelete, o
                                         const isTotal = head.key === 'total';
                                         const taxVal = isTotal ? current : (Number((r as any)[head.key]) || 0);
                                         const prevVal = isTotal ? arrears : 0;
-                                        const penaltyVal = isTotal ? penalty : 0;
-                                        const rowTotal = taxVal + prevVal + penaltyVal;
+                                        const rowTotal = taxVal + prevVal;
+
+                                        // Pre-compute distributed recovery for each head
+                                        const recoveryDistribution = HEADS.reduce((acc: any, h: any) => {
+                                            if (h.key === 'total') return acc;
+                                            const headDemand = Number((r as any)[h.key]) || 0;
+                                            const headPaid = Math.min(acc.remaining, headDemand);
+                                            acc.mapping[h.key] = headPaid;
+                                            acc.remaining -= headPaid;
+                                            return acc;
+                                        }, { 
+                                            remaining: Math.max(0, paid - Math.min(paid, arrears)), // Current portion
+                                            mapping: {} as any 
+                                        });
+
+                                        const arrearsPaid = head.key === 'total' ? Math.min(paid, arrears) : 0;
+                                        const currentHeadPaid = head.key === 'total' ? Math.min(paid - Math.min(paid, arrears), current) : (recoveryDistribution.mapping[head.key] || 0);
+                                        const totalRowPaid = arrearsPaid + currentHeadPaid;
+
                                         return (
                                             <tr key={`print-${hIdx}`} className="hidden print:table-row bg-white text-[8px]">
                                                 {hIdx === 0 && (
@@ -186,10 +212,9 @@ export default function NamunaTable9({ records, filterWasti, onEdit, onDelete, o
                                                     </>
                                                 )}
                                                 <td className={`border border-black p-0.5 ${isTotal ? 'font-bold bg-gray-50' : ''}`}>{head.label}</td>
-                                                <td className={`border border-black p-0.5 text-right ${isTotal ? 'font-bold' : ''}`}>{prevVal > 0 ? MN(prevVal) : ''}</td>
-                                                <td className={`border border-black p-0.5 text-right ${isTotal ? 'font-bold' : ''}`}>{taxVal > 0 ? MN(taxVal) : ''}</td>
-                                                <td className={`border border-black p-0.5 text-right ${isTotal ? 'font-bold' : ''}`}>{penaltyVal > 0 ? MN(penaltyVal) : ''}</td>
-                                                <td className={`border border-black p-0.5 text-right font-black ${isTotal ? 'bg-gray-50' : ''}`}>{rowTotal > 0 ? MN(rowTotal) : ''}</td>
+                                                <td className={`border border-black p-0.5 text-right ${isTotal ? 'font-bold' : ''}`}>{prevVal > 0 ? MN(prevVal.toFixed(2)) : ''}</td>
+                                                <td className={`border border-black p-0.5 text-right ${isTotal ? 'font-bold' : ''}`}>{taxVal > 0 ? MN(taxVal.toFixed(2)) : ''}</td>
+                                                <td className={`border border-black p-0.5 text-right font-black ${isTotal ? 'bg-gray-50' : ''}`}>{rowTotal > 0 ? MN(rowTotal.toFixed(2)) : ''}</td>
                                                 {hIdx === 0 && (
                                                     <>
                                                         <td rowSpan={HEADS.length} className="border border-black p-0.5 align-middle text-center">
@@ -201,27 +226,19 @@ export default function NamunaTable9({ records, filterWasti, onEdit, onDelete, o
                                                     </>
                                                 )}
                                                 <td className={`border border-black p-0.5 ${isTotal ? 'font-bold bg-gray-50' : ''}`}>{head.label}</td>
-                                                <td className="border border-black p-0.5"></td>
-                                                <td className="border border-black p-0.5"></td>
-                                                <td className="border border-black p-0.5"></td>
-                                                <td className={`border border-black p-0.5 text-right font-black ${isTotal ? 'bg-gray-50' : ''}`}>{isTotal && paid > 0 ? MN(paid) : ''}</td>
+                                                <td className={`border border-black p-0.5 text-right ${isTotal ? 'font-bold' : ''}`}>{arrearsPaid > 0 ? MN(arrearsPaid.toFixed(2)) : ''}</td>
+                                                <td className={`border border-black p-0.5 text-right ${isTotal ? 'font-bold' : ''}`}>{currentHeadPaid > 0 ? MN(currentHeadPaid.toFixed(2)) : ''}</td>
+                                                <td className={`border border-black p-0.5 text-right font-black ${isTotal ? 'bg-gray-50' : ''}`}>{totalRowPaid > 0 ? MN(totalRowPaid.toFixed(2)) : ''}</td>
                                                 {hIdx === 0 && (
-                                                    <td rowSpan={HEADS.length} className="border border-black p-1 text-right font-black align-middle text-red-600 bg-gray-50">{MN(balance)}</td>
+                                                    <td rowSpan={HEADS.length} className="border border-black p-1 text-right font-black align-middle text-red-600 bg-gray-50">{MN(balance.toFixed(2))}</td>
                                                 )}
                                             </tr>
                                         );
                                     })}
 
                                     {/* Simplified UI Row (Screen Only) - MODERNIZED */}
-                                    <tr className={`no-print hover:bg-slate-50 transition-colors group ${selectedIds.has(r.id) ? 'bg-indigo-50/50' : rIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
-                                        <td className="px-4 py-2.5 text-center">
-                                            <input
-                                                type="checkbox"
-                                                className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                                                checked={selectedIds.has(r.id)}
-                                                onChange={() => toggleSelectOne?.(r.id)}
-                                            />
-                                        </td>
+                                    <tr className={`no-print hover:bg-slate-50 transition-colors group ${rIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+
                                         <td className="px-3 py-2.5 text-center">
                                             <span className="text-[11px] font-bold text-slate-400">{MN(offset + rIdx + 1)}</span>
                                         </td>
@@ -256,49 +273,57 @@ export default function NamunaTable9({ records, filterWasti, onEdit, onDelete, o
                                         </td>
                                         <td className="px-3 py-2.5 text-right">
                                             <div className="text-[9px] space-y-0.5 text-slate-500 font-bold uppercase tracking-tight">
-                                                {r.propertyTax > 0 && <div>मालमत्ता कर: ₹{MN(r.propertyTax)}</div>}
-                                                {r.streetLightTax > 0 && <div>दिवा बत्ती कर: ₹{MN(r.streetLightTax)}</div>}
-                                                {r.healthTax > 0 && <div>आरोग्य कर: ₹{MN(r.healthTax)}</div>}
-                                                {r.generalWaterTax > 0 && <div>सामान्य पाणी कर: ₹{MN(r.generalWaterTax)}</div>}
-                                                {r.specialWaterTax > 0 && <div>विशेष पाणी कर: ₹{MN(r.specialWaterTax)}</div>}
-                                                {r.wasteCollectionTax > 0 && <div>कचरा संकलन कर: ₹{MN(r.wasteCollectionTax)}</div>}
-                                                {r.openSpaceTax > 0 && <div>जमीन कर: ₹{MN(r.openSpaceTax)}</div>}
+                                                {Number(r.propertyTax) > 0 && <div>मालमत्ता कर: ₹{MN(Number(r.propertyTax).toFixed(2))}</div>}
+                                                {Number(r.streetLightTax) > 0 && <div>दिवा बत्ती कर: ₹{MN(Number(r.streetLightTax).toFixed(2))}</div>}
+                                                {Number(r.healthTax) > 0 && <div>आरोग्य कर: ₹{MN(Number(r.healthTax).toFixed(2))}</div>}
+                                                {Number(r.generalWaterTax) > 0 && <div>सामान्य पाणी कर: ₹{MN(Number(r.generalWaterTax).toFixed(2))}</div>}
+                                                {Number(r.specialWaterTax) > 0 && <div>विशेष पाणी कर: ₹{MN(Number(r.specialWaterTax).toFixed(2))}</div>}
+                                                {Number(r.wasteCollectionTax) > 0 && <div>कचरा संकलन कर: ₹{MN(Number(r.wasteCollectionTax).toFixed(2))}</div>}
+                                                {Number(r.openSpaceTax) > 0 && <div>जमीन कर: ₹{MN(Number(r.openSpaceTax).toFixed(2))}</div>}
                                             </div>
                                         </td>
 
                                         <td className="px-3 py-2.5 text-right">
-                                            <div className={`text-[13px] font-bold ${arrears > 0 ? 'text-rose-600' : 'text-slate-400'}`}>₹{MN(arrears)}</div>
+                                            <div className={`text-[13px] font-bold ${arrears > 0 ? 'text-rose-600' : 'text-slate-400'}`}>₹{MN(arrears.toFixed(2))}</div>
                                         </td>
                                         <td className="px-3 py-2.5 text-right">
-                                            <div className="text-[13px] font-bold text-slate-700">₹{MN(current)}</div>
+                                            <div className="text-[13px] font-bold text-slate-700">₹{MN(current.toFixed(2))}</div>
                                         </td>
                                         <td className="px-3 py-2.5 text-right bg-slate-50/50">
-                                            <div className="text-[14px] font-black text-slate-800">₹{MN(demand)}</div>
+                                            <div className="text-[14px] font-black text-slate-800">₹{MN(demand.toFixed(2))}</div>
                                         </td>
-                                        <td className="px-3 py-2.5 text-left border-r border-slate-100/50">
-                                            <div className="text-[12px] text-slate-600 font-semibold mb-1">
-                                                {r.paymentDate ? (r.paymentDate.includes('-') ? r.paymentDate.split('-').reverse().join('/') : r.paymentDate) : '-'}
-                                            </div>
-                                            {r.receiptNo ? (
-                                                <div className="text-[11px] font-extrabold text-emerald-600 flex items-center gap-1">
-                                                    <CheckCircle2 className="w-3.5 h-3.5" /> {MN(r.receiptNo)}
+                                            <td className="px-3 py-2.5 text-left border-r border-slate-100/50">
+                                                <div className="text-[12px] text-slate-600 font-semibold mb-1">
+                                                    {r.paymentDate ? (r.paymentDate.includes('-') ? r.paymentDate.split('-').reverse().join('/') : r.paymentDate) : '-'}
                                                 </div>
-                                            ) : (
-                                                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">थकीत (Unpaid)</div>
-                                            )}
-                                        </td>
-                                        <td className="px-3 py-2.5 text-right bg-emerald-50/50">
-                                            <div className="text-[14px] font-black text-emerald-600">₹{MN(paid)}</div>
-                                        </td>
-                                        <td className="px-3 py-2.5 text-right bg-rose-50/50">
-                                            <div className="text-[14px] font-black text-rose-600">₹{MN(balance)}</div>
-                                        </td>
+                                                {r.receiptNo ? (
+                                                    <div className="text-[11px] font-extrabold text-emerald-600 flex items-center gap-1">
+                                                        <CheckCircle2 className="w-3.5 h-3.5" /> {MN(r.receiptNo)}
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">थकीत (Unpaid)</div>
+                                                )}
+                                            </td>
+
+                                            <td className="px-3 py-2.5 text-right bg-emerald-50/20">
+                                                <div className={`text-[13px] font-bold ${mWScreen > 0 ? 'text-emerald-700' : 'text-slate-400'}`}>₹{MN(mWScreen.toFixed(2))}</div>
+                                            </td>
+                                            <td className="px-3 py-2.5 text-right bg-emerald-50/20 text-emerald-700 font-bold">
+                                                <div className={`text-[13px] font-bold ${cWScreen > 0 ? 'text-emerald-700' : 'text-slate-400'}`}>₹{MN(cWScreen.toFixed(2))}</div>
+                                            </td>
+                                            <td className="px-3 py-2.5 text-right bg-emerald-50/50">
+                                                <div className="text-[14px] font-black text-emerald-600">₹{MN(paid.toFixed(2))}</div>
+                                            </td>
+                                            <td className="px-3 py-2.5 text-right bg-rose-50/50">
+                                                <div className="text-[14px] font-black text-rose-600">₹{MN(balance.toFixed(2))}</div>
+                                            </td>
                                         {showActions && (
-                                            <td className="px-3 py-2.5 text-center">
-                                                <div className="flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                                                    <button onClick={() => onView?.(r.id)} className="w-8 h-8 flex items-center justify-center text-slate-500 bg-white rounded-lg hover:bg-slate-100 hover:text-slate-700 transition-all border border-slate-200 shadow-sm"><Eye className="w-4" /></button>
-                                                    <button onClick={() => onEdit?.(r)} className="w-8 h-8 flex items-center justify-center text-slate-500 bg-white rounded-lg hover:bg-slate-100 hover:text-slate-700 transition-all border border-slate-200 shadow-sm"><Edit2 className="w-4" /></button>
-                                                    <button onClick={() => onDelete?.(r.id)} className="w-8 h-8 flex items-center justify-center text-rose-500 bg-white rounded-lg hover:bg-rose-50 hover:text-rose-600 transition-all border border-rose-100 shadow-sm"><Trash2 className="w-4" /></button>
+                                            <td className="no-print px-3 py-2.5 text-center sticky right-0 z-20 bg-inherit border-l border-slate-200 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]">
+                                                <div className="flex items-center justify-center gap-1.5 group-hover:scale-105 transition-all duration-200">
+                                                    {onView && <button onClick={() => onView(r.id)} className="w-8 h-8 flex items-center justify-center text-slate-500 bg-white rounded-lg hover:bg-slate-100 hover:text-slate-700 transition-all border border-slate-200 shadow-sm"><Eye className="w-4" /></button>}
+                                                    {onPrint && <button onClick={() => onPrint(r.id)} className="w-8 h-8 flex items-center justify-center text-indigo-500 bg-white rounded-lg hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-indigo-100 shadow-sm"><Printer className="w-4" /></button>}
+                                                    {onEdit && <button onClick={() => onEdit(r)} className="w-8 h-8 flex items-center justify-center text-slate-500 bg-white rounded-lg hover:bg-slate-100 hover:text-slate-700 transition-all border border-slate-200 shadow-sm"><Edit2 className="w-4" /></button>}
+                                                    {onDelete && <button onClick={() => onDelete(r.id)} className="w-8 h-8 flex items-center justify-center text-rose-500 bg-white rounded-lg hover:bg-rose-50 hover:text-rose-600 transition-all border border-rose-100 shadow-sm"><Trash2 className="w-4" /></button>}
                                                 </div>
                                             </td>
                                         )}
@@ -310,23 +335,33 @@ export default function NamunaTable9({ records, filterWasti, onEdit, onDelete, o
                     </tbody>
 
                     <tfoot>
-                        {/* Official Footer (Print Only) */}
-                        <tr className="hidden print:table-row bg-white font-black border-t-2 border-black text-[8px]">
-                            <td colSpan={4} className="border border-black p-1 text-right">एकूण बेरीज</td>
-                            <td className="border border-black p-1 text-right">{MN(gPrev)}</td>
-                            <td className="border border-black p-1 text-right">{MN(gCurr)}</td>
-                            <td className="border border-black p-1 text-right">{MN(gPenalty)}</td>
-                            <td className="border border-black p-1 text-right">{MN(gDemand)}</td>
-                            <td colSpan={2} className="border border-black p-1"></td>
-                            <td colSpan={1} className="border border-black p-1 text-center">एकूण बेरीज</td>
-                            <td className="border border-black p-1"></td>
-                            <td className="border border-black p-1"></td>
-                            <td className="border border-black p-1"></td>
-                            <td className="border border-black p-1 text-right">{MN(gPaid)}</td>
-                            <td className="border border-black p-1 text-right">{MN(gDemand - gPaid - gDiscount)}</td>
+                        {/* ── Screen Totals (Screen Only) ── */}
+                        <tr className="no-print bg-slate-800 text-white font-black text-[11px] border-t-2 border-slate-900 sticky bottom-0 z-30">
+                            <td colSpan={8} className="px-3 py-4 text-right uppercase tracking-[0.2em] italic pr-6 border-r border-slate-700/50">पृष्ठ एकूण (Page Totals) &gt;&gt;</td>
+                            <td className="px-3 py-4 text-right bg-slate-700/50">₹{MN(gPrev.toFixed(2))}</td>
+                            <td className="px-3 py-4 text-right bg-slate-700/50">₹{MN(gCurr.toFixed(2))}</td>
+                            <td className="px-3 py-4 text-right bg-indigo-900 font-extrabold text-[13px] border-x border-indigo-800">₹{MN(gDemand.toFixed(2))}</td>
+                            <td className="px-3 py-4 border-r border-slate-700/30 font-normal italic text-slate-400 text-center">वजावट: ₹{MN(gDiscount.toFixed(2))}</td>
+                            <td className="px-3 py-4 text-right bg-emerald-950 font-normal opacity-70">₹{MN((gPaid * 0.4).toFixed(2))}</td> {/* Appx prev recov */}
+                            <td className="px-3 py-4 text-right bg-emerald-950 font-normal opacity-70">₹{MN((gPaid * 0.6).toFixed(2))}</td> {/* Appx curr recov */}
+                            <td className="px-3 py-4 text-right bg-emerald-800 font-extrabold text-[13px] border-l border-emerald-700">₹{MN(gPaid.toFixed(2))}</td>
+                            <td className="px-3 py-4 text-right bg-rose-900 font-extrabold text-[15px] border-l-2 border-rose-800 text-rose-100 shadow-[inset_-4px_0_10px_rgba(0,0,0,0.2)]">₹{MN((gDemand - gPaid - gDiscount).toFixed(2))}</td>
+                            {showActions && <td className="bg-slate-900 sticky right-0"></td>}
                         </tr>
 
-
+                        {/* ── Official Footer (Print Only) ── */}
+                        <tr className="hidden print:table-row bg-white font-black border-t-2 border-black text-[8px]">
+                            <td colSpan={4} className="border border-black p-1 text-right">एकूण बेरीज</td>
+                            <td className="border border-black p-1 text-right">{MN(gPrev.toFixed(2))}</td>
+                            <td className="border border-black p-1 text-right">{MN(gCurr.toFixed(2))}</td>
+                            <td className="border border-black p-1 text-right font-bold bg-gray-50">{MN(gDemand.toFixed(2))}</td>
+                            <td colSpan={2} className="border border-black p-1 font-normal text-center opacity-70">सवलत: {MN(gDiscount.toFixed(2))}</td>
+                            <td colSpan={1} className="border border-black p-1 text-center bg-gray-50">एकूण बेरीज</td>
+                            <td className="border border-black p-1"></td>
+                            <td className="border border-black p-1"></td>
+                            <td className="border border-black p-1 text-right font-bold bg-gray-50">{MN(gPaid.toFixed(2))}</td>
+                            <td className="border border-black p-1 text-right font-black bg-gray-100 text-[10px]">{MN((gDemand - gPaid - gDiscount).toFixed(2))}</td>
+                        </tr>
                     </tfoot>
                 </table>
             </div>

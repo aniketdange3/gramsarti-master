@@ -22,15 +22,29 @@ interface PropertyFormProps {
     records?: PropertyRecord[];
 }
 
-const FieldLabel = ({ children }: { children: React.ReactNode }) => (
-    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">{children}</label>
+const MN = (v: number | string | undefined) =>
+    String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
+
+const FieldLabel = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
+    <label className={`block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ${className}`}>{children}</label>
 );
+
+const INPUT_CLASSES = "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white disabled:bg-slate-50 disabled:text-slate-500";
 
 const FormInput = ({ className = '', ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
     <input
         {...props}
-        className={`w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-white ${className}`}
+        className={`${INPUT_CLASSES} ${className}`}
     />
+);
+
+const FormSelect = ({ className = '', children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) => (
+    <select
+        {...props}
+        className={`${INPUT_CLASSES} ${className}`}
+    >
+        {children}
+    </select>
 );
 
 const FLOOR_COLORS = [
@@ -80,10 +94,44 @@ const PropertyForm = ({
     });
     const [depreciationRates, setDepreciationRates] = useState<any[]>([]);
 
+    const [remarksObj, setRemarksObj] = useState({
+        date: '', subject: '', ferfar: '', pan: '', anu: ''
+    });
+
+    useEffect(() => {
+        if (initialData?.remarksNotes) {
+            const str = initialData.remarksNotes;
+            if (str.includes('मासिक सभा')) {
+                setRemarksObj({
+                    date: str.match(/(?:दिनांक:)\s*(.*?)(?=[,\n]\s*विषय:|$)/)?.[1]?.trim() || '',
+                    subject: str.match(/विषय:\s*(.*?)(?=[,\n]\s*फेरफार क्र:|$)/)?.[1]?.trim() || '',
+                    ferfar: str.match(/फेरफार क्र:\s*(.*?)(?=[,\n]\s*पान क्र:|$)/)?.[1]?.trim() || '',
+                    pan: str.match(/पान क्र:\s*(.*?)(?=[,\n]\s*अनु क्र:|$)/)?.[1]?.trim() || '',
+                    anu: str.match(/अनु क्र:\s*(.*)$/)?.[1]?.trim() || '',
+                });
+            } else {
+                setRemarksObj({ date: '', subject: str, ferfar: '', pan: '', anu: '' });
+            }
+        }
+    }, [initialData]);
+
+    const updateRemark = (field: keyof typeof remarksObj, value: string) => {
+        const newObj = { ...remarksObj, [field]: value };
+        setRemarksObj(newObj);
+
+        const hasData = Object.values(newObj).some(v => typeof v === 'string' && v.trim() !== '');
+        if (hasData) {
+            const combined = `मासिक सभा\nदिनांक: ${newObj.date}\nविषय: ${newObj.subject}\nफेरफार क्र: ${newObj.ferfar}\nपान क्र: ${newObj.pan}\nअनु क्र: ${newObj.anu}`;
+            setFormData(f => ({ ...f, remarksNotes: combined }));
+        } else {
+            setFormData(f => ({ ...f, remarksNotes: '' }));
+        }
+    };
+
     const isDuplicate = React.useMemo(() => {
         if (!formData.ownerName || !formData.khasraNo || !formData.wastiName) return false;
         const currentKey = `${String(formData.khasraNo).trim()}|${String(formData.wastiName).trim()}|${String(formData.ownerName).trim()}`.toLowerCase();
-        
+
         return records.some(r => {
             if (initialData && r.id === initialData.id) return false;
             const key = `${String(r.khasraNo).trim()}|${String(r.wastiName).trim()}|${String(r.ownerName).trim()}`.toLowerCase();
@@ -181,6 +229,20 @@ const PropertyForm = ({
         }
     }, [formData.propertyAge, depreciationRates]);
 
+    // Auto-sync section taxes to main summary
+    useEffect(() => {
+        const totalPropTax = formData.sections.reduce((sum, s) => sum + (Number(s.buildingFinalValue) || 0), 0);
+        const totalOpenTax = formData.sections.reduce((sum, s) => sum + (Number(s.openSpaceFinalValue) || 0), 0);
+
+        if (totalPropTax !== formData.propertyTax || totalOpenTax !== formData.openSpaceTax) {
+            setFormData(prev => ({
+                ...prev,
+                propertyTax: Math.round(totalPropTax),
+                openSpaceTax: Math.round(totalOpenTax)
+            }));
+        }
+    }, [formData.sections]);
+
     useEffect(() => {
         const newTotal = calculateTotalTax(formData);
         if (newTotal !== formData.totalTaxAmount) {
@@ -202,17 +264,14 @@ const PropertyForm = ({
         const newSections = [...formData.sections];
         newSections[index] = { ...newSections[index], [field]: value };
 
-        if (field === 'lengthFt' || field === 'widthFt') {
-            const length = field === 'lengthFt' ? value : newSections[index].lengthFt || 0;
-            const width = field === 'widthFt' ? value : newSections[index].widthFt || 0;
-            if (length > 0 && width > 0) {
-                const areaFt = length * width;
-                newSections[index].areaSqFt = areaFt;
-                newSections[index].areaSqMt = Number((areaFt / 10.764).toFixed(2));
-            }
+        if (field === 'areaSqFt') {
+            const val = Number(value) || 0;
+            newSections[index].areaSqMt = Number((val / 10.7639).toFixed(2));
         }
-        if (field === 'areaSqFt') newSections[index].areaSqMt = Number((Number(value) / 10.764).toFixed(2));
-        if (field === 'areaSqMt') newSections[index].areaSqFt = Number((Number(value) * 10.764).toFixed(2));
+        if (field === 'areaSqMt') {
+            const val = Number(value) || 0;
+            newSections[index].areaSqFt = Number((val * 10.7639).toFixed(2));
+        }
 
         if (field === 'propertyType') {
             if (value && value !== 'निवडा') {
@@ -231,8 +290,23 @@ const PropertyForm = ({
                     newSections[index].landRate = rates.landRate || 0;
                     newSections[index].openSpaceTaxRate = rates.openSpaceTaxRate || 0;
                 }
-                newSections[index].depreciationRate = 0;
-                newSections[index].weightage = 1.00;
+                
+                // Reset Irrelevant Fields based on Type
+                if (value === 'खाली जागा') {
+                    newSections[index].buildingRate = 0;
+                    newSections[index].buildingValue = 0;
+                    newSections[index].buildingTaxRate = 0;
+                    newSections[index].buildingFinalValue = 0;
+                    newSections[index].depreciationRate = 0;
+                    newSections[index].weightage = 0;
+                } else {
+                    newSections[index].landRate = 0;
+                    newSections[index].openSpaceValue = 0;
+                    newSections[index].openSpaceTaxRate = 0;
+                    newSections[index].openSpaceFinalValue = 0;
+                    newSections[index].depreciationRate = 0;
+                    newSections[index].weightage = 1.00;
+                }
             } else {
                 newSections[index].depreciationRate = 0; newSections[index].weightage = 0;
                 newSections[index].buildingTaxRate = 0; newSections[index].buildingRate = 0;
@@ -240,14 +314,20 @@ const PropertyForm = ({
             }
         }
 
+        // Recalculate Vals and Taxes for this section
         const s = newSections[index];
-        if (['areaSqFt', 'areaSqMt', 'buildingRate', 'lengthFt', 'widthFt', 'propertyType'].includes(field as string)) {
-            const bValue = Number(s.areaSqMt || 0) * Number(s.buildingRate || 0);
-            newSections[index].buildingValue = Math.round(bValue);
-        }
-        const bDep = Number(newSections[index].depreciationRate) || 0;
-        const bWeight = Number(newSections[index].weightage) || 0;
-        newSections[index].buildingFinalValue = Math.round(Number(newSections[index].buildingValue) * bDep * bWeight);
+        const area = Number(s.areaSqMt || 0);
+        
+        // Formula: Capital Value = Area * Rate
+        const bValue = area * Number(s.buildingRate || 0);
+        newSections[index].buildingValue = Number(bValue.toFixed(2));
+
+        const lValue = area * Number(s.landRate || 0);
+        newSections[index].openSpaceValue = Number(lValue.toFixed(2));
+
+        // Tax = (Value * TaxRate) / 1000
+        newSections[index].buildingFinalValue = Number(((newSections[index].buildingValue * Number(s.buildingTaxRate || 0)) / 1000).toFixed(2));
+        newSections[index].openSpaceFinalValue = Number(((newSections[index].openSpaceValue * Number(s.openSpaceTaxRate || 0)) / 1000).toFixed(2));
 
         setFormData({ ...formData, sections: newSections });
     };
@@ -369,12 +449,12 @@ const PropertyForm = ({
                                 स्थान व ओळख (Location & ID)
                             </h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div>
+                                {/* <div>
                                     <FieldLabel>मालमत्ता क्र.</FieldLabel>
                                     <TransliterationInput placeholder="उदा. १२७"
                                         className="w-full border-2 border-primary/10 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary bg-white"
                                         value={formData.propertyId || ''} onChangeText={val => setFormData({ ...formData, propertyId: val })} />
-                                </div>
+                                </div> */}
                                 {/* 
                                 <div>
                                     <FieldLabel>{LABELS.citySurveyNo}</FieldLabel>
@@ -385,50 +465,59 @@ const PropertyForm = ({
 */}
                                 <div className="col-span-2 md:col-span-1">
                                     <FieldLabel>{LABELS.wastiName}</FieldLabel>
-                                    <select 
+                                    <FormSelect
                                         value={formData.wastiName}
                                         onChange={e => setFormData({ ...formData, wastiName: e.target.value })}
-                                        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white font-bold"
                                     >
                                         <option value="">निवडा</option>
                                         {dynamicMasters.WASTI.map(item => (
                                             <option key={item.id} value={item.item_value_mr}>{item.item_value_mr}</option>
                                         ))}
-                                    </select>
+                                    </FormSelect>
                                 </div>
                                 <div>
                                     <FieldLabel>{LABELS.wardNo}</FieldLabel>
                                     <datalist id="wardNumbers">
                                         {dynamicMasters.WARD.map(item => <option key={item.id} value={item.item_value_mr} />)}
                                     </datalist>
-                                    <TransliterationInput list="wardNumbers" placeholder={PLACEHOLDERS.wardNo}
-                                        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
-                                        value={formData.wardNo} onChangeText={val => setFormData({ ...formData, wardNo: val })} required />
+                                    <TransliterationInput 
+                                        list="wardNumbers" 
+                                        placeholder={PLACEHOLDERS.wardNo}
+                                        className={INPUT_CLASSES}
+                                        value={formData.wardNo} 
+                                        onChangeText={val => setFormData({ ...formData, wardNo: val })} 
+                                        required 
+                                    />
                                 </div>
                                 <div>
                                     <FieldLabel>{LABELS.khasraNo}</FieldLabel>
-                                    <ComboTransliterationInput 
+                                    <ComboTransliterationInput
                                         value={formData.khasraNo}
                                         onChangeText={val => setFormData({ ...formData, khasraNo: val })}
                                         placeholder={PLACEHOLDERS.khasraNo}
                                         options={existingKhasras.map(k => ({ value: k, label: k }))}
-                                        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white font-bold"
+                                        className={INPUT_CLASSES}
                                     />
                                 </div>
                                 <div>
                                     <FieldLabel>{LABELS.plotNo}</FieldLabel>
-                                    <TransliterationInput placeholder={PLACEHOLDERS.plotNo}
-                                        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
-                                        value={formData.plotNo} onChangeText={val => setFormData({ ...formData, plotNo: val })} required />
+                                    <TransliterationInput 
+                                        placeholder={PLACEHOLDERS.plotNo}
+                                        className={INPUT_CLASSES}
+                                        value={formData.plotNo} 
+                                        onChangeText={val => setFormData({ ...formData, plotNo: val })} 
+                                        required 
+                                    />
                                 </div>
                                 <div className="col-span-2">
                                     <FieldLabel>{LABELS.layoutName}</FieldLabel>
-                                    <datalist id="layoutNames">
-                                        {existingLayouts.map(l => <option key={l} value={l} />)}
-                                    </datalist>
-                                    <TransliterationInput list="layoutNames" placeholder={PLACEHOLDERS.layoutName}
-                                        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
-                                        value={formData.layoutName} onChangeText={val => setFormData({ ...formData, layoutName: val })} />
+                                    <ComboTransliterationInput
+                                        value={formData.layoutName}
+                                        onChangeText={val => setFormData({ ...formData, layoutName: val })}
+                                        placeholder={PLACEHOLDERS.layoutName}
+                                        options={existingLayouts.map(l => ({ value: l, label: l }))}
+                                        className={INPUT_CLASSES}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -442,21 +531,28 @@ const PropertyForm = ({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <FieldLabel>{LABELS.ownerName}</FieldLabel>
-                                    <TransliterationInput placeholder={PLACEHOLDERS.ownerName}
-                                        className="w-full border-2 border-blue-100 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                                        value={formData.ownerName} onChangeText={val => setFormData({ ...formData, ownerName: val })} required />
+                                    <TransliterationInput 
+                                        placeholder={PLACEHOLDERS.ownerName}
+                                        className={`${INPUT_CLASSES} border-2 border-blue-100 font-bold`}
+                                        value={formData.ownerName} 
+                                        onChangeText={val => setFormData({ ...formData, ownerName: val })} 
+                                        required 
+                                    />
                                 </div>
                                 <div>
                                     <FieldLabel>{LABELS.occupantName}</FieldLabel>
-                                    <TransliterationInput placeholder={PLACEHOLDERS.occupantName}
-                                        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                                        value={formData.occupantName} onChangeText={val => setFormData({ ...formData, occupantName: val })} />
+                                    <TransliterationInput 
+                                        placeholder={PLACEHOLDERS.occupantName}
+                                        className={INPUT_CLASSES}
+                                        value={formData.occupantName} 
+                                        onChangeText={val => setFormData({ ...formData, occupantName: val })} 
+                                    />
                                 </div>
                             </div>
                         </div>
 
                         {/* Section 3: Construction & Dimensions */}
-                        <div className="bg-amber-50/50 rounded-2xl p-5 border border-amber-100">
+                        {/* <div className="bg-amber-50/50 rounded-2xl p-5 border border-amber-100">
                             <h3 className="text-sm font-black text-amber-800 uppercase tracking-wider mb-4 flex items-center gap-2">
                                 <div className="w-5 h-5 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600 text-xs font-black">३</div>
                                 बांधकाम व क्षेत्रफळ (Dimensions)
@@ -494,12 +590,12 @@ const PropertyForm = ({
                                         onChange={e => setFormData({ ...formData, propertyAge: Number(e.target.value) })} />
                                 </div>
                             </div>
-                        </div>
+                        </div> */}
 
                         {/* Section 4: Floor Details & Valuation */}
                         <div>
                             <h3 className="text-sm font-black text-primary-dark uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <div className="w-5 h-5 bg-primary/10 rounded-lg flex items-center justify-center text-primary text-xs font-black">४</div>
+                                <div className="w-5 h-5 bg-primary/10 rounded-lg flex items-center justify-center text-primary text-xs font-black">३</div>
                                 मोजमाप व कर मूल्य (Valuation)
                             </h3>
                             <div className="space-y-3">
@@ -536,16 +632,15 @@ const PropertyForm = ({
                                                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
                                                         <div className="col-span-2">
                                                             <FieldLabel>{LABELS.propertyType}</FieldLabel>
-                                                            <select 
+                                                            <FormSelect
                                                                 value={formData.sections[idx].propertyType}
                                                                 onChange={e => handleSectionChange(idx, 'propertyType', e.target.value)}
-                                                                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white font-bold"
                                                             >
                                                                 <option value="">निवडा</option>
                                                                 {dynamicMasters.PROPERTY_TYPE.map(item => (
                                                                     <option key={item.id} value={item.item_value_mr}>{item.item_value_mr}</option>
                                                                 ))}
-                                                            </select>
+                                                            </FormSelect>
                                                         </div>
                                                         {isActive && (
                                                             <>
@@ -593,15 +688,18 @@ const PropertyForm = ({
                                                             </div>
                                                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3">
                                                                 {[
-                                                                    { lbl: LABELS.landRate, field: 'landRate', ph: PLACEHOLDERS.rate },
-                                                                    { lbl: LABELS.buildingRate, field: 'buildingRate', ph: PLACEHOLDERS.rate },
-                                                                    { lbl: LABELS.depreciationRate, field: 'depreciationRate', ph: PLACEHOLDERS.depreciation },
-                                                                    { lbl: LABELS.weightage, field: 'weightage', ph: PLACEHOLDERS.weightage },
-                                                                    { lbl: LABELS.buildingValue, field: 'buildingValue', ph: PLACEHOLDERS.value },
-                                                                    { lbl: LABELS.openSpaceValue, field: 'openSpaceValue', ph: PLACEHOLDERS.value },
-                                                                    { lbl: LABELS.buildingTaxRate, field: 'buildingTaxRate', ph: PLACEHOLDERS.taxRate },
-                                                                    { lbl: LABELS.openSpaceTaxRate, field: 'openSpaceTaxRate', ph: PLACEHOLDERS.taxRate },
-                                                                ].map(({ lbl, field, ph }) => (
+                                                                    { lbl: LABELS.landRate, field: 'landRate', ph: PLACEHOLDERS.rate, category: 'OPEN_SPACE' },
+                                                                    { lbl: LABELS.buildingRate, field: 'buildingRate', ph: PLACEHOLDERS.rate, category: 'CONSTRUCTION' },
+                                                                    { lbl: LABELS.depreciationRate, field: 'depreciationRate', ph: PLACEHOLDERS.depreciation, category: 'CONSTRUCTION' },
+                                                                    { lbl: LABELS.weightage, field: 'weightage', ph: PLACEHOLDERS.weightage, category: 'CONSTRUCTION' },
+                                                                    { lbl: LABELS.buildingValue, field: 'buildingValue', ph: PLACEHOLDERS.value, category: 'CONSTRUCTION' },
+                                                                    { lbl: LABELS.openSpaceValue, field: 'openSpaceValue', ph: PLACEHOLDERS.value, category: 'OPEN_SPACE' },
+                                                                    { lbl: LABELS.buildingTaxRate, field: 'buildingTaxRate', ph: PLACEHOLDERS.taxRate, category: 'CONSTRUCTION' },
+                                                                    { lbl: LABELS.openSpaceTaxRate, field: 'openSpaceTaxRate', ph: PLACEHOLDERS.taxRate, category: 'OPEN_SPACE' },
+                                                                ].filter(f => {
+                                                                    const isOS = section.propertyType === 'खाली जागा';
+                                                                    return isOS ? f.category === 'OPEN_SPACE' : f.category === 'CONSTRUCTION';
+                                                                }).map(({ lbl, field, ph }) => (
                                                                     <div key={field}>
                                                                         <FieldLabel>{lbl}</FieldLabel>
                                                                         <FormInput type="number" placeholder={ph}
@@ -609,23 +707,27 @@ const PropertyForm = ({
                                                                             onChange={e => handleSectionChange(idx, field as keyof PropertySection, Number(e.target.value))} />
                                                                     </div>
                                                                 ))}
-                                                                <div>
-                                                                    <FieldLabel>{LABELS.constructionYear}</FieldLabel>
-                                                                    <FormInput type="text" placeholder="२०१०-११"
-                                                                        value={formData.constructionYear || ''}
-                                                                        onChange={e => setFormData({ ...formData, constructionYear: e.target.value })} />
-                                                                </div>
-                                                                <div>
-                                                                    <FieldLabel>{LABELS.propertyAge}</FieldLabel>
-                                                                    <FormInput type="number" placeholder="१५"
-                                                                        value={formData.propertyAge || ''}
-                                                                        onChange={e => setFormData({ ...formData, propertyAge: Number(e.target.value) })} />
-                                                                </div>
+                                                                {section.propertyType !== 'खाली जागा' && (
+                                                                    <>
+                                                                        <div>
+                                                                            <FieldLabel>{LABELS.constructionYear}</FieldLabel>
+                                                                            <FormInput type="text" placeholder="२०१०-११"
+                                                                                value={formData.constructionYear || ''}
+                                                                                onChange={e => setFormData({ ...formData, constructionYear: e.target.value })} />
+                                                                        </div>
+                                                                        <div>
+                                                                            <FieldLabel>{LABELS.propertyAge}</FieldLabel>
+                                                                            <FormInput type="number" placeholder="१५"
+                                                                                value={formData.propertyAge || ''}
+                                                                                onChange={e => setFormData({ ...formData, propertyAge: Number(e.target.value) })} />
+                                                                        </div>
+                                                                    </>
+                                                                )}
                                                             </div>
-                                                            {section.buildingValue > 0 && (
+                                                            {(section.buildingValue > 0 || section.openSpaceValue > 0) && (
                                                                 <div className={`flex items-center gap-2 text-xs font-bold ${col.text} bg-white/70 rounded-xl px-4 py-2.5`}>
                                                                     <Calculator className="w-4 h-4" />
-                                                                    भांडवली मूल्य: ₹{section.buildingValue.toLocaleString()}
+                                                                    मूल्यांकन: ₹{(section.propertyType === 'खाली जागा' ? section.openSpaceValue : section.buildingValue).toFixed(2)}
                                                                 </div>
                                                             )}
                                                         </>
@@ -647,7 +749,7 @@ const PropertyForm = ({
                         {/* Section 5: Tax Summary */}
                         <div className="bg-primary/5 rounded-2xl p-5 border border-primary/10">
                             <h3 className="text-sm font-black text-primary-dark uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <div className="w-5 h-5 bg-primary/10 rounded-lg flex items-center justify-center text-primary text-xs font-black">५</div>
+                                <div className="w-5 h-5 bg-primary/10 rounded-lg flex items-center justify-center text-primary text-xs font-black"> ४ </div>
                                 <Calculator className="w-4 h-4" />
                                 कराचा तपशील (Tax Summary)
                                 <button
@@ -673,7 +775,7 @@ const PropertyForm = ({
                                     <div key={field}>
                                         <FieldLabel>{label}</FieldLabel>
                                         <FormInput type="number" placeholder="0"
-                                            className="font-semibold text-primary"
+                                            className="font-black text-primary-dark"
                                             value={value || ''}
                                             onChange={e => handleTaxChange(field, Number(e.target.value))} />
                                     </div>
@@ -711,48 +813,120 @@ const PropertyForm = ({
                                         onChange={e => setFormData({ ...formData, surchargeEmployment: Number(e.target.value) })} />
                                 </div> 
 */}
-                                <div>
-                                    <FieldLabel>{LABELS.remarksNotes}</FieldLabel>
-                                    <TransliterationInput 
-                                        placeholder="टिपणी..."
-                                        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
-                                        value={formData.remarksNotes || ''}
-                                        onChangeText={val => setFormData({ ...formData, remarksNotes: val })} 
-                                    />
+                                <div className="col-span-2 md:col-span-5 bg-white p-4 rounded-xl border-2 border-primary/20">
+                                    <h4 className="text-xs font-black text-primary uppercase tracking-wider mb-4">मासिक सभा (Remarks/Notes)</h4>
+                                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                                        <div>
+                                            <FieldLabel>दिनांक</FieldLabel>
+                                            <FormInput type="date" value={remarksObj.date} onChange={e => updateRemark('date', e.target.value)} />
+                                        </div>
+                                        <div>
+                                            <FieldLabel>विषय</FieldLabel>
+                                            <TransliterationInput 
+                                                placeholder="विषय" 
+                                                className={INPUT_CLASSES}
+                                                value={remarksObj.subject} 
+                                                onChangeText={v => updateRemark('subject', v)} 
+                                            />
+                                        </div>
+                                        <div>
+                                            <FieldLabel>फेरफार क्र</FieldLabel>
+                                            <TransliterationInput 
+                                                placeholder="फेरफार क्र" 
+                                                className={INPUT_CLASSES}
+                                                value={remarksObj.ferfar} 
+                                                onChangeText={v => updateRemark('ferfar', v)} 
+                                            />
+                                        </div>
+                                        <div>
+                                            <FieldLabel>पान क्र</FieldLabel>
+                                            <TransliterationInput 
+                                                placeholder="पान क्र" 
+                                                className={INPUT_CLASSES}
+                                                value={remarksObj.pan} 
+                                                onChangeText={v => updateRemark('pan', v)} 
+                                            />
+                                        </div>
+                                        <div>
+                                            <FieldLabel>अनु क्र</FieldLabel>
+                                            <TransliterationInput 
+                                                placeholder="अनु क्र" 
+                                                className={INPUT_CLASSES}
+                                                value={remarksObj.anu} 
+                                                onChangeText={v => updateRemark('anu', v)} 
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div className="bg-white rounded-xl p-4 border-2 border-primary/20 flex items-center justify-between">
                                 <div>
-                                    <p className="text-xs font-black text-primary uppercase tracking-wider">{LABELS.totalTax}</p>
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-widest">{LABELS.totalTax}</p>
                                     <p className="text-2xl font-black text-primary-dark mt-0.5">₹{Number(formData.totalTaxAmount || 0).toLocaleString()}</p>
                                 </div>
-                                <input type="number"
-                                    className="w-40 border-2 border-primary/20 rounded-xl px-3 py-2 text-lg font-black text-primary-dark text-right focus:outline-none focus:ring-2 focus:ring-primary"
+                                <FormInput 
+                                    type="number"
+                                    className="w-40 text-lg font-black text-primary-dark text-right"
                                     value={formData.totalTaxAmount || ''}
-                                    onChange={e => setFormData({ ...formData, totalTaxAmount: Number(e.target.value) })} />
+                                    onChange={e => setFormData({ ...formData, totalTaxAmount: Number(e.target.value) })} 
+                                />
                             </div>
                         </div>
 
-                        {/* Section 4: Financial Tracking */}
+                        {/* Section 5: Financial Tracking */}
                         <div className="rounded-2xl p-5 border border-rose-100 bg-rose-50/30">
                             <h3 className="text-sm font-black text-rose-600 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <div className="w-5 h-5 bg-rose-100 rounded-lg flex items-center justify-center text-rose-600 text-xs font-black">६</div>
+                                <div className="w-5 h-5 bg-rose-100 rounded-lg flex items-center justify-center text-rose-600 text-xs font-black">५</div>
+                                <Calculator className="w-4 h-4" />
                                 आर्थिक माहिती (Financials)
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="bg-white rounded-xl p-4 border-2 border-rose-100">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                                <div className="bg-white rounded-xl p-4 border-2 border-rose-100 flex flex-col justify-between">
                                     <FieldLabel>मागील थकबाकी (Arrears)</FieldLabel>
-                                    <FormInput type="number" className="font-bold text-lg text-rose-700 border-2 border-rose-200"
+                                    <FormInput 
+                                        type="number" 
+                                        className="font-black text-xl text-rose-700 border-none px-0 py-0 focus:ring-0"
                                         value={formData.arrearsAmount || ''}
-                                        onChange={e => setFormData({ ...formData, arrearsAmount: Number(e.target.value) })} />
-                                    <p className="text-[10px] text-rose-500 mt-1.5 font-medium">* मागील वर्षाची शिल्लक थकबाकी</p>
+                                        onChange={e => setFormData({ ...formData, arrearsAmount: Number(e.target.value) })} 
+                                    />
+                                    <p className="text-[10px] text-rose-500 mt-1.5 font-medium italic">* मागील वर्षाची शिल्लक थकबाकी</p>
                                 </div>
-                                <div className="bg-white rounded-xl p-4 border-2 border-success/10">
-                                    <FieldLabel>भरलेली रक्कम (Paid)</FieldLabel>
-                                    <FormInput type="number" className="font-bold text-lg text-success border-2 border-success/20"
+                                <div className="bg-white rounded-xl p-4 border-2 border-slate-200 opacity-80 flex flex-col justify-between">
+                                    <FieldLabel>चालू मागणी (Current Tax)</FieldLabel>
+                                    <FormInput 
+                                        type="number" 
+                                        readOnly 
+                                        className="font-black text-xl text-slate-700 bg-transparent border-none px-0 py-0 focus:ring-0 cursor-not-allowed"
+                                        value={formData.totalTaxAmount || 0} 
+                                    />
+                                    <p className="text-[10px] text-slate-500 mt-1.5 font-medium italic">* यावर्षीची एकूण मागणी</p>
+                                </div>
+                                <div className="bg-primary/5 rounded-xl p-4 border-2 border-primary/20">
+                                    <FieldLabel className="text-primary-dark">एकूण मागणी (Total Demand)</FieldLabel>
+                                    <div className="text-2xl font-black text-primary-dark mt-1">
+                                        ₹{((Number(formData.arrearsAmount) || 0) + (Number(formData.totalTaxAmount) || 0)).toFixed(2)}
+                                    </div>
+                                    <p className="text-[10px] text-primary/60 mt-1.5 font-bold">मागील + चालू</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="bg-white rounded-xl p-4 border-2 border-success/20 flex flex-col justify-between">
+                                    <FieldLabel className="text-success-dark">भरलेली रक्कम (Paid)</FieldLabel>
+                                    <FormInput 
+                                        type="number" 
+                                        className="font-black text-2xl text-success border-none px-0 py-0 focus:ring-0"
                                         value={formData.paidAmount || ''}
-                                        onChange={e => setFormData({ ...formData, paidAmount: Number(e.target.value) })} />
-                                    <p className="text-[10px] text-success mt-1.5 font-medium">* यावर्षी जमा केलेली एकूण रक्कम</p>
+                                        onChange={e => setFormData({ ...formData, paidAmount: Number(e.target.value) })} 
+                                    />
+                                    <p className="text-[10px] text-success mt-1.5 font-medium italic">* यावर्षी जमा केलेली एकूण रक्कम</p>
+                                </div>
+                                <div className={`rounded-xl p-4 border-2 ${((Number(formData.arrearsAmount) + Number(formData.totalTaxAmount)) - Number(formData.paidAmount) - (Number(formData.discountAmount) || 0)) > 0 ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                                    <FieldLabel className="text-slate-600">एकूण बाकी (Balance)</FieldLabel>
+                                    <div className={`text-2xl font-black mt-1 ${((Number(formData.arrearsAmount) + Number(formData.totalTaxAmount)) - Number(formData.paidAmount) - (Number(formData.discountAmount) || 0)) > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                        ₹{Math.max(0, (Number(formData.arrearsAmount) || 0) + (Number(formData.totalTaxAmount) || 0) - (Number(formData.paidAmount) || 0) - (Number(formData.discountAmount) || 0)).toFixed(2)}
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 mt-1.5 font-medium">वजावट: ₹{MN(formData.discountAmount || 0)}</p>
                                 </div>
                             </div>
                         </div>
@@ -762,29 +936,36 @@ const PropertyForm = ({
                         {/* Section 8: Receipt Information */}
                         <div className="rounded-2xl p-5 border border-emerald-100 bg-emerald-50/30">
                             <h3 className="text-sm font-black text-emerald-600 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <div className="w-5 h-5 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 text-xs font-black">८</div>
+                                <div className="w-5 h-5 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 text-xs font-black">६ </div>
                                 पावती माहिती (Receipt Info)
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <FieldLabel>{LABELS.receiptBook}</FieldLabel>
-                                    <TransliterationInput placeholder="उदा. ५"
-                                        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                                    <TransliterationInput 
+                                        placeholder="उदा. ५"
+                                        className={INPUT_CLASSES}
                                         value={formData.receiptBook || ''}
-                                        onChangeText={val => setFormData({ ...formData, receiptBook: val })} />
+                                        onChangeText={val => setFormData({ ...formData, receiptBook: val })} 
+                                    />
                                 </div>
                                 <div>
                                     <FieldLabel>{LABELS.receiptNo}</FieldLabel>
-                                    <TransliterationInput placeholder="उदा. ७८"
-                                        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                                    <TransliterationInput 
+                                        placeholder="उदा. ७८"
+                                        className={INPUT_CLASSES}
                                         value={formData.receiptNo || ''}
-                                        onChangeText={val => setFormData({ ...formData, receiptNo: val })} />
+                                        onChangeText={val => setFormData({ ...formData, receiptNo: val })} 
+                                    />
                                 </div>
                                 <div>
                                     <FieldLabel>{LABELS.paymentDate}</FieldLabel>
-                                    <FormInput type="date"
+                                    <FormInput 
+                                        type="date"
+                                        className={INPUT_CLASSES}
                                         value={formData.paymentDate || new Date().toISOString().split('T')[0]}
-                                        onChange={e => setFormData({ ...formData, paymentDate: e.target.value })} />
+                                        onChange={e => setFormData({ ...formData, paymentDate: e.target.value })} 
+                                    />
                                 </div>
                             </div>
                         </div>

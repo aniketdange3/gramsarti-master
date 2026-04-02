@@ -603,6 +603,7 @@ const initializeDatabase = async () => {
             new_owner_name VARCHAR(255) NOT NULL,
             applicant_name VARCHAR(255) DEFAULT NULL,
             applicant_mobile VARCHAR(20) DEFAULT NULL,
+            ferfar_type VARCHAR(100) DEFAULT NULL,
             status ENUM('PENDING', 'APPROVED', 'REJECTED') DEFAULT 'PENDING',
             remarks TEXT DEFAULT NULL,
             document_proof VARCHAR(255) DEFAULT NULL,
@@ -612,6 +613,7 @@ const initializeDatabase = async () => {
             FOREIGN KEY(property_id) REFERENCES properties(id) ON DELETE CASCADE
         ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
         console.log('Ferfar requests table ready');
+        await addColumnIfNotExists(connection, 'ferfar_requests', 'ferfar_type', 'VARCHAR(100) DEFAULT NULL');
 
         await connection.query('SET FOREIGN_KEY_CHECKS = 1');
         connection.release();

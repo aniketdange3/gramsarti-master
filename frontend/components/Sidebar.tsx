@@ -18,8 +18,8 @@ interface SidebarProps {
 
 export default function Sidebar({ user, activeView, onNavClick, totalRecords, navItems }: SidebarProps) {
   return (
-    <aside className="w-68 h-full flex flex-col shadow-premium-blue relative z-10 no-print" style={{
-      background: 'linear-gradient(180deg, #3730a3 0%, #4f46e5 100%)',
+    <aside className="w-55 h-full flex flex-col shadow-premium-blue relative z-10 no-print" style={{
+      background: 'linear-gradient(180deg, #3730a3 0%, #433cd3ff 100%)',
     }}>
       {/* Logo Area */}
       <div className="p-7 border-b border-white/10 glass-dark m-3 rounded-2xl">
@@ -33,15 +33,6 @@ export default function Sidebar({ user, activeView, onNavClick, totalRecords, na
           </div>
         </div>
 
-        {/* Status indicator */}
-        <div className="mt-5 flex items-center gap-3 bg-white/5 rounded-xl px-3 py-2 border border-white/5">
-          <div className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </div>
-          <span className="text-[10px] text-white/60 font-black uppercase tracking-wider">सिस्टम सक्रिय</span>
-          <div className="ml-auto bg-white/10 px-1.5 py-0.5 rounded text-[10px] text-white/50 font-bold">{totalRecords}</div>
-        </div>
       </div>
 
       {/* Navigation */}

@@ -105,7 +105,7 @@ const PropertyForm = ({
                 setRemarksObj({
                     date: str.match(/(?:दिनांक:)\s*(.*?)(?=[,\n]\s*विषय:|$)/)?.[1]?.trim() || '',
                     subject: str.match(/विषय:\s*(.*?)(?=[,\n]\s*फेरफार क्र:|$)/)?.[1]?.trim() || '',
-                    ferfar: str.match(/फेरफार क्र:\s*(.*?)(?=[,\n]\s*पान क्र:|$)/)?.[1]?.trim() || '',
+                    ferfar: str.match(/फेरफार बुक  क्र:\s*(.*?)(?=[,\n]\s*पान क्र:|$)/)?.[1]?.trim() || '',
                     pan: str.match(/पान क्र:\s*(.*?)(?=[,\n]\s*अनु क्र:|$)/)?.[1]?.trim() || '',
                     anu: str.match(/अनु क्र:\s*(.*)$/)?.[1]?.trim() || '',
                 });
@@ -290,7 +290,7 @@ const PropertyForm = ({
                     newSections[index].landRate = rates.landRate || 0;
                     newSections[index].openSpaceTaxRate = rates.openSpaceTaxRate || 0;
                 }
-                
+
                 // Reset Irrelevant Fields based on Type
                 if (value === 'खाली जागा') {
                     newSections[index].buildingRate = 0;
@@ -317,7 +317,7 @@ const PropertyForm = ({
         // Recalculate Vals and Taxes for this section
         const s = newSections[index];
         const area = Number(s.areaSqMt || 0);
-        
+
         // Formula: Capital Value = Area * Rate
         const bValue = area * Number(s.buildingRate || 0);
         newSections[index].buildingValue = Number(bValue.toFixed(2));
@@ -480,13 +480,13 @@ const PropertyForm = ({
                                     <datalist id="wardNumbers">
                                         {dynamicMasters.WARD.map(item => <option key={item.id} value={item.item_value_mr} />)}
                                     </datalist>
-                                    <TransliterationInput 
-                                        list="wardNumbers" 
+                                    <TransliterationInput
+                                        list="wardNumbers"
                                         placeholder={PLACEHOLDERS.wardNo}
                                         className={INPUT_CLASSES}
-                                        value={formData.wardNo} 
-                                        onChangeText={val => setFormData({ ...formData, wardNo: val })} 
-                                        required 
+                                        value={formData.wardNo}
+                                        onChangeText={val => setFormData({ ...formData, wardNo: val })}
+                                        required
                                     />
                                 </div>
                                 <div>
@@ -501,12 +501,12 @@ const PropertyForm = ({
                                 </div>
                                 <div>
                                     <FieldLabel>{LABELS.plotNo}</FieldLabel>
-                                    <TransliterationInput 
+                                    <TransliterationInput
                                         placeholder={PLACEHOLDERS.plotNo}
                                         className={INPUT_CLASSES}
-                                        value={formData.plotNo} 
-                                        onChangeText={val => setFormData({ ...formData, plotNo: val })} 
-                                        required 
+                                        value={formData.plotNo}
+                                        onChangeText={val => setFormData({ ...formData, plotNo: val })}
+                                        required
                                     />
                                 </div>
                                 <div className="col-span-2">
@@ -531,21 +531,21 @@ const PropertyForm = ({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <FieldLabel>{LABELS.ownerName}</FieldLabel>
-                                    <TransliterationInput 
+                                    <TransliterationInput
                                         placeholder={PLACEHOLDERS.ownerName}
                                         className={`${INPUT_CLASSES} border-2 border-blue-100 font-bold`}
-                                        value={formData.ownerName} 
-                                        onChangeText={val => setFormData({ ...formData, ownerName: val })} 
-                                        required 
+                                        value={formData.ownerName}
+                                        onChangeText={val => setFormData({ ...formData, ownerName: val })}
+                                        required
                                     />
                                 </div>
                                 <div>
                                     <FieldLabel>{LABELS.occupantName}</FieldLabel>
-                                    <TransliterationInput 
+                                    <TransliterationInput
                                         placeholder={PLACEHOLDERS.occupantName}
                                         className={INPUT_CLASSES}
-                                        value={formData.occupantName} 
-                                        onChangeText={val => setFormData({ ...formData, occupantName: val })} 
+                                        value={formData.occupantName}
+                                        onChangeText={val => setFormData({ ...formData, occupantName: val })}
                                     />
                                 </div>
                             </div>
@@ -822,38 +822,38 @@ const PropertyForm = ({
                                         </div>
                                         <div>
                                             <FieldLabel>विषय</FieldLabel>
-                                            <TransliterationInput 
-                                                placeholder="विषय" 
+                                            <TransliterationInput
+                                                placeholder="विषय"
                                                 className={INPUT_CLASSES}
-                                                value={remarksObj.subject} 
-                                                onChangeText={v => updateRemark('subject', v)} 
+                                                value={remarksObj.subject}
+                                                onChangeText={v => updateRemark('subject', v)}
                                             />
                                         </div>
                                         <div>
                                             <FieldLabel>फेरफार क्र</FieldLabel>
-                                            <TransliterationInput 
-                                                placeholder="फेरफार क्र" 
+                                            <TransliterationInput
+                                                placeholder="फेरफार क्र"
                                                 className={INPUT_CLASSES}
-                                                value={remarksObj.ferfar} 
-                                                onChangeText={v => updateRemark('ferfar', v)} 
+                                                value={remarksObj.ferfar}
+                                                onChangeText={v => updateRemark('ferfar', v)}
                                             />
                                         </div>
                                         <div>
                                             <FieldLabel>पान क्र</FieldLabel>
-                                            <TransliterationInput 
-                                                placeholder="पान क्र" 
+                                            <TransliterationInput
+                                                placeholder="पान क्र"
                                                 className={INPUT_CLASSES}
-                                                value={remarksObj.pan} 
-                                                onChangeText={v => updateRemark('pan', v)} 
+                                                value={remarksObj.pan}
+                                                onChangeText={v => updateRemark('pan', v)}
                                             />
                                         </div>
                                         <div>
                                             <FieldLabel>अनु क्र</FieldLabel>
-                                            <TransliterationInput 
-                                                placeholder="अनु क्र" 
+                                            <TransliterationInput
+                                                placeholder="अनु क्र"
                                                 className={INPUT_CLASSES}
-                                                value={remarksObj.anu} 
-                                                onChangeText={v => updateRemark('anu', v)} 
+                                                value={remarksObj.anu}
+                                                onChangeText={v => updateRemark('anu', v)}
                                             />
                                         </div>
                                     </div>
@@ -864,11 +864,11 @@ const PropertyForm = ({
                                     <p className="text-[10px] font-black text-primary uppercase tracking-widest">{LABELS.totalTax}</p>
                                     <p className="text-2xl font-black text-primary-dark mt-0.5">₹{Number(formData.totalTaxAmount || 0).toLocaleString()}</p>
                                 </div>
-                                <FormInput 
+                                <FormInput
                                     type="number"
                                     className="w-40 text-lg font-black text-primary-dark text-right"
                                     value={formData.totalTaxAmount || ''}
-                                    onChange={e => setFormData({ ...formData, totalTaxAmount: Number(e.target.value) })} 
+                                    onChange={e => setFormData({ ...formData, totalTaxAmount: Number(e.target.value) })}
                                 />
                             </div>
                         </div>
@@ -883,21 +883,21 @@ const PropertyForm = ({
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                                 <div className="bg-white rounded-xl p-4 border-2 border-rose-100 flex flex-col justify-between">
                                     <FieldLabel>मागील थकबाकी (Arrears)</FieldLabel>
-                                    <FormInput 
-                                        type="number" 
+                                    <FormInput
+                                        type="number"
                                         className="font-black text-xl text-rose-700 border-none px-0 py-0 focus:ring-0"
                                         value={formData.arrearsAmount || ''}
-                                        onChange={e => setFormData({ ...formData, arrearsAmount: Number(e.target.value) })} 
+                                        onChange={e => setFormData({ ...formData, arrearsAmount: Number(e.target.value) })}
                                     />
                                     <p className="text-[10px] text-rose-500 mt-1.5 font-medium italic">* मागील वर्षाची शिल्लक थकबाकी</p>
                                 </div>
                                 <div className="bg-white rounded-xl p-4 border-2 border-slate-200 opacity-80 flex flex-col justify-between">
                                     <FieldLabel>चालू मागणी (Current Tax)</FieldLabel>
-                                    <FormInput 
-                                        type="number" 
-                                        readOnly 
+                                    <FormInput
+                                        type="number"
+                                        readOnly
                                         className="font-black text-xl text-slate-700 bg-transparent border-none px-0 py-0 focus:ring-0 cursor-not-allowed"
-                                        value={formData.totalTaxAmount || 0} 
+                                        value={formData.totalTaxAmount || 0}
                                     />
                                     <p className="text-[10px] text-slate-500 mt-1.5 font-medium italic">* यावर्षीची एकूण मागणी</p>
                                 </div>
@@ -913,11 +913,11 @@ const PropertyForm = ({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="bg-white rounded-xl p-4 border-2 border-success/20 flex flex-col justify-between">
                                     <FieldLabel className="text-success-dark">भरलेली रक्कम (Paid)</FieldLabel>
-                                    <FormInput 
-                                        type="number" 
+                                    <FormInput
+                                        type="number"
                                         className="font-black text-2xl text-success border-none px-0 py-0 focus:ring-0"
                                         value={formData.paidAmount || ''}
-                                        onChange={e => setFormData({ ...formData, paidAmount: Number(e.target.value) })} 
+                                        onChange={e => setFormData({ ...formData, paidAmount: Number(e.target.value) })}
                                     />
                                     <p className="text-[10px] text-success mt-1.5 font-medium italic">* यावर्षी जमा केलेली एकूण रक्कम</p>
                                 </div>
@@ -942,29 +942,29 @@ const PropertyForm = ({
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <FieldLabel>{LABELS.receiptBook}</FieldLabel>
-                                    <TransliterationInput 
+                                    <TransliterationInput
                                         placeholder="उदा. ५"
                                         className={INPUT_CLASSES}
                                         value={formData.receiptBook || ''}
-                                        onChangeText={val => setFormData({ ...formData, receiptBook: val })} 
+                                        onChangeText={val => setFormData({ ...formData, receiptBook: val })}
                                     />
                                 </div>
                                 <div>
                                     <FieldLabel>{LABELS.receiptNo}</FieldLabel>
-                                    <TransliterationInput 
+                                    <TransliterationInput
                                         placeholder="उदा. ७८"
                                         className={INPUT_CLASSES}
                                         value={formData.receiptNo || ''}
-                                        onChangeText={val => setFormData({ ...formData, receiptNo: val })} 
+                                        onChangeText={val => setFormData({ ...formData, receiptNo: val })}
                                     />
                                 </div>
                                 <div>
                                     <FieldLabel>{LABELS.paymentDate}</FieldLabel>
-                                    <FormInput 
+                                    <FormInput
                                         type="date"
                                         className={INPUT_CLASSES}
                                         value={formData.paymentDate || new Date().toISOString().split('T')[0]}
-                                        onChange={e => setFormData({ ...formData, paymentDate: e.target.value })} 
+                                        onChange={e => setFormData({ ...formData, paymentDate: e.target.value })}
                                     />
                                 </div>
                             </div>

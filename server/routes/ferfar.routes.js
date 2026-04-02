@@ -51,9 +51,9 @@ router.post('/apply', async (req, res) => {
         // 2. Insert into ferfar_requests
         const [result] = await db.query(
             `INSERT INTO ferfar_requests 
-            (property_id, old_owner_name, new_owner_name, applicant_name, applicant_mobile, remarks, status) 
-            VALUES (?, ?, ?, ?, ?, ?, 'PENDING')`,
-            [property_id, old_owner_name, new_owner_name, applicant_name || '', applicant_mobile || '', remarks || '']
+            (property_id, old_owner_name, new_owner_name, applicant_name, applicant_mobile, ferfar_type, remarks, status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING')`,
+            [property_id, old_owner_name, new_owner_name, applicant_name || '', applicant_mobile || '', ferfar_type || '', remarks || '']
         );
 
         res.status(201).json({ message: 'Ferfar request applied successfully', id: result.insertId });

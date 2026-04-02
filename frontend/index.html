@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="mr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="GramSarthi - ग्रामसर्थी">
+  <meta name="keywords" content="ग्रामसर्थी, ग्रामसर्थी, ग्रामसर्थी">
+  <meta name="author" content="Aniket Dange">
+  <link rel="icon" type="image/png" href="/images/logo.png">
+  <title>GramSarthi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              DEFAULT: '#544CE6',
+              dark: '#302C80',
+              light: '#9B9CF0',
+            },
+            success: '#0C996D',
+            surface: '#FFFFFF',
+            border: '#D6D8E1',
+            background: '#F6F8FA',
+            'text-main': '#2B2F33',
+            'text-muted': '#8D999F',
+          },
+          fontFamily: {
+            sans: ['"Noto Sans Devanagari"', '"Noto Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;700;900&display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      font-family: "Noto Sans Devanagari", sans-serif;
+      background-color: #F6F8FA;
+      color: #2B2F33;
+      margin: 0;
+      overflow-x: hidden;
+    }
+  </style>
+  <script type="importmap">
+{
+  "imports": {
+    "xlsx": "https://esm.sh/xlsx@^0.18.5",
+    "jspdf": "https://esm.sh/jspdf@^2.5.1",
+    "jspdf-autotable": "https://esm.sh/jspdf-autotable@^3.5.25",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4"
+  }
+}
+</script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>

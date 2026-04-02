@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Languages } from 'lucide-react';
 
-interface TransliterationInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface TransliterationInputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> {
     value: string;
     onChangeText: (value: string) => void;
     lang?: string; // default 'mr' (Marathi)
+    isTextArea?: boolean;
 }
 
 export const TransliterationInput: React.FC<TransliterationInputProps> = ({
@@ -13,6 +13,7 @@ export const TransliterationInput: React.FC<TransliterationInputProps> = ({
     onChangeText,
     lang = 'mr',
     className = '',
+    isTextArea = false,
     ...props
 }) => {
     const [isEnabled, setIsEnabled] = useState(true);
@@ -20,7 +21,7 @@ export const TransliterationInput: React.FC<TransliterationInputProps> = ({
     const [highlightedIndex, setHighlightedIndex] = useState(0);
     const [currentEnglishWord, setCurrentEnglishWord] = useState('');
     const [cursorPos, setCursorPos] = useState(0);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -46,7 +47,6 @@ export const TransliterationInput: React.FC<TransliterationInputProps> = ({
         }
     }, [lang]);
 
-    // Extract the current English word being typed (the last word before cursor)
     const getCurrentWord = useCallback((text: string, cursor: number) => {
         const leftPart = text.slice(0, cursor);
         const match = leftPart.match(/([a-zA-Z]+)$/);
@@ -64,7 +64,6 @@ export const TransliterationInput: React.FC<TransliterationInputProps> = ({
         setSuggestions([]);
         setCurrentEnglishWord('');
 
-        // Set cursor position after the inserted suggestion
         requestAnimationFrame(() => {
             if (inputRef.current) {
                 const newPos = beforeWord.length + suggestion.length;
@@ -74,7 +73,7 @@ export const TransliterationInput: React.FC<TransliterationInputProps> = ({
         });
     }, [value, cursorPos, currentEnglishWord, onChangeText]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const newValue = e.target.value;
         const newCursor = e.target.selectionStart || 0;
         onChangeText(newValue);
@@ -85,10 +84,7 @@ export const TransliterationInput: React.FC<TransliterationInputProps> = ({
         const word = getCurrentWord(newValue, newCursor);
         setCurrentEnglishWord(word);
 
-        // Debounce the API call
-        if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
-        }
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
 
         if (word.length >= 1) {
             debounceTimerRef.current = setTimeout(() => {
@@ -99,12 +95,9 @@ export const TransliterationInput: React.FC<TransliterationInputProps> = ({
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (!isEnabled || suggestions.length === 0) {
-            return;
-        }
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        if (!isEnabled || suggestions.length === 0) return;
 
-        // Navigate suggestions with arrow keys
         if (e.key === 'ArrowDown') {
             e.preventDefault();
             setHighlightedIndex(prev => Math.min(prev + 1, suggestions.length - 1));
@@ -117,18 +110,15 @@ export const TransliterationInput: React.FC<TransliterationInputProps> = ({
             return;
         }
 
-        // Select with Enter
         if (e.key === 'Enter' && suggestions.length > 0) {
             e.preventDefault();
             applySuggestion(suggestions[highlightedIndex]);
             return;
         }
 
-        // Select first suggestion on Space
         if (e.key === ' ' && suggestions.length > 0 && currentEnglishWord) {
             e.preventDefault();
             const selected = suggestions[highlightedIndex];
-            // Apply suggestion + add the space
             const text = value;
             const cursor = cursorPos;
             const wordLen = currentEnglishWord.length;
@@ -149,13 +139,11 @@ export const TransliterationInput: React.FC<TransliterationInputProps> = ({
             return;
         }
 
-        // Dismiss on Escape
         if (e.key === 'Escape') {
             setSuggestions([]);
             return;
         }
 
-        // Number keys 1-9 and 0 for the 10th suggestion
         const numKey = parseInt(e.key);
         if (e.key === '0' && suggestions.length >= 10) {
             e.preventDefault();
@@ -169,7 +157,6 @@ export const TransliterationInput: React.FC<TransliterationInputProps> = ({
         }
     };
 
-    // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
             if (
@@ -183,25 +170,23 @@ export const TransliterationInput: React.FC<TransliterationInputProps> = ({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Cleanup debounce timer on unmount
     useEffect(() => {
         return () => {
-            if (debounceTimerRef.current) {
-                clearTimeout(debounceTimerRef.current);
-            }
+            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
         };
     }, []);
 
+    const Component = isTextArea ? 'textarea' : 'input';
+
     return (
         <div className="relative" style={{ position: 'relative' }}>
-            <input
-                ref={inputRef}
-                type="text"
+            <Component
+                ref={inputRef as any}
                 className={`${className} pr-10`}
                 value={value}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
-                onClick={(e) => setCursorPos(e.currentTarget.selectionStart || 0)}
+                onClick={(e: any) => setCursorPos(e.currentTarget.selectionStart || 0)}
                 {...props}
             />
             <button
@@ -210,13 +195,12 @@ export const TransliterationInput: React.FC<TransliterationInputProps> = ({
                     setIsEnabled(!isEnabled);
                     if (isEnabled) setSuggestions([]);
                 }}
-                className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors ${isEnabled ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`absolute right-2 top-2 p-1 rounded-md transition-colors ${isEnabled ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-gray-600'}`}
                 title={isEnabled ? "मराठी टायपिंग चालू (Marathi ON)" : "मराठी टायपिंग बंद (Marathi OFF)"}
             >
                 <Languages className="w-4 h-4" />
             </button>
 
-            {/* Suggestion Dropdown */}
             {suggestions.length > 0 && (
                 <div
                     ref={dropdownRef}
@@ -239,7 +223,6 @@ export const TransliterationInput: React.FC<TransliterationInputProps> = ({
                         overflowY: 'auto'
                     }}
                 >
-                    {/* Header showing what's being transliterated */}
                     <div style={{
                         padding: '6px 12px',
                         fontSize: '11px',
@@ -255,7 +238,7 @@ export const TransliterationInput: React.FC<TransliterationInputProps> = ({
                         <div
                             key={i}
                             onMouseDown={(e) => {
-                                e.preventDefault(); // Prevent blur
+                                e.preventDefault();
                                 applySuggestion(s);
                             }}
                             onMouseEnter={() => setHighlightedIndex(i)}

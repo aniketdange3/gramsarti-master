@@ -3,9 +3,11 @@ export interface BillCalculation {
     arrearsTotal: number;
     currentTaxBase: number;
     discountAmount: number;
+    penaltyAmount: number;
     currentTaxTotal: number;
     billTotal: number;
     isDiscountEligible: boolean;
+    isPenaltyEligible: boolean;
 }
 
 /**
@@ -32,17 +34,23 @@ export const calculateBill = (
     const isDiscountEligible = month >= 3 && month <= 8;
 
     const discountAmount = isDiscountEligible ? Math.round(currentTaxBase * 0.05) : 0;
-    const currentTaxTotal = currentTaxBase - discountAmount;
+    
+    // Check Penalty Eligibility: After December 31st (January, February, March)
+    const isPenaltyEligible = month >= 0 && month <= 2; 
+    const penaltyAmount = isPenaltyEligible ? Math.round((arrearsBase + currentTaxBase) * 0.05) : 0;
 
-    const billTotal = arrearsTotal + currentTaxTotal;
+    const currentTaxTotal = currentTaxBase - discountAmount;
+    const billTotal = arrearsTotal + currentTaxTotal + penaltyAmount;
 
     return {
         arrearsBase,
         arrearsTotal,
         currentTaxBase,
         discountAmount,
+        penaltyAmount,
         currentTaxTotal,
         billTotal,
-        isDiscountEligible
+        isDiscountEligible,
+        isPenaltyEligible
     };
 };

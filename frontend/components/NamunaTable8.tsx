@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Eye, Edit2, Trash2, Printer } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Eye, Edit2, Trash2, Printer, Calculator, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PropertyRecord } from '../types';
 import OwnerNameDisplay from './OwnerNameDisplay';
 import { PANCHAYAT_CONFIG } from '../panchayatConfig';
@@ -12,6 +12,7 @@ interface Props {
     onView?: (id: string) => void;
     showActions?: boolean;
     onPrint?: (id: string) => void;
+    onCalculate?: (record: PropertyRecord) => void;
 }
 
 
@@ -22,7 +23,7 @@ interface Props {
 const MN = (v: number | string | undefined) =>
     String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
 
 export default function NamunaTable8({
     records,
@@ -31,12 +32,18 @@ export default function NamunaTable8({
     onDelete,
     onView,
     onPrint,
+    onCalculate,
     showActions = false
 }: Props) {
 
 
     const [page, setPage] = useState(1);
     const [showAll, setShowAll] = useState(false);
+
+    // Reset to page 1 when records change (e.g. after filtering)
+    useEffect(() => {
+        setPage(1);
+    }, [records]);
 
     const totalPages = Math.max(1, Math.ceil(records.length / PAGE_SIZE));
     const safePage = Math.min(page, totalPages);
@@ -116,23 +123,17 @@ export default function NamunaTable8({
                 </div>
             </div>
 
-            {/* ── Simple UI Header (Screen Only) ── */}
-            <div className="no-print bg-white border-b border-slate-200 px-4 xl:px-6 py-3 flex flex-wrap items-center justify-between gap-3 flex-none">
-                <div className="flex items-center gap-4">
-                    <h3 className="text-[15px] font-black text-slate-800">मालमत्ता आकारणी तपशील</h3>
-                    <button
-                        onClick={() => setShowAll(!showAll)}
-                        className={`text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all ${showAll
-                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-200'
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
-                            }`}
-                    >
-                        {showAll ? 'पृष्ठानुसार पहा' : 'सर्व नोंदी पहा'}
-                    </button>
-                </div>
-                <p className="text-[11px] tracking-wide text-slate-500 font-bold bg-slate-100 px-3 py-1.5 rounded-md">
-                    एकूण <span className="text-indigo-600">{MN(records.length)}</span> नोंदी {showAll ? '(सर्व)' : `पैकी ${MN(pageRecords.length)} (पृष्ठ ${MN(safePage)})`}
-                </p>
+            {/* ── Screen-Only Table Controls ── */}
+            <div className="no-print bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-end gap-3 flex-none">
+                <button
+                    onClick={() => setShowAll(!showAll)}
+                    className={`text-[10px] font-black px-3 py-1 rounded-lg border transition-all ${showAll
+                        ? 'bg-slate-800 text-white border-slate-800 shadow-sm'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                        }`}
+                >
+                    {showAll ? 'पृष्ठानुसार पहा' : 'सर्व नोंदी पहा'}
+                </button>
             </div>
 
             {/* ── Table Container with Watermark ── */}
@@ -346,6 +347,7 @@ export default function NamunaTable8({
                                             <div className="flex items-center justify-center gap-1.5 group-hover:scale-105 transition-all duration-200">
                                                 {onView && <button onClick={() => onView(r.id)} title="पहा" className="w-8 h-8 flex items-center justify-center text-slate-500 bg-white rounded-lg hover:bg-slate-100 hover:text-slate-700 transition-all border border-slate-200 shadow-sm"><Eye className="w-4" /></button>}
                                                 {onPrint && <button onClick={() => onPrint(r.id)} title="प्रिंट करा" className="w-8 h-8 flex items-center justify-center text-indigo-500 bg-white rounded-lg hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-indigo-100 shadow-sm"><Printer className="w-4" /></button>}
+                                                {onCalculate && <button onClick={() => onCalculate(r)} title="गणना सूत्र" className="w-8 h-8 flex items-center justify-center text-emerald-500 bg-white rounded-lg hover:bg-emerald-50 hover:text-emerald-600 transition-all border border-emerald-100 shadow-sm"><Calculator className="w-4" /></button>}
                                                 {onEdit && <button onClick={() => onEdit(r)} title="सुधारा" className="w-8 h-8 flex items-center justify-center text-slate-500 bg-white rounded-lg hover:bg-slate-100 hover:text-slate-700 transition-all border border-slate-200 shadow-sm"><Edit2 className="w-4" /></button>}
                                                 {onDelete && <button onClick={() => onDelete(r.id)} title="हटवा" className="w-8 h-8 flex items-center justify-center text-rose-500 bg-white rounded-lg hover:bg-rose-50 hover:text-rose-600 transition-all border border-rose-100 shadow-sm"><Trash2 className="w-4" /></button>}
                                             </div>
@@ -414,14 +416,15 @@ export default function NamunaTable8({
             {totalPages > 1 && !showAll && (
                 <div className="flex items-center justify-between px-4 xl:px-6 py-3 border-t border-slate-200 bg-slate-50/80 backdrop-blur-[2px] no-print flex-none relative z-10 w-full">
                     <div className="text-[12px] font-bold text-slate-500 tracking-wide hidden sm:block">
-                        पृष्ठ <span className="text-slate-800">{safePage}</span> पैकी <span className="text-slate-800">{totalPages}</span>
+                        पृष्ठ <span className="text-slate-800 font-black">{MN(safePage)}</span> पैकी <span className="text-slate-800">{MN(totalPages)}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 sm:ml-auto w-full sm:w-auto justify-center">
+                    <div className="flex items-center gap-1 sm:ml-auto w-full sm:w-auto justify-center">
                         <button onClick={() => setPage(1)} disabled={safePage === 1}
-                            className="px-2.5 py-1.5 text-[10px] font-black rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 disabled:bg-slate-50 disabled:cursor-not-allowed transition-all shadow-sm">&#171;</button>
+                            className="px-2 h-8 flex items-center justify-center text-[11px] font-black rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-40 shadow-sm transition-all">«</button>
+                        
                         <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 disabled:bg-slate-50 disabled:cursor-not-allowed transition-all shadow-sm">
-                            <span className="leading-none text-lg -mt-0.5">‹</span>
+                            className="px-3 h-8 flex items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-40 shadow-sm transition-all text-[10px] font-black uppercase">
+                            ‹ मागील
                         </button>
                         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                             let pageNum: number;
@@ -434,15 +437,16 @@ export default function NamunaTable8({
                                     className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-black transition-all shadow-sm border ${pageNum === safePage
                                         ? 'bg-slate-800 text-white border-slate-800'
                                         : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-800'
-                                        }`}>{pageNum}</button>
+                                        }`}>{MN(pageNum)}</button>
                             );
                         })}
                         <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 disabled:bg-slate-50 disabled:cursor-not-allowed transition-all shadow-sm">
-                            <span className="leading-none text-lg -mt-0.5">›</span>
+                            className="px-3 h-8 flex items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-40 shadow-sm transition-all text-[10px] font-black uppercase">
+                            पुढील ›
                         </button>
+
                         <button onClick={() => setPage(totalPages)} disabled={safePage === totalPages}
-                            className="px-2.5 py-1.5 text-[10px] font-black rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 disabled:bg-slate-50 disabled:cursor-not-allowed transition-all shadow-sm">&#187;</button>
+                            className="px-2 h-8 flex items-center justify-center text-[11px] font-black rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-40 shadow-sm transition-all">»</button>
                     </div>
                 </div>
             )}

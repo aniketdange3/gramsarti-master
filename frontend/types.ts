@@ -16,6 +16,7 @@ export interface PropertySection {
   buildingFinalValue: number;
   openSpaceFinalValue: number;
   propertyType: string;
+  floorIndex: number;
 }
 
 export const FLOOR_NAMES = [
@@ -52,8 +53,13 @@ export interface PropertyRecord {
   plotNo: string;
   occupantName: string;
   ownerName: string;
+  contactNo?: string;
   hasConstruction: boolean;
   openSpace: number;
+  propertyLength?: number;
+  propertyWidth?: number;
+  totalAreaSqFt?: number;
+  totalAreaSqMt?: number;
 
   // Exactly 5 floors as requested
   sections: PropertySection[];
@@ -104,6 +110,7 @@ export interface PropertyRecord {
   //   surchargeTotal?: number;
 
   remarksNotes?: string;
+  buildingUsage?: string;
 
   createdAt: string;
 }
@@ -124,7 +131,8 @@ export const DEFAULT_SECTION: PropertySection = {
   openSpaceValue: 0,
   buildingFinalValue: 0,
   openSpaceFinalValue: 0,
-  propertyType: ''
+  propertyType: '',
+  floorIndex: 0
 }; export const LABELS = {
   appTitle: "मालमत्ता कर व्यवस्थापन",
   srNo: "अनुक्रमांक",
@@ -134,6 +142,7 @@ export const DEFAULT_SECTION: PropertySection = {
   plotNo: "प्लॉट क्रमांक/मालमत्ता क्र.",
   occupantName: "भोगवटाधारकाचे नाव",
   ownerName: "मालकाचे नाव",
+  contactNo: "संपर्क क्र.",
   hasConstruction: "बांधकाम आहे का",
   openSpace: "खाली जागा",
   lengthFt: "लांबी (फूट)",
@@ -207,5 +216,7 @@ export interface FerfarRequest {
   wastiName?: string;
   plotNo?: string;
 }
+
+export const BUILDING_USAGE_OPTIONS = []; // This is now managed via Master Data in the database
 
 

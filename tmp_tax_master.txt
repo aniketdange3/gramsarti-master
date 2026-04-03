@@ -1,0 +1,20 @@
+﻿                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                </div>
+            </div>
+
+            {isAdding && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+                    <form onSubmit={handleFormSubmit} className="bg-white rounded-[2.5rem] max-w-lg w-full overflow-hidden premium-shadow-lg border border-white/20">
+                        <div className="p-8 pb-6 flex justify-between items-start bg-indigo-900 text-white relative">
+                            <div>
+                                <h2 className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-2 leading-none">à¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾à¤ªà¤¨ â€” {tabs.find(t => t.id === activeTab)?.label}</h2>

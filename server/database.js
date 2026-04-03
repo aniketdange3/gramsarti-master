@@ -184,7 +184,13 @@ const initializeDatabase = async () => {
             readyReckonerBuilding DECIMAL(10, 2) DEFAULT 0,
             readyReckonerComposite DECIMAL(10, 2) DEFAULT 0,
             depreciationAmount DECIMAL(10, 2) DEFAULT 0,
-            discountAmount DECIMAL(10, 2) DEFAULT 0
+            discountAmount DECIMAL(10, 2) DEFAULT 0,
+            propertyLength DECIMAL(10, 2) DEFAULT NULL,
+            propertyWidth DECIMAL(10, 2) DEFAULT NULL,
+            totalAreaSqFt DECIMAL(10, 2) DEFAULT NULL,
+            totalAreaSqMt DECIMAL(10, 2) DEFAULT NULL,
+            contactNo VARCHAR(20) DEFAULT NULL,
+            buildingUsage VARCHAR(100) DEFAULT 'निवास'
         ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
 
         // Migrations for existing DB
@@ -230,6 +236,12 @@ const initializeDatabase = async () => {
             ['readyReckonerComposite', 'DECIMAL(10,2) DEFAULT 0'],
             ['depreciationAmount', 'DECIMAL(10,2) DEFAULT 0'],
             ['discountAmount', 'DECIMAL(10,2) DEFAULT 0'],
+            ['propertyLength', 'DECIMAL(10,2) DEFAULT NULL'],
+            ['propertyWidth', 'DECIMAL(10,2) DEFAULT NULL'],
+            ['totalAreaSqFt', 'DECIMAL(10,2) DEFAULT NULL'],
+            ['totalAreaSqMt', 'DECIMAL(10,2) DEFAULT NULL'],
+            ['contactNo', 'VARCHAR(20) DEFAULT NULL'],
+            ['buildingUsage', "VARCHAR(100) DEFAULT 'निवास'"],
         ];
         for (const [col, def] of newPropCols) {
             await addColumnIfNotExists(connection, 'properties', col, def);
@@ -446,12 +458,27 @@ const initializeDatabase = async () => {
             FOREIGN KEY(category_id) REFERENCES master_categories(id) ON DELETE CASCADE
         ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
 
+        // Migration: Rename PROPERTY_USAGE to BUILDING_USAGE if it exists. 
+        // Handle case where BUILDING_USAGE might already exist (from a partially failed seed)
+        const [existingBuild] = await connection.query("SELECT id FROM master_categories WHERE code = 'BUILDING_USAGE'");
+        const [existingProp] = await connection.query("SELECT id FROM master_categories WHERE code = 'PROPERTY_USAGE'");
+        if (existingProp.length > 0) {
+            if (existingBuild.length > 0) {
+                // Both exist? Move items from Prop to Build then delete Prop
+                await connection.query("UPDATE master_items SET category_id = ? WHERE category_id = ?", [existingBuild[0].id, existingProp[0].id]);
+                await connection.query("DELETE FROM master_categories WHERE id = ?", [existingProp[0].id]);
+            } else {
+                // Only Prop exists? Rename it.
+                await connection.query("UPDATE master_categories SET code = 'BUILDING_USAGE', name_mr = 'इमारतीचा वापर', name_en = 'Building Usage' WHERE code = 'PROPERTY_USAGE'");
+            }
+        }
+
         // Granular Seed for categories and items
         const categories = [
             { name_mr: 'वस्तीचे नाव', name_en: 'Wasti Name', code: 'WASTI' },
             { name_mr: 'मालमत्तेचा प्रकार', name_en: 'Property Type', code: 'PROPERTY_TYPE' },
             { name_mr: 'वॉर्ड क्रमांक', name_en: 'Ward Number', code: 'WARD' },
-            { name_mr: 'मालमत्तेचा वापर', name_en: 'Property Usage', code: 'PROPERTY_USAGE' }
+            { name_mr: 'इमारतीचा वापर', name_en: 'Building Usage', code: 'BUILDING_USAGE' }
         ];
 
         for (const cat of categories) {
@@ -467,7 +494,7 @@ const initializeDatabase = async () => {
 
             // Check items for this category
             const [itemCount] = await connection.query('SELECT COUNT(*) as count FROM master_items WHERE category_id = ?', [categoryId]);
-            if (itemCount[0].count === 0) {
+            if (itemCount[0].count === 0 || cat.code === 'BUILDING_USAGE') {
                 let items = [];
                 if (cat.code === 'WASTI') {
                     items = ['शंकरपुर', 'गोटाळ पांजरी', 'वेळाहरी', ];
@@ -475,13 +502,35 @@ const initializeDatabase = async () => {
                     items = ['आर.सी.सी', 'विटा सिमेंट', 'मातीचे', 'खाली जागा'];
                 } else if (cat.code === 'WARD') {
                     items = ['1', '2', '3'];
-                } else if (cat.code === 'PROPERTY_USAGE') {
-                    items = ['निवासी (Residential)', 'व्यावसायिक (Commercial)', 'औद्योगिक (Audyogik)', 'जमीन (Land)'];
+                } else if (cat.code === 'BUILDING_USAGE') {
+                    // For Building Usage, we want to ensure exact items
+                    items = [
+                        { mr: 'निवास', en: 'Residential', code: '1.00' },
+                        { mr: 'औदयोगिक', en: 'Industrial', code: '1.20' },
+                        { mr: 'वाणिज्य', en: 'Commercial', code: '1.25' }
+                    ];
+
+                    // Clear existing if mismatch
+                    if (itemCount[0].count > 0) {
+                        const [existingItems] = await connection.query('SELECT item_value_mr FROM master_items WHERE category_id = ?', [categoryId]);
+                        const isMismatch = existingItems.some(i => !['निवास', 'औदयोगिक', 'वाणिज्य'].includes(i.item_value_mr));
+                        if (isMismatch) {
+                            await connection.query('DELETE FROM master_items WHERE category_id = ?', [categoryId]);
+                        } else {
+                            // Already correct, skip
+                            continue;
+                        }
+                    }
                 }
                 for (const item of items) {
-                    await connection.query(`INSERT INTO master_items (category_id, item_value_mr) VALUES (?, ?)`, [categoryId, item]);
+                    if (typeof item === 'string') {
+                        await connection.query(`INSERT INTO master_items (category_id, item_value_mr) VALUES (?, ?)`, [categoryId, item]);
+                    } else {
+                        await connection.query(`INSERT INTO master_items (category_id, item_value_mr, item_value_en, item_code) VALUES (?, ?, ?, ?)`, 
+                            [categoryId, item.mr, item.en, item.code]);
+                    }
                 }
-                console.log(`    Seeded items for category: ${cat.code}`);
+                console.log(`    Seeded/Verified items for category: ${cat.code}`);
             }
         }
 
@@ -614,6 +663,35 @@ const initializeDatabase = async () => {
         ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
         console.log('Ferfar requests table ready');
         await addColumnIfNotExists(connection, 'ferfar_requests', 'ferfar_type', 'VARCHAR(100) DEFAULT NULL');
+
+        // ──────────────────────────────────────────────
+        // 17. BUILDING USAGE MASTER TABLE
+        // ──────────────────────────────────────────────
+        console.log('Ensuring building_usage_master table exists...');
+        await connection.query(`CREATE TABLE IF NOT EXISTS building_usage_master (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            usage_type_mr VARCHAR(255) NOT NULL,
+            usage_type_en VARCHAR(255),
+            weightage DECIMAL(10, 2) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+
+        const [buCount] = await connection.query('SELECT COUNT(*) as count FROM building_usage_master');
+        if (buCount[0].count === 0) {
+            const initialBU = [
+                { mr: 'निवास', en: 'Residential', w: 1.00 },
+                { mr: 'औदयोगिक', en: 'Industrial', w: 1.20 },
+                { mr: 'वाणिज्य', en: 'Commercial', w: 1.25 }
+            ];
+            for (const b of initialBU) {
+                await connection.query(
+                    'INSERT INTO building_usage_master (usage_type_mr, usage_type_en, weightage) VALUES (?, ?, ?)',
+                    [b.mr, b.en, b.w]
+                );
+            }
+            console.log('  Seeded building_usage_master');
+        }
+        console.log('Building usage master ready');
 
         await connection.query('SET FOREIGN_KEY_CHECKS = 1');
         connection.release();

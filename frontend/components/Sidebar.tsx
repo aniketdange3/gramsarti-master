@@ -18,7 +18,7 @@ interface SidebarProps {
 
 export default function Sidebar({ user, activeView, onNavClick, totalRecords, navItems }: SidebarProps) {
   return (
-    <aside className="w-55 h-full flex flex-col shadow-premium-blue relative z-10 no-print" style={{
+    <aside className="w-45 h-full flex flex-col shadow-premium-blue relative z-10 no-print" style={{
       background: 'linear-gradient(180deg, #3730a3 0%, #433cd3ff 100%)',
     }}>
       {/* Logo Area */}

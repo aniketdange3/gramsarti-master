@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, Edit2, Trash2, ChevronLeft, ChevronRight, CheckCircle2, Printer } from 'lucide-react';
 import { PropertyRecord } from '../types';
 import { PANCHAYAT_CONFIG } from '../panchayatConfig';
@@ -28,7 +28,7 @@ const HEADS = [
     { label: 'एकूण मागणी', key: 'total' },
 ];
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
 
 export default function NamunaTable9({
     records,
@@ -42,6 +42,11 @@ export default function NamunaTable9({
 
     const [page, setPage] = useState(1);
     const [showAll, setShowAll] = useState(false);
+
+    // Reset page to 1 when records change (e.g. after search or filter)
+    useEffect(() => {
+        setPage(1);
+    }, [records]);
 
     const totalPages = Math.max(1, Math.ceil(records.length / PAGE_SIZE));
     const safePage = Math.min(page, totalPages);
@@ -79,23 +84,17 @@ export default function NamunaTable9({
                 </div>
             </div>
 
-            {/* ── Simple UI Header (Screen Only) ── */}
-            <div className="no-print bg-white border-b border-slate-200 px-4 xl:px-6 py-3 flex flex-wrap items-center justify-between gap-3 flex-none">
-                <div className="flex items-center gap-4">
-                    <h3 className="text-[15px] font-black text-slate-800">तपशील यादी</h3>
-                    <button
-                        onClick={() => setShowAll(!showAll)}
-                        className={`text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all ${showAll
-                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-200'
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
-                            }`}
-                    >
-                        {showAll ? 'पृष्ठानुसार पहा' : 'सर्व नोंदी पहा'}
-                    </button>
-                </div>
-                <p className="text-[11px] tracking-wide text-slate-500 font-bold bg-slate-100 px-3 py-1.5 rounded-md">
-                    एकूण <span className="text-indigo-600">{MN(records.length)}</span> नोंदी {showAll ? '(सर्व)' : `पैकी ${MN(pageRecords.length)} (पृष्ठ ${MN(safePage)})`}
-                </p>
+            {/* ── Screen-Only Table Controls ── */}
+            <div className="no-print bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-end gap-3 flex-none">
+                <button
+                    onClick={() => setShowAll(!showAll)}
+                    className={`text-[10px] font-black px-3 py-1 rounded-lg border transition-all ${showAll
+                        ? 'bg-slate-800 text-white border-slate-800 shadow-sm'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                        }`}
+                >
+                    {showAll ? 'पृष्ठानुसार पहा' : 'सर्व नोंदी पहा'}
+                </button>
             </div>
 
             {/* ── Table Container with Watermark ── */}
@@ -187,9 +186,9 @@ export default function NamunaTable9({
                                             acc.mapping[h.key] = headPaid;
                                             acc.remaining -= headPaid;
                                             return acc;
-                                        }, { 
+                                        }, {
                                             remaining: Math.max(0, paid - Math.min(paid, arrears)), // Current portion
-                                            mapping: {} as any 
+                                            mapping: {} as any
                                         });
 
                                         const arrearsPaid = head.key === 'total' ? Math.min(paid, arrears) : 0;
@@ -292,31 +291,31 @@ export default function NamunaTable9({
                                         <td className="px-3 py-2.5 text-right bg-slate-50/50">
                                             <div className="text-[14px] font-black text-slate-800">₹{MN(demand.toFixed(2))}</div>
                                         </td>
-                                            <td className="px-3 py-2.5 text-left border-r border-slate-100/50">
-                                                <div className="text-[12px] text-slate-600 font-semibold mb-1">
-                                                    {r.paymentDate ? (r.paymentDate.includes('-') ? r.paymentDate.split('-').reverse().join('/') : r.paymentDate) : '-'}
+                                        <td className="px-3 py-2.5 text-left border-r border-slate-100/50">
+                                            <div className="text-[12px] text-slate-600 font-semibold mb-1">
+                                                {r.paymentDate ? (r.paymentDate.includes('-') ? r.paymentDate.split('-').reverse().join('/') : r.paymentDate) : '-'}
+                                            </div>
+                                            {r.receiptNo ? (
+                                                <div className="text-[11px] font-extrabold text-emerald-600 flex items-center gap-1">
+                                                    <CheckCircle2 className="w-3.5 h-3.5" /> {MN(r.receiptNo)}
                                                 </div>
-                                                {r.receiptNo ? (
-                                                    <div className="text-[11px] font-extrabold text-emerald-600 flex items-center gap-1">
-                                                        <CheckCircle2 className="w-3.5 h-3.5" /> {MN(r.receiptNo)}
-                                                    </div>
-                                                ) : (
-                                                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">थकीत (Unpaid)</div>
-                                                )}
-                                            </td>
+                                            ) : (
+                                                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">थकीत (Unpaid)</div>
+                                            )}
+                                        </td>
 
-                                            <td className="px-3 py-2.5 text-right bg-emerald-50/20">
-                                                <div className={`text-[13px] font-bold ${mWScreen > 0 ? 'text-emerald-700' : 'text-slate-400'}`}>₹{MN(mWScreen.toFixed(2))}</div>
-                                            </td>
-                                            <td className="px-3 py-2.5 text-right bg-emerald-50/20 text-emerald-700 font-bold">
-                                                <div className={`text-[13px] font-bold ${cWScreen > 0 ? 'text-emerald-700' : 'text-slate-400'}`}>₹{MN(cWScreen.toFixed(2))}</div>
-                                            </td>
-                                            <td className="px-3 py-2.5 text-right bg-emerald-50/50">
-                                                <div className="text-[14px] font-black text-emerald-600">₹{MN(paid.toFixed(2))}</div>
-                                            </td>
-                                            <td className="px-3 py-2.5 text-right bg-rose-50/50">
-                                                <div className="text-[14px] font-black text-rose-600">₹{MN(balance.toFixed(2))}</div>
-                                            </td>
+                                        <td className="px-3 py-2.5 text-right bg-emerald-50/20">
+                                            <div className={`text-[13px] font-bold ${mWScreen > 0 ? 'text-emerald-700' : 'text-slate-400'}`}>₹{MN(mWScreen.toFixed(2))}</div>
+                                        </td>
+                                        <td className="px-3 py-2.5 text-right bg-emerald-50/20 text-emerald-700 font-bold">
+                                            <div className={`text-[13px] font-bold ${cWScreen > 0 ? 'text-emerald-700' : 'text-slate-400'}`}>₹{MN(cWScreen.toFixed(2))}</div>
+                                        </td>
+                                        <td className="px-3 py-2.5 text-right bg-emerald-50/50">
+                                            <div className="text-[14px] font-black text-emerald-600">₹{MN(paid.toFixed(2))}</div>
+                                        </td>
+                                        <td className="px-3 py-2.5 text-right bg-rose-50/50">
+                                            <div className="text-[14px] font-black text-rose-600">₹{MN(balance.toFixed(2))}</div>
+                                        </td>
                                         {showActions && (
                                             <td className="no-print px-3 py-2.5 text-center sticky right-0 z-20 bg-inherit border-l border-slate-200 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]">
                                                 <div className="flex items-center justify-center gap-1.5 group-hover:scale-105 transition-all duration-200">
@@ -334,35 +333,6 @@ export default function NamunaTable9({
                         })}
                     </tbody>
 
-                    <tfoot>
-                        {/* ── Screen Totals (Screen Only) ── */}
-                        <tr className="no-print bg-slate-800 text-white font-black text-[11px] border-t-2 border-slate-900 sticky bottom-0 z-30">
-                            <td colSpan={8} className="px-3 py-4 text-right uppercase tracking-[0.2em] italic pr-6 border-r border-slate-700/50">पृष्ठ एकूण (Page Totals) &gt;&gt;</td>
-                            <td className="px-3 py-4 text-right bg-slate-700/50">₹{MN(gPrev.toFixed(2))}</td>
-                            <td className="px-3 py-4 text-right bg-slate-700/50">₹{MN(gCurr.toFixed(2))}</td>
-                            <td className="px-3 py-4 text-right bg-indigo-900 font-extrabold text-[13px] border-x border-indigo-800">₹{MN(gDemand.toFixed(2))}</td>
-                            <td className="px-3 py-4 border-r border-slate-700/30 font-normal italic text-slate-400 text-center">वजावट: ₹{MN(gDiscount.toFixed(2))}</td>
-                            <td className="px-3 py-4 text-right bg-emerald-950 font-normal opacity-70">₹{MN((gPaid * 0.4).toFixed(2))}</td> {/* Appx prev recov */}
-                            <td className="px-3 py-4 text-right bg-emerald-950 font-normal opacity-70">₹{MN((gPaid * 0.6).toFixed(2))}</td> {/* Appx curr recov */}
-                            <td className="px-3 py-4 text-right bg-emerald-800 font-extrabold text-[13px] border-l border-emerald-700">₹{MN(gPaid.toFixed(2))}</td>
-                            <td className="px-3 py-4 text-right bg-rose-900 font-extrabold text-[15px] border-l-2 border-rose-800 text-rose-100 shadow-[inset_-4px_0_10px_rgba(0,0,0,0.2)]">₹{MN((gDemand - gPaid - gDiscount).toFixed(2))}</td>
-                            {showActions && <td className="bg-slate-900 sticky right-0"></td>}
-                        </tr>
-
-                        {/* ── Official Footer (Print Only) ── */}
-                        <tr className="hidden print:table-row bg-white font-black border-t-2 border-black text-[8px]">
-                            <td colSpan={4} className="border border-black p-1 text-right">एकूण बेरीज</td>
-                            <td className="border border-black p-1 text-right">{MN(gPrev.toFixed(2))}</td>
-                            <td className="border border-black p-1 text-right">{MN(gCurr.toFixed(2))}</td>
-                            <td className="border border-black p-1 text-right font-bold bg-gray-50">{MN(gDemand.toFixed(2))}</td>
-                            <td colSpan={2} className="border border-black p-1 font-normal text-center opacity-70">सवलत: {MN(gDiscount.toFixed(2))}</td>
-                            <td colSpan={1} className="border border-black p-1 text-center bg-gray-50">एकूण बेरीज</td>
-                            <td className="border border-black p-1"></td>
-                            <td className="border border-black p-1"></td>
-                            <td className="border border-black p-1 text-right font-bold bg-gray-50">{MN(gPaid.toFixed(2))}</td>
-                            <td className="border border-black p-1 text-right font-black bg-gray-100 text-[10px]">{MN((gDemand - gPaid - gDiscount).toFixed(2))}</td>
-                        </tr>
-                    </tfoot>
                 </table>
             </div>
 
@@ -392,14 +362,15 @@ export default function NamunaTable9({
             {totalPages > 1 && !showAll && (
                 <div className="flex items-center justify-between px-4 xl:px-6 py-3 border-t border-slate-200 bg-slate-50/80 backdrop-blur-[2px] no-print flex-none relative z-10 w-full">
                     <div className="text-[12px] font-bold text-slate-500 tracking-wide hidden sm:block">
-                        पृष्ठ <span className="text-slate-800">{safePage}</span> पैकी <span className="text-slate-800">{totalPages}</span>
+                        पृष्ठ <span className="text-slate-800 font-black">{MN(safePage)}</span> पैकी <span className="text-slate-800">{MN(totalPages)}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 sm:ml-auto w-full sm:w-auto justify-center">
+                    <div className="flex items-center gap-1 sm:ml-auto w-full sm:w-auto justify-center">
                         <button onClick={() => setPage(1)} disabled={safePage === 1}
-                            className="px-2.5 py-1.5 text-[10px] font-black rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 disabled:bg-slate-50 disabled:cursor-not-allowed transition-all shadow-sm">&#171;</button>
+                            className="px-2 h-8 flex items-center justify-center text-[11px] font-black rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-40 shadow-sm transition-all">«</button>
+                        
                         <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 disabled:bg-slate-50 disabled:cursor-not-allowed transition-all shadow-sm">
-                            <ChevronLeft className="w-4 h-4" />
+                            className="px-3 h-8 flex items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-40 shadow-sm transition-all text-[10px] font-black uppercase">
+                            ‹ मागील
                         </button>
                         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                             let pageNum: number;
@@ -412,15 +383,16 @@ export default function NamunaTable9({
                                     className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-black transition-all shadow-sm border ${pageNum === safePage
                                         ? 'bg-slate-800 text-white border-slate-800'
                                         : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-800'
-                                        }`}>{pageNum}</button>
+                                        }`}>{MN(pageNum)}</button>
                             );
                         })}
                         <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 disabled:bg-slate-50 disabled:cursor-not-allowed transition-all shadow-sm">
-                            <ChevronRight className="w-4 h-4" />
+                            className="px-3 h-8 flex items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-40 shadow-sm transition-all text-[10px] font-black uppercase">
+                            पुढील ›
                         </button>
+
                         <button onClick={() => setPage(totalPages)} disabled={safePage === totalPages}
-                            className="px-2.5 py-1.5 text-[10px] font-black rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 disabled:bg-slate-50 disabled:cursor-not-allowed transition-all shadow-sm">&#187;</button>
+                            className="px-2 h-8 flex items-center justify-center text-[11px] font-black rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-40 shadow-sm transition-all">»</button>
                     </div>
                 </div>
             )}

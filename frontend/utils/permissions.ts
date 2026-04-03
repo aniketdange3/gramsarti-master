@@ -2,7 +2,7 @@ export const hasAccess = (user: any, featureId: string, allowedRoles?: string[])
   return hasModulePermission(user, featureId, 'view', allowedRoles);
 };
 
-export const hasModulePermission = (user: any, featureId: string, action: 'view' | 'add' | 'edit' | 'delete' | 'any', allowedRoles?: string[]) => {
+export const hasModulePermission = (user: any, featureId: string, action: 'view' | 'add' | 'edit' | 'delete' | 'any' | 'filter', allowedRoles?: string[]) => {
   if (!user) return false;
   const isAdminRole = user.role === 'super_admin' || user.role === 'gram_sachiv' || user.role === 'gram_sevak';
   if (isAdminRole) return true;

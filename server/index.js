@@ -229,7 +229,7 @@ app.post('/api/properties', async (req, res) => {
         await connection.query('DELETE FROM property_sections WHERE propertyId = ?', [finalId]);
         await connection.query('DELETE FROM properties WHERE id = ?', [finalId]);
 
-        const propertyQuery = `INSERT INTO properties (id, srNo, wardNo, khasraNo, layoutName, plotNo, occupantName, ownerName, hasConstruction, openSpace, propertyTax, openSpaceTax, streetLightTax, healthTax, generalWaterTax, specialWaterTax, wasteCollectionTax, penaltyAmount, totalTaxAmount, arrearsAmount, paidAmount, wastiName, createdAt, receiptNo, receiptBook, paymentDate, propertyId, constructionYear, propertyAge, readyReckonerLand, readyReckonerBuilding, readyReckonerComposite, depreciationAmount, remarksNotes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        const propertyQuery = `INSERT INTO properties (id, srNo, wardNo, khasraNo, layoutName, plotNo, occupantName, ownerName, hasConstruction, openSpace, propertyTax, openSpaceTax, streetLightTax, healthTax, generalWaterTax, specialWaterTax, wasteCollectionTax, penaltyAmount, totalTaxAmount, arrearsAmount, paidAmount, wastiName, createdAt, receiptNo, receiptBook, paymentDate, propertyId, constructionYear, propertyAge, readyReckonerLand, readyReckonerBuilding, readyReckonerComposite, depreciationAmount, remarksNotes, propertyLength, propertyWidth, totalAreaSqFt, totalAreaSqMt, contactNo, buildingUsage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
         const propertyParams = [
             finalId, property.srNo, property.wardNo, property.khasraNo, property.layoutName,
@@ -241,7 +241,9 @@ app.post('/api/properties', async (req, res) => {
             property.receiptNo || null, property.receiptBook || null, property.paymentDate || null,
             property.propertyId || null, property.constructionYear || null, property.propertyAge || 0,
             property.readyReckonerLand || 0, property.readyReckonerBuilding || 0, property.readyReckonerComposite || 0,
-            property.depreciationAmount || 0, property.remarksNotes || null
+            property.depreciationAmount || 0, property.remarksNotes || null,
+            property.propertyLength || null, property.propertyWidth || null, property.totalAreaSqFt || null, property.totalAreaSqMt || null, property.contactNo || null,
+            property.buildingUsage || 'निवास'
         ];
 
         await connection.query(propertyQuery, propertyParams);
@@ -367,7 +369,7 @@ app.post('/api/properties/import', async (req, res) => {
             const finalId = Math.random().toString(36).substr(2, 9) + '_' + Date.now();
 
             // Insert Property with the resolved srNo
-            const propertyQuery = `INSERT INTO properties (id, srNo, wardNo, khasraNo, layoutName, plotNo, occupantName, ownerName, hasConstruction, openSpace, propertyTax, openSpaceTax, streetLightTax, healthTax, generalWaterTax, specialWaterTax, wasteCollectionTax, penaltyAmount, totalTaxAmount, arrearsAmount, paidAmount, wastiName, createdAt, receiptNo, receiptBook, paymentDate, propertyId, constructionYear, propertyAge, readyReckonerLand, readyReckonerBuilding, readyReckonerComposite, depreciationAmount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            const propertyQuery = `INSERT INTO properties (id, srNo, wardNo, khasraNo, layoutName, plotNo, occupantName, ownerName, hasConstruction, openSpace, propertyTax, openSpaceTax, streetLightTax, healthTax, generalWaterTax, specialWaterTax, wasteCollectionTax, penaltyAmount, totalTaxAmount, arrearsAmount, paidAmount, wastiName, createdAt, receiptNo, receiptBook, paymentDate, propertyId, constructionYear, propertyAge, readyReckonerLand, readyReckonerBuilding, readyReckonerComposite, depreciationAmount, propertyLength, propertyWidth, totalAreaSqFt, totalAreaSqMt, contactNo, buildingUsage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
             await connection.query(propertyQuery, [
                 finalId, sNo, property.wardNo, property.khasraNo, property.layoutName,
@@ -379,7 +381,9 @@ app.post('/api/properties/import', async (req, res) => {
                 property.receiptNo || null, property.receiptBook || null, property.paymentDate || null,
                 property.propertyId || null, property.constructionYear || null, property.propertyAge || 0,
                 property.readyReckonerLand || 0, property.readyReckonerBuilding || 0, property.readyReckonerComposite || 0,
-                property.depreciationAmount || 0
+                property.depreciationAmount || 0,
+                property.propertyLength || null, property.propertyWidth || null, property.totalAreaSqFt || null, property.totalAreaSqMt || null, property.contactNo || null,
+                property.buildingUsage || 'निवास'
             ]);
 
             // Insert Sections
@@ -492,10 +496,25 @@ app.post('/api/properties/cleanup-duplicates', async (req, res) => {
     }
 });
 
-// Tax Rate Master Endpoints
+// कर दरांसाठी मेमरी कॅशे (Memory Cache for Tax Rates)
+let taxRatesCache = null;
+
+const clearTaxRatesCache = () => {
+    taxRatesCache = null;
+    console.log('[CACHE] Tax rates cache cleared.');
+};
+
+// Tax Rate Master Endpoints (कर दर मुख्य डेटा)
 app.get('/api/tax-rates', async (req, res) => {
     try {
+        // जर कॅशे उपलब्ध असेल तर थेट कॅशेमधून डेटा पाठवा (Optimized Caching)
+        if (taxRatesCache) {
+            console.log('[CACHE] Returning cached tax rates');
+            return res.json(taxRatesCache);
+        }
+        
         const [rows] = await db.query('SELECT * FROM tax_rates');
+        taxRatesCache = rows; // कॅशेमध्ये जतन करा (Save to Cache)
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -509,6 +528,7 @@ app.post('/api/tax-rates', async (req, res) => {
             'INSERT INTO tax_rates (propertyType, wastiName, buildingRate, buildingTaxRate, landRate, openSpaceTaxRate) VALUES (?, ?, ?, ?, ?, ?)',
             [propertyType, wastiName, buildingRate, buildingTaxRate, landRate, openSpaceTaxRate]
         );
+        clearTaxRatesCache(); // नवीन दर जोडल्यावर कॅशे साफ करा (Invalidate cache on write)
         res.status(201).json({ id: result.insertId, message: 'Tax rate added successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -522,6 +542,7 @@ app.put('/api/tax-rates/:id', async (req, res) => {
             'UPDATE tax_rates SET buildingRate = ?, buildingTaxRate = ?, landRate = ?, openSpaceTaxRate = ? WHERE id = ?',
             [buildingRate, buildingTaxRate, landRate, openSpaceTaxRate, req.params.id]
         );
+        clearTaxRatesCache(); // अपडेट केल्यावर कॅशे साफ करा (Invalidate cache on update)
         res.json({ message: 'Tax rate updated successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -531,6 +552,7 @@ app.put('/api/tax-rates/:id', async (req, res) => {
 app.delete('/api/tax-rates/:id', async (req, res) => {
     try {
         await db.query('DELETE FROM tax_rates WHERE id = ?', [req.params.id]);
+        clearTaxRatesCache(); // डिलीट झाल्यावर कॅशे साफ करा (Invalidate cache on delete)
         res.json({ message: 'Tax rate deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -739,6 +761,52 @@ app.delete('/api/master/ready-reckoner/:id', async (req, res) => {
     try {
         await db.query('DELETE FROM ready_reckoner_rates WHERE id = ?', [req.params.id]);
         res.json({ message: 'Ready Reckoner rate deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ─── BUILDING USAGE MASTER ENDPOINTS ───────────────────────────────────────
+
+app.get('/api/master/building-usage', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM building_usage_master ORDER BY id ASC');
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/master/building-usage', async (req, res) => {
+    const { usage_type_mr, usage_type_en, weightage } = req.body;
+    try {
+        const [result] = await db.query(
+            'INSERT INTO building_usage_master (usage_type_mr, usage_type_en, weightage) VALUES (?, ?, ?)',
+            [usage_type_mr, usage_type_en, weightage]
+        );
+        res.status(201).json({ id: result.insertId, message: 'Usage type added successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/master/building-usage/:id', async (req, res) => {
+    const { usage_type_mr, usage_type_en, weightage } = req.body;
+    try {
+        await db.query(
+            'UPDATE building_usage_master SET usage_type_mr = ?, usage_type_en = ?, weightage = ? WHERE id = ?',
+            [usage_type_mr, usage_type_en, weightage, req.params.id]
+        );
+        res.json({ message: 'Usage type updated successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/master/building-usage/:id', async (req, res) => {
+    try {
+        await db.query('DELETE FROM building_usage_master WHERE id = ?', [req.params.id]);
+        res.json({ message: 'Usage type deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

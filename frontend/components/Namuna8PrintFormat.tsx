@@ -224,7 +224,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                             (Number(r.specialWaterTax) || 0) +
                                             (Number(r.healthTax) || 0);
 
-                                        const totalArea = activeSections.reduce((sum: number, s: any) => sum + (Number(s?.areaSqFt) || 0), 0);
+                                        const totalArea = Number(r.totalAreaSqFt) > 0 ? Number(r.totalAreaSqFt) : activeSections.reduce((sum: number, s: any) => sum + (Number(s?.areaSqFt) || 0), 0);
                                         const srNo = chunkIdx * RECORDS_PER_PAGE + rIdx + 1;
 
                                         return (
@@ -251,6 +251,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                                     <td rowSpan={rowCount} className="p-0 align-middle border border-black text-[10px]">
                                                                         <div className="p-1 font-black border-b border-black flex items-center justify-between text-gray-900 uppercase">
                                                                             <OwnerNameDisplay name={r.ownerName || '-'} />
+
                                                                             <button
                                                                                 onClick={() => setSelectedRecordForFormula(r)}
                                                                                 className="no-print ml-2 w-7 h-7 flex items-center justify-center bg-[#A80D40]/10 text-[#A80D40] rounded-lg border border-[#A80D40]/20 hover:bg-[#A80D40] hover:text-white transition-all shadow-md active:scale-95"
@@ -261,8 +262,20 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                                         </div>
                                                                         <div className="p-1 text-[9px] text-gray-500 font-bold italic">भोगवटादार: {r.occupantName || 'स्वतः'}</div>
                                                                     </td>
-                                                                    <td rowSpan={rowCount} className="p-1 text-center font-black align-middle border border-black text-[10px] bg-[#A80D40]/5">
-                                                                        {MN(totalArea)}
+                                                                    <td rowSpan={rowCount} className="p-1 justify-center items-center text-center font-black align-middle border border-black text-[10px] bg-[#A80D40]/5 leading-tight">
+                                                                        {Number(r.propertyLength) > 0 && Number(r.propertyWidth) > 0 ? (
+                                                                            <div className="flex flex-col items-center justify-center gap-1">
+                                                                                <span className="text-[#A80D40] whitespace-nowrap">
+                                                                                    {MN(r.propertyLength)} × {MN(r.propertyWidth)} = {MN(r.totalAreaSqFt || totalArea)} <span className="text-[8px] font-bold text-gray-500">SqFt</span>
+                                                                                </span>
+                                                                                <span title="चौरस मीटर" className="text-[9px] text-gray-600">({MN(r.totalAreaSqMt || 0)} <span className="text-[7.5px]">SqMt</span>)</span>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="flex flex-col items-center justify-center gap-1">
+                                                                                <span title="चौरस फूट" className="text-[#A80D40] whitespace-nowrap">{MN(totalArea)} <span className="text-[8px] font-bold text-gray-500">SqFt</span></span>
+                                                                                {Number(r.totalAreaSqMt) > 0 && <span title="चौरस मीटर" className="text-[9px] text-gray-600">({MN(r.totalAreaSqMt)} <span className="text-[7.5px]">SqMt</span>)</span>}
+                                                                            </div>
+                                                                        )}
                                                                     </td>
                                                                 </>
                                                             )}

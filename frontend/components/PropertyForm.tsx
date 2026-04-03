@@ -8,6 +8,19 @@ import { TransliterationInput } from './TransliterationInput';
 import { ComboTransliterationInput } from './ComboTransliterationInput';
 import { getApplicableRates } from '../taxUtils';
 
+interface DepreciationRate {
+    min_age: number;
+    max_age: number;
+    percentage: number;
+}
+
+interface BuildingUsageRate {
+    id: number;
+    usage_type_mr: string;
+    usage_type_en: string;
+    weightage: string | number;
+}
+
 
 interface PropertyFormProps {
     initialData?: PropertyRecord;
@@ -82,6 +95,7 @@ const PropertyForm = ({
             remarksNotes: '',
             billNo: '', lastBillDate: '',
             receiptNo: '', receiptBook: '', paymentDate: '',
+            buildingUsage: 'निवास',
             createdAt: new Date().toISOString()
         };
     });
@@ -90,9 +104,11 @@ const PropertyForm = ({
     const [dynamicMasters, setDynamicMasters] = useState<{ [key: string]: any[] }>({
         WASTI: [],
         PROPERTY_TYPE: [],
-        WARD: []
+        WARD: [],
+        BUILDING_USAGE: []
     });
     const [depreciationRates, setDepreciationRates] = useState<any[]>([]);
+    const [buildingUsageRates, setBuildingUsageRates] = useState<BuildingUsageRate[]>([]);
 
     const [remarksObj, setRemarksObj] = useState({
         date: '', subject: '', ferfar: '', pan: '', anu: ''
@@ -154,16 +170,19 @@ const PropertyForm = ({
         const loadAll = async () => {
             const token = localStorage.getItem('gp_token');
             const headers = { 'Authorization': `Bearer ${token}` };
-            const [wastis, types, wards, deps] = await Promise.all([
+            const [wastis, types, wards, buDrops, buRates, deps] = await Promise.all([
                 fetchMaster('WASTI'),
                 fetchMaster('PROPERTY_TYPE'),
                 fetchMaster('WARD'),
+                fetchMaster('BUILDING_USAGE'),
+                fetch(`${API_BASE_URL}/api/master/building-usage`, { headers }).then(r => r.json()).catch(() => []),
                 fetch(`${API_BASE_URL}/api/master/depreciation`, { headers }).then(async r => {
                     if (r.status === 401 && onAuthError) onAuthError();
                     return r.json();
                 }).catch(() => [])
             ]);
-            setDynamicMasters({ WASTI: wastis, PROPERTY_TYPE: types, WARD: wards });
+            setDynamicMasters({ WASTI: wastis, PROPERTY_TYPE: types, WARD: wards, BUILDING_USAGE: buDrops });
+            setBuildingUsageRates(buRates);
             setDepreciationRates(deps);
         };
         loadAll();
@@ -182,6 +201,31 @@ const PropertyForm = ({
         else if (formData.wastiName === 'वेळाहरी') updates = { wardNo: '3', khasraNo: '' };
         if (Object.keys(updates).length > 0) setFormData(prev => ({ ...prev, ...updates }));
     }, [formData.wastiName, initialData]);
+
+    useEffect(() => {
+        // Find usage rate from dedicated master table
+        const usageRate = buildingUsageRates.find(r => r.usage_type_mr === formData.buildingUsage);
+        if (!usageRate) return;
+
+        const weight = Number(usageRate.weightage);
+        const newSections = formData.sections.map(s => {
+            // ONLY apply usage weightage if property type is RCC (आर.सी.सी)
+            if (s.propertyType === 'आर.सी.सी' && s.weightage !== weight) {
+                return { ...s, weightage: weight };
+            }
+            // If not RCC, ensure weightage stays 1.0 (or whatever default)
+            if (s.propertyType !== 'आर.सी.सी' && s.propertyType !== 'निवडा' && s.weightage !== 1.0) {
+                 return { ...s, weightage: 1.0 };
+            }
+            return s;
+        });
+
+        // Trigger update only if something changed
+        const hasChange = newSections.some((s, idx) => s.weightage !== formData.sections[idx].weightage);
+        if (hasChange) {
+            setFormData(prev => ({ ...prev, sections: newSections }));
+        }
+    }, [formData.buildingUsage, buildingUsageRates, formData.sections]);
 
     //     useEffect(() => {
     //         const sEducation = Number(formData.surchargeEducation) || 0;
@@ -264,6 +308,16 @@ const PropertyForm = ({
         const newSections = [...formData.sections];
         newSections[index] = { ...newSections[index], [field]: value };
 
+        if (field === 'lengthFt' || field === 'widthFt') {
+            const l = Number(newSections[index].lengthFt) || 0;
+            const w = Number(newSections[index].widthFt) || 0;
+            if (l > 0 && w > 0) {
+                const sqFt = Number((l * w).toFixed(2));
+                newSections[index].areaSqFt = sqFt;
+                newSections[index].areaSqMt = Number((sqFt / 10.7639).toFixed(2));
+            }
+        }
+
         if (field === 'areaSqFt') {
             const val = Number(value) || 0;
             newSections[index].areaSqMt = Number((val / 10.7639).toFixed(2));
@@ -330,6 +384,26 @@ const PropertyForm = ({
         newSections[index].openSpaceFinalValue = Number(((newSections[index].openSpaceValue * Number(s.openSpaceTaxRate || 0)) / 1000).toFixed(2));
 
         setFormData({ ...formData, sections: newSections });
+    };
+
+    const handleTotalAreaChange = (field: keyof PropertyRecord, value: number) => {
+        let updates: Partial<PropertyRecord> = { [field]: value };
+
+        if (field === 'propertyLength' || field === 'propertyWidth') {
+            const l = field === 'propertyLength' ? value : (formData.propertyLength || 0);
+            const w = field === 'propertyWidth' ? value : (formData.propertyWidth || 0);
+            if (l > 0 && w > 0) {
+                const sqFt = l * w;
+                updates.totalAreaSqFt = Number(sqFt.toFixed(2));
+                updates.totalAreaSqMt = Number((sqFt / 10.7639).toFixed(2));
+            }
+        } else if (field === 'totalAreaSqFt') {
+            updates.totalAreaSqMt = Number((value / 10.7639).toFixed(2));
+        } else if (field === 'totalAreaSqMt') {
+            updates.totalAreaSqFt = Number((value * 10.7639).toFixed(2));
+        }
+
+        setFormData(prev => ({ ...prev, ...updates }));
     };
 
     const handleTaxChange = (field: keyof PropertyRecord, value: number) => {
@@ -528,7 +602,7 @@ const PropertyForm = ({
                                 <div className="w-5 h-5 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 text-xs font-black">२</div>
                                 मालकाचा तपशील (Ownership)
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                                 <div>
                                     <FieldLabel>{LABELS.ownerName}</FieldLabel>
                                     <TransliterationInput
@@ -540,6 +614,17 @@ const PropertyForm = ({
                                     />
                                 </div>
                                 <div>
+                                    <FieldLabel>{LABELS.contactNo || 'संपर्क क्र.'}</FieldLabel>
+                                    <FormInput
+                                        type="tel"
+                                        placeholder="संपर्क क्रमांक"
+                                        className={INPUT_CLASSES}
+                                        value={formData.contactNo || ''}
+                                        onChange={e => setFormData({ ...formData, contactNo: e.target.value })}
+                                        maxLength={10}
+                                    />
+                                </div>
+                                <div>
                                     <FieldLabel>{LABELS.occupantName}</FieldLabel>
                                     <TransliterationInput
                                         placeholder={PLACEHOLDERS.occupantName}
@@ -547,6 +632,37 @@ const PropertyForm = ({
                                         value={formData.occupantName}
                                         onChangeText={val => setFormData({ ...formData, occupantName: val })}
                                     />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-blue-100/50">
+                                <div>
+                                    <FieldLabel>{LABELS.lengthFt} (एकूण)</FieldLabel>
+                                    <FormInput type="number" placeholder={PLACEHOLDERS.length}
+                                        value={formData.propertyLength || ''}
+                                        onChange={e => handleTotalAreaChange('propertyLength', Number(e.target.value))} />
+                                </div>
+                                <div>
+                                    <FieldLabel>{LABELS.widthFt} (एकूण)</FieldLabel>
+                                    <FormInput type="number" placeholder={PLACEHOLDERS.width}
+                                        value={formData.propertyWidth || ''}
+                                        onChange={e => handleTotalAreaChange('propertyWidth', Number(e.target.value))} />
+                                    {Number(formData.propertyLength) > 0 && Number(formData.propertyWidth) > 0 && (
+                                        <p className="text-[10px] text-blue-600 font-bold mt-1 animate-pulse">
+                                            = {Number(formData.propertyLength) * Number(formData.propertyWidth)} चौ.फु.
+                                        </p>
+                                    )}
+                                </div>
+                                <div>
+                                    <FieldLabel>एकूण {LABELS.areaSqFt}</FieldLabel>
+                                    <FormInput type="number" placeholder={PLACEHOLDERS.area}
+                                        value={formData.totalAreaSqFt || ''}
+                                        onChange={e => handleTotalAreaChange('totalAreaSqFt', Number(e.target.value))} />
+                                </div>
+                                <div>
+                                    <FieldLabel>एकूण {LABELS.areaSqMt}</FieldLabel>
+                                    <FormInput type="number" placeholder={PLACEHOLDERS.area}
+                                        value={formData.totalAreaSqMt || ''}
+                                        onChange={e => handleTotalAreaChange('totalAreaSqMt', Number(e.target.value))} />
                                 </div>
                             </div>
                         </div>
@@ -642,6 +758,20 @@ const PropertyForm = ({
                                                                 ))}
                                                             </FormSelect>
                                                         </div>
+                                                        {section.propertyType === 'आर.सी.सी' && (
+                                                            <div className="col-span-2">
+                                                                <FieldLabel>इमारतीचा वापर</FieldLabel>
+                                                                <FormSelect
+                                                                    value={formData.buildingUsage || ''}
+                                                                    onChange={e => setFormData({ ...formData, buildingUsage: e.target.value })}
+                                                                >
+                                                                    <option value="">निवडा (Select)</option>
+                                                                    {buildingUsageRates.map(opt => (
+                                                                        <option key={opt.id} value={opt.usage_type_mr}>{opt.usage_type_mr}</option>
+                                                                    ))}
+                                                                </FormSelect>
+                                                            </div>
+                                                        )}
                                                         {isActive && (
                                                             <>
                                                                 <div>
@@ -727,7 +857,7 @@ const PropertyForm = ({
                                                             {(section.buildingValue > 0 || section.openSpaceValue > 0) && (
                                                                 <div className={`flex items-center gap-2 text-xs font-bold ${col.text} bg-white/70 rounded-xl px-4 py-2.5`}>
                                                                     <Calculator className="w-4 h-4" />
-                                                                    मूल्यांकन: ₹{(section.propertyType === 'खाली जागा' ? section.openSpaceValue : section.buildingValue).toFixed(2)}
+                                                                    मूल्यांकन: ₹{Number(section.propertyType === 'खाली जागा' ? section.openSpaceValue : section.buildingValue).toFixed(2)}
                                                                 </div>
                                                             )}
                                                         </>

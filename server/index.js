@@ -1,3 +1,14 @@
+/**
+ * SERVER ENTRY POINT - ग्रामसारथी मुख्य सर्व्हर (GramSarthi Main Backend)
+ * 
+ * हा सर्व्हर एक्सप्रेस (Express.js) फ्रेमवर्कवर आधारित असून, डेटाबेस कनेक्शन आणि 
+ * सर्व API एंडपॉईंट्स (Endpoints) नियंत्रित करतो.
+ * 
+ * SERVER STARTUP PROCESS (STEP-BY-STEP):
+ * 1. Database Init: `initializeDatabase()` द्वारे डेटाबेस टेबल्स आणि स्किमा तयार केला जातो.
+ * 2. API Routes: युजर ऑथेंटिकेशन, मालमत्ता नोंदी, आणि पेमेंट्ससाठी स्वतंत्र राऊट्स लोड केले जातात.
+ * 3. Static Hosting: 'dist' फोल्डरमधील रिअ‍ॅक्ट (React) फ्रंटएंड फाईल्स होस्ट केल्या जातात.
+ */
 
 const express = require('express');
 const cors = require('cors');

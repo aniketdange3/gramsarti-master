@@ -1,3 +1,16 @@
+/**
+ * DASHBOARD COMPONENT - मालमत्ता व्यवस्थापन केंद्र (Property Management Hub)
+ * 
+ * हे मॉड्यूल गावातील सर्व मालमत्तांचा (Properties) डेटा शोधण्यासाठी, फिल्टर करण्यासाठी 
+ * आणि व्यवस्थापित करण्यासाठी वापरले जाते.
+ * 
+ * डेटा फ्लो प्रोसेस (STEP-BY-STEP):
+ * 1. Initialization: सर्व मालमत्तांची यादी (records) सर्व्हर कडून घेऊन `records` स्टेटमध्ये साठवली जाते.
+ * 2. Search & Filter: युजरने टाकलेल्या सर्च टर्म आणि ५ फिल्टर्स (वस्ती, लेआउट इ.) नुसार `filteredRecords` तयार केले जातात.
+ * 3. Stats Calculation: फिल्टर केलेल्या डेटावर आधारित एकूण मागणी, वसुली आणि थकबाकीची बेरीज करून वरच्या कार्ड्समध्ये दाखवली जाते.
+ * 4. Marathi Numerals (MN): सिस्टिममधील सर्व संख्यात्मक डेटा 'MN' हेल्पर फंक्शन द्वारे मराठी आकड्यांमध्ये रूपांतरित केला जातो.
+ */
+
 import { API_BASE_URL } from '@/config';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Plus, FileSpreadsheet, Search, Edit2, Trash2, X, ChevronRight, ChevronLeft, FileDown, Printer, FileUp, FileText, Receipt, Eye, TrendingUp, Users, IndianRupee, AlertTriangle, CheckCircle2, Filter, RotateCcw, Shield } from 'lucide-react';

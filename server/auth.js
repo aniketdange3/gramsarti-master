@@ -1,3 +1,15 @@
+/**
+ * AUTHENTICATION MIDDLEWARE - सुरक्षा आणि अधिकृतता (Security & Auth)
+ * 
+ * या फाईलमध्ये वापरकर्त्याची ओळख पटवणे (Authentication) आणि त्यांना 
+ * ठराविक कृतींची परवानगी देणे (Authorization) या गोष्टी हाताळल्या जातात.
+ * 
+ * SECURITY PROCESS (STEP-BY-STEP):
+ * 1. Token Generation: युजर लॉग-इन झाल्यावर 'jsonwebtoken' (JWT) चा वापर करून ८ तासांचे टोकन दिले जाते.
+ * 2. Authenticate Middleware: प्रत्येक API कॉलवर येणारे टोकन `JWT_SECRET` द्वारे पडताळून पाहिले जाते.
+ * 3. Authorize Middleware: युजरचा रोल (Admin, Operator इ.) तपासून त्यांना त्या मॉड्युलची परवानगी आहे की नाही हे ठरवले जाते.
+ */
+
 const jwt = require('jsonwebtoken');
 
 // गुपित की आणि कालबाह्यता काळ (Secret Key and Token Expiry Time)

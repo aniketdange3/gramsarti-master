@@ -1,3 +1,16 @@
+/**
+ * DATABASE LAYER - ग्रामसारथी डेटाबेस व्यवस्थापन (GramSarthi Database Engine)
+ * 
+ * या फाईलमध्ये MySQL डेटाबेसशी कनेक्शन जोडणे, टेबल्स तयार करणे आणि डेटा 
+ * मायग्रेशन (Migration) हाताळले जाते.
+ * 
+ * DATABASE ARCHITECTURE (STEP-BY-STEP):
+ * 1. Connection Pool: `mysql2/promise` वापरून कार्यक्षम कनेक्शन पूल तयार केला जातो.
+ * 2. Schema Lifecycle: `initializeDatabase()` द्वारे सर्व आवश्यक टेबल्स (Users, Properties, Sections) 
+ *    स्वयंचलितपणे तयार केले जातात.
+ * 3. Dynamic Migrations: `addColumnIfNotExists` फंक्शन वापरून जुन्या डेटाबेसमध्ये नवीन कॉलम्स 
+ *    सुरक्षितपणे ॲड केले जातात.
+ */
 
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');

@@ -1,3 +1,20 @@
+/**
+ * TAX CALCULATION UTILITIES - कर मोजणी सूत्र (Gram Panchayat Tax Formulas)
+ * 
+ * या फाईलमध्ये मालमत्ता कराच्या दरांचे (Tax Rates) आणि मोजणीच्या नियमांचे व्यवस्थापन केले जाते.
+ * 
+ * TAX FORMULAS (STEP-BY-STEP):
+ * 1. आर.सी.सी (RCC Building): 
+ *    - सूत्र: [बांधकाम क्षेत्रफळ] x [बांधकाम दर] x [बांधकाम कर दर]
+ *    - (Area x BuildingRate x BuildingTaxRate)
+ * 
+ * 2. खाली जागा (Open Land):
+ *    - सूत्र: [जमीन क्षेत्रफळ] x [जमीन दर] x [खाली जागा कर दर]
+ *    - (Area x LandRate x OpenSpaceTaxRate)
+ * 
+ * टिप: जमीन दर (Land Rate) हा संबंधित वस्तीच्या (शंकरपुर, वेळाहरी इ.) रेडी रेकनरनुसार बदलतो.
+ */
+
 export interface TaxRateConfig {
     buildingRate: number;
     buildingTaxRate: number;

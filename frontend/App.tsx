@@ -1,3 +1,14 @@
+/**
+ * GRAMSARTHI - मुख्य व्यवस्थापन प्रणाली (Main Application Entry)
+ * 
+ * या फाईलमध्ये संपूर्ण प्रणालीचे राउटिंग (Routing), ऑथेंटिकेशन (Authentication), 
+ * आणि युजर अटेंडन्स (Attendance) मॅनेजमेंट हाताळले जाते.
+ * 
+ * STEP-BY-STEP PROCESS:
+ * 1. ऑथेंटिकेशन चेक (Session Auth): रिलोड झाल्यावर युजर लॉग-इन आहे का ते तपासले जाते (gp_token).
+ * 2. लेआउट रेंडरिंग (Sidebar & Main): युजर रोलनुसार साइडबार आणि मुख्य दृश्य (Dashboard/Namuna) दाखवले जाते.
+ * 3. अटेंडन्स ट्रॅकिंग (Duty Session): 'Check-In' आणि 'Check-Out' द्वारे कर्मचार्‍यांच्या कामाच्या वेळा सर्व्हरवर नोंदवल्या जातात.
+ */
 
 import React, { useState, useEffect, useRef } from 'react';
 import { LayoutDashboard, FileText, Receipt, Settings, Menu, X, Home, Activity, ChevronRight, LogOut, User, Shield, IndianRupee, FileWarning, BarChart3, List, ChevronDown, Edit2, Save, Phone, Mail, BadgeCheck, MapPin } from 'lucide-react';

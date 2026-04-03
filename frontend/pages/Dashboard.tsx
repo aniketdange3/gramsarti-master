@@ -10,6 +10,8 @@ import { matchesSearch } from '../utils/transliterate';
 import { TransliterationInput } from '../components/TransliterationInput';
 import PropertyForm from '../components/PropertyForm';
 import { generateMaganiBillPDF } from '../utils/pdfGenerator';
+import MaganiBillDocument from '../components/MaganiBillDocument';
+import { ArrowLeft } from 'lucide-react';
 import { CustomDropdown } from '../components/CustomDropdown';
 import { hasModulePermission } from '../utils/permissions';
 import UserManagement from '../components/UserManagement';
@@ -117,6 +119,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
     const [showAll, setShowAll] = useState(false);
     const ITEMS_PER_PAGE = 25;
     const [activeTab, setActiveTab] = useState<'dashboard' | 'user_requests'>(initialTab || 'dashboard');
+    const [activeBillRecord, setActiveBillRecord] = useState<PropertyRecord | null>(null);
     const { toasts, addToast } = useToast();
 
     const currentUser = useMemo(() => JSON.parse(localStorage.getItem('gp_user') || '{}'), []);
@@ -383,6 +386,33 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
         e.target.value = '';
     };
 
+    if (activeBillRecord) {
+        return (
+            <div className="flex flex-col h-full bg-slate-100 no-print-bg">
+                <style>{`
+                    @media print {
+                        body, html { margin: 0 !important; padding: 0 !important; background: white !important; }
+                        .no-print { display: none !important; }
+                    }
+                `}</style>
+                <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center gap-3 no-print shadow-sm sticky top-0 z-50">
+                    <button onClick={() => setActiveBillRecord(null)}
+                        className="flex items-center gap-2 text-sm font-bold text-slate-600 px-4 py-2 rounded-xl hover:bg-slate-100 border border-slate-200 transition-all">
+                        <ArrowLeft className="w-4 h-4" /> डॅशबोर्डकडे परत
+                    </button>
+                    <div className="flex-1" />
+                    <button onClick={() => window.print()}
+                        className="flex items-center gap-2 text-sm font-black text-white bg-indigo-600 px-6 py-2.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20">
+                        <Printer className="w-4 h-4" /> प्रिंट बिल (लँडस्केप)
+                    </button>
+                </div>
+                <div className="flex-1 overflow-auto p-8 pt-4 flex justify-center no-print-bg">
+                    <MaganiBillDocument record={activeBillRecord} />
+                </div>
+            </div>
+        );
+    }
+
     return (
         <>
             {/* Toast Container */}
@@ -622,8 +652,9 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                                                     <Edit2 className="w-4 h-4" />
                                                                 </button>
                                                             )}
-                                                            <button onClick={() => generateMaganiBillPDF(record)} className="w-8 h-8 flex items-center justify-center text-emerald-500 bg-emerald-50 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm border border-emerald-100" title="मागणी बिल">
+                                                            <button onClick={() => setActiveBillRecord(record)} className="w-8 h-8 flex items-center justify-center text-emerald-500 bg-emerald-50 rounded-xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100 relative group" title="मागणी बिल (Magani Bill)">
                                                                 <FileText className="w-4 h-4" />
+                                                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-[10px] font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl">मागणी बिल प्रिंट</span>
                                                             </button>
                                                             {canDelete && !record.remarksNotes && (
                                                                 <button onClick={() => deleteRecord(record.id)} className="w-8 h-8 flex items-center justify-center text-rose-500 bg-rose-50 rounded-xl hover:bg-rose-500 hover:text-white transition-all shadow-sm border border-rose-100" title="हटवा">
@@ -821,13 +852,22 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                         </div>
 
                         <div className="p-8 bg-slate-50/80 border-t border-slate-100 flex gap-4">
-                            <button onClick={async () => await generateMaganiBillPDF(viewingRecord!)} className="flex-1 flex items-center justify-center gap-3 py-4 bg-rose-600 text-white rounded-[1.5rem] font-bold hover:bg-rose-700 shadow-lg shadow-rose-600/20 active:scale-95 transition-all text-sm">
-                                <FileText className="w-4 h-4" /> मागणी बिल
+                            <button 
+                                onClick={() => { setActiveBillRecord(viewingRecord); setViewingRecord(null); }} 
+                                className="flex-1 flex items-center justify-center gap-3 py-4 bg-rose-600 text-white rounded-2xl font-bold hover:bg-rose-700 shadow-lg shadow-rose-600/20 active:scale-95 transition-all text-sm"
+                            >
+                                <FileText className="w-4 h-4" /> मागणी बिल प्रिंट
                             </button>
-                            <button onClick={() => window.print()} className="flex-1 flex items-center justify-center gap-3 py-4 bg-indigo-800 text-white rounded-[1.5rem] font-bold hover:bg-indigo-900 active:scale-95 transition-all text-sm">
-                                <Printer className="w-4 h-4" /> प्रिंट
+                            <button 
+                                onClick={() => { window.print(); }} 
+                                className="flex-1 flex items-center justify-center gap-3 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all text-sm"
+                            >
+                                <Printer className="w-4 h-4" /> कार्ड प्रिंट
                             </button>
-                            <button onClick={() => setViewingRecord(null)} className="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-[1.5rem] font-bold hover:bg-slate-100 active:scale-95 transition-all text-sm">
+                            <button 
+                                onClick={() => setViewingRecord(null)} 
+                                className="px-8 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold hover:bg-slate-100 active:scale-95 transition-all text-sm"
+                            >
                                 बंद करा
                             </button>
                         </div>

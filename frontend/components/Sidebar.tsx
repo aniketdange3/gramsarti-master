@@ -29,7 +29,10 @@ export default function Sidebar({ user, activeView, onNavClick, totalRecords, na
           </div>
           <div>
             <h1 className="font-black text-white text-xl leading-tight tracking-tight">GramSarthi</h1>
-            <p className="text-white/40 text-[9px] font-black tracking-widest uppercase">Property Tax</p>
+            <p className="text-white text-[9px] font-black tracking-widest uppercase">गट ग्रामपंचायत
+            </p>
+            <p className="text-white text-[9px] font-black tracking-widest uppercase">वेळा हरिश्चंद्र
+            </p>
           </div>
         </div>
 

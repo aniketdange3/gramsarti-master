@@ -103,11 +103,11 @@ export interface PropertyRecord {
   depreciationAmount?: number; // Added for Namuna 8 replica
 
   // Surcharges (अधिभार)
-  //   surchargeEducation?: number;
-  //   surchargeHealth?: number;
-  //   surchargeRoad?: number;
-  //   surchargeEmployment?: number;
-  //   surchargeTotal?: number;
+  surchargeEducation?: number;
+  surchargeHealth?: number;
+  surchargeRoad?: number;
+  surchargeEmployment?: number;
+  surchargeTotal?: number;
 
   remarksNotes?: string;
   buildingUsage?: string;

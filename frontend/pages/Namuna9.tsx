@@ -14,6 +14,7 @@ import { CustomDropdown } from '../components/CustomDropdown';
 import * as XLSX from 'xlsx';
 import { EXCEL_HEADERS } from '../constants';
 import { FileUp, FileSpreadsheet } from 'lucide-react';
+import MaganiBillDocument from '../components/MaganiBillDocument';
 
 interface Namuna9Props {
     records: PropertyRecord[];
@@ -40,7 +41,8 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
     const [saving, setSaving] = useState(false);
     const [dynamicWastis, setDynamicWastis] = useState<string[]>([]);
     const [dynamicPropertyTypes, setDynamicPropertyTypes] = useState<string[]>([]);
-    const [printRecord, setPrintRecord] = useState<PropertyRecord | null>(null);
+    const [printRecords, setPrintRecords] = useState<PropertyRecord[] | null>(null);
+    const [activeBillRecord, setActiveBillRecord] = useState<PropertyRecord | null>(null);
 
     const currentUser = useMemo(() => JSON.parse(localStorage.getItem('gp_user') || '{}'), []);
     const isAdmin = currentUser.role === 'super_admin' || currentUser.role === 'gram_sachiv' || currentUser.role === 'gram_sevak';
@@ -74,7 +76,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
 
     const uniqueWastis = useMemo(() => Array.from(new Set(records.map(r => r.wastiName).filter(Boolean))).sort(), [records]);
     const uniqueLayouts = useMemo(() => Array.from(new Set(wastiFiltered.map(r => r.layoutName).filter(Boolean))).sort(), [wastiFiltered]);
-    
+
     // Sort Khasra Logic
     const sortKhasra = (a: string, b: string) => {
         const aStr = String(a || '');
@@ -206,7 +208,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
         const isNew = !editingRecord;
         const maxSrNo = records.reduce((max, r) => Math.max(max, Number(r.srNo) || 0), 0);
         const finalRecord = isNew ? { ...record, srNo: maxSrNo + 1, id: `temp-${Date.now()}` } : record;
-        
+
         // Optimistic UI Update: लगेच UI मध्ये बदल करा (Update UI instantly)
         if (typeof onUpdateLocalRecord === 'function') {
             onUpdateLocalRecord(finalRecord);
@@ -238,7 +240,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
 
     const handleDelete = async (id: string) => {
         if (!window.confirm('आपली खात्री आहे का की आपण ही नोंद हटवू इच्छिता?')) return;
-        
+
         // Optimistic UI Delete: लगेच UI मधून हटवा (Remove from UI instantly)
         if (typeof onRemoveLocalRecord === 'function') {
             onRemoveLocalRecord(id);
@@ -271,8 +273,8 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
         return Array.from(new Set(records.map(r => r.khasraNo).filter(Boolean)));
     }, [records]);
 
-    // ─── PRINT SELECTED RECORD VIEW ──────────────────────────────────────────
-    if (printRecord) {
+    // ─── PRINT SELECTED RECORDS VIEW ──────────────────────────────────────────
+    if (printRecords && printRecords.length > 0) {
         return (
             <div className="flex flex-col h-full bg-gray-100 no-print-bg">
                 <style>{`
@@ -286,7 +288,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                     }
                 `}</style>
                 <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center gap-3 no-print shadow-sm sticky top-0 z-50">
-                    <button onClick={() => setPrintRecord(null)}
+                    <button onClick={() => setPrintRecords(null)}
                         className="flex items-center gap-2 text-sm font-bold text-gray-600 px-4 py-2 rounded-xl hover:bg-gray-100 border border-gray-200 transition-all">
                         <ArrowLeft className="w-4 h-4" /> यादीकडे परत
                     </button>
@@ -298,52 +300,39 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                 </div>
                 <div className="flex-1 overflow-auto p-4 flex justify-center no-print-bg print-parent">
                     <div className="w-full">
-                         <Namuna9PrintFormat records={[printRecord]} />
+                        <Namuna9PrintFormat records={printRecords} />
                     </div>
                 </div>
             </div>
         );
     }
 
-    // ─── SINGLE RECORD DETAIL VIEW ───────────────────────────────────────────
     if (viewId && selectedRecord) {
+        // ... (existing detail view logic, though the user might prefer the bill view now)
+    }
+
+    if (activeBillRecord) {
         return (
-            <div className="flex flex-col h-full bg-gray-100 overflow-hidden">
-                <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center gap-3 no-print shadow-sm shrink-0">
-                    <button onClick={() => setViewId(null)}
-                        className="flex items-center gap-2 text-sm font-bold text-gray-600 px-4 py-2 rounded-xl hover:bg-gray-100 border border-gray-200 transition-all">
+            <div className="flex flex-col h-full bg-slate-100 no-print-bg">
+                <style>{`
+                    @media print {
+                        body, html { margin: 0 !important; padding: 0 !important; background: white !important; }
+                        .no-print { display: none !important; }
+                    }
+                `}</style>
+                <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center gap-3 no-print shadow-sm sticky top-0 z-50">
+                    <button onClick={() => setActiveBillRecord(null)}
+                        className="flex items-center gap-2 text-sm font-bold text-slate-600 px-4 py-2 rounded-xl hover:bg-slate-100 border border-slate-200 transition-all">
                         <ArrowLeft className="w-4 h-4" /> यादीकडे परत
                     </button>
                     <div className="flex-1" />
-                    {canEdit && (
-                        <button onClick={() => handleEdit(selectedRecord)}
-                            className="flex items-center gap-2 text-sm font-bold text-amber-600 border border-amber-200 bg-amber-50 px-4 py-2 rounded-xl hover:bg-amber-100 transition-all">
-                            <Edit2 className="w-4 h-4" /> संपादित करा
-                        </button>
-                    )}
                     <button onClick={() => window.print()}
-                        className="flex items-center gap-2 text-sm font-bold text-white bg-primary px-5 py-2 rounded-xl hover:bg-primary-dark transition-all">
-                        <Printer className="w-4 h-4" /> पीडीएफ / प्रिंट काढा
+                        className="flex items-center gap-2 text-sm font-black text-white bg-indigo-600 px-6 py-2.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20">
+                        <Printer className="w-4 h-4" /> प्रिंट (लँडस्केप)
                     </button>
                 </div>
-
-                {/* Print styles — A4 landscape, black & white */}
-                <style>{`
-                    @media print {
-                        .no-print { display: none !important; }
-                        body, html { background: white !important; }
-                        * { color: black !important; background: transparent !important;
-                            -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                        th { background: #1e1e1e !important; color: white !important; }
-                        tr:nth-child(even) td { background: #f5f5f5 !important; }
-                    }
-                    @page { size: A4 landscape; margin: 10mm; }
-                `}</style>
-
-                <div className="overflow-auto flex-1 p-4 bg-gray-100 no-print-bg">
-                    <div className="w-full flex justify-center">
-                        <Namuna9PrintFormat records={[selectedRecord]} />
-                    </div>
+                <div className="flex-1 overflow-auto p-8 pt-4 flex justify-center no-print-bg">
+                    <MaganiBillDocument record={activeBillRecord} />
                 </div>
             </div>
         );
@@ -362,7 +351,18 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
 
     const handlePrint = (id: string) => {
         const record = records.find(r => r.id === id);
-        if (record) setPrintRecord(record);
+        if (record) setPrintRecords([record]);
+    };
+
+    const handlePrintMultiple = (selectedRecords: PropertyRecord[]) => {
+        if (selectedRecords.length > 0) {
+            setPrintRecords(selectedRecords);
+        }
+    };
+
+    const handlePrintBill = (id: string) => {
+        const record = records.find(r => r.id === id);
+        if (record) setActiveBillRecord(record);
     };
 
     // ─── LIST VIEW (High-Fidelity Overhaul) ──────────────────────────────────
@@ -370,8 +370,14 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
         <div className="flex flex-col h-full bg-slate-50/50">
             {/* ── TOP HEADER ── */}
             <div className="bg-white border-b border-gray-100 px-4 py-2.5 shadow-sm no-print shrink-0 relative z-20">
-                <div className="flex items-center justify-between">
-                    {/* Action Button (Left) */}
+                <div className="flex items-end justify-between">
+                    {/* Title & Info (left) */}
+                    <div className="text-start">
+                        <h2 className=" bg-indigo-700 text-white px-2 py-1 text-xl  font-bold rounded-lg mt-1 w-fit">नमुना ९ </h2>
+                        <p className="text-md font-black text-gray-800 leading-none">कर मागणी व वसुली नोंदवही</p>
+
+                    </div>
+                    {/* Action Button (Left)
                     <div className="flex items-center gap-2">
                         {canAdd && (
                             <button onClick={() => { setEditingRecord(null); setVisibleFloorCount(1); setShowForm(true); }}
@@ -388,84 +394,78 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                             <FileSpreadsheet className="w-3.5 h-3.5 text-primary" />
                             <span className="hidden sm:inline">एक्सपोर्ट</span>
                         </button>
-                    </div>
+                    </div> */}
+                    {/* ── FILTER BAR (Like Dashboard UI) ── */}
+                    <div className="px-2 py-1.5 no-print shrink-0">
+                        <div className="flex flex-wrap items-center gap-2 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+                            {/* Search Field */}
+                            <div className="relative group w-56 lg:w-72">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10 group-focus-within:text-primary transition-colors" />
+                                <TransliterationInput
+                                    placeholder="नाव, प्लॉट शोधा..."
+                                    value={searchTerm}
+                                    onChangeText={setSearchTerm}
+                                    className="w-full pl-9 pr-10 py-1.5 bg-slate-50 border-transparent rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                                />
+                                {searchTerm && (
+                                    <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
+                                        <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
+                                    </button>
+                                )}
+                            </div>
 
-                    {/* Title & Info (Right) */}
-                    <div className="text-right">
-                        <h2 className="text-xl font-black text-gray-800 leading-none">नमुना ९ — कर मागणी व वसुली नोंदवही</h2>
-                        <div className="flex items-center justify-end gap-3 mt-1 text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none">
-                            <span>{filteredRecords.length} नोंदी</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                            <div className="w-px h-5 bg-slate-200 mx-1 hidden sm:block" />
 
-            {/* ── FILTER BAR (Like Dashboard UI) ── */}
-            <div className="px-2 py-1.5 no-print shrink-0">
-                <div className="flex flex-wrap items-center gap-2 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
-                    {/* Search Field */}
-                    <div className="relative group w-56 lg:w-72">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10 group-focus-within:text-primary transition-colors" />
-                        <TransliterationInput 
-                            placeholder="नाव, प्लॉट शोधा..." 
-                            value={searchTerm}
-                            onChangeText={setSearchTerm}
-                            className="w-full pl-9 pr-10 py-1.5 bg-slate-50 border-transparent rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
-                        />
-                        {searchTerm && (
-                            <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
-                                <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
-                            </button>
-                        )}
-                    </div>
-                    
-                    <div className="w-px h-5 bg-slate-200 mx-1 hidden sm:block" />
-
-                    {/* Advanced Filters */}
-                    {(canFilter || isAdmin) && (
-                        <div className="flex items-center gap-1">
-                            <CustomDropdown 
-                                value={filterWasti} 
-                                onChange={handleWastiChange}
-                                placeholder="वस्ती - सर्व"
-                                options={uniqueWastis.map(w => ({ value: w, label: w }))}
-                            />
-                            <CustomDropdown 
-                                value={filterLayout} 
-                                onChange={handleLayoutChange}
-                                placeholder="लेआउट - सर्व"
-                                options={uniqueLayouts.map(l => ({ value: l, label: l }))}
-                            />
-                            <CustomDropdown 
-                                value={filterKhasra} 
-                                onChange={handleKhasraChange}
-                                placeholder="खसरा - सर्व"
-                                options={uniqueKhasras.map(k => ({ value: k, label: k }))}
-                            />
-                            <CustomDropdown 
-                                value={filterPlotNo} 
-                                onChange={setFilterPlotNo}
-                                placeholder="प्लॉट - सर्व"
-                                options={uniquePlots.map(p => ({ value: p, label: p }))}
-                            />
-                            <CustomDropdown 
-                                value={filterPropertyType} 
-                                onChange={setFilterPropertyType}
-                                placeholder="प्रकार - सर्व"
-                                options={dynamicPropertyTypes.map(p => ({ value: p, label: p }))}
-                            />
-                            {(filterWasti || filterLayout || filterKhasra || filterPlotNo || filterPropertyType) && (
-                                <button 
-                                    onClick={() => { setFilterWasti(''); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); setFilterPropertyType(''); }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100 transition-all flex-shrink-0"
-                                >
-                                    <RotateCcw className="w-3 h-3" /> सर्व रद्द
-                                </button>
+                            {/* Advanced Filters */}
+                            {(canFilter || isAdmin) && (
+                                <div className="flex items-center gap-1">
+                                    <CustomDropdown
+                                        value={filterWasti}
+                                        onChange={handleWastiChange}
+                                        placeholder="वस्ती - सर्व"
+                                        options={uniqueWastis.map(w => ({ value: w, label: w }))}
+                                    />
+                                    <CustomDropdown
+                                        value={filterLayout}
+                                        onChange={handleLayoutChange}
+                                        placeholder="लेआउट - सर्व"
+                                        options={uniqueLayouts.map(l => ({ value: l, label: l }))}
+                                    />
+                                    <CustomDropdown
+                                        value={filterKhasra}
+                                        onChange={handleKhasraChange}
+                                        placeholder="खसरा - सर्व"
+                                        options={uniqueKhasras.map(k => ({ value: k, label: k }))}
+                                    />
+                                    <CustomDropdown
+                                        value={filterPlotNo}
+                                        onChange={setFilterPlotNo}
+                                        placeholder="प्लॉट - सर्व"
+                                        options={uniquePlots.map(p => ({ value: p, label: p }))}
+                                    />
+                                    <CustomDropdown
+                                        value={filterPropertyType}
+                                        onChange={setFilterPropertyType}
+                                        placeholder="प्रकार - सर्व"
+                                        options={dynamicPropertyTypes.map(p => ({ value: p, label: p }))}
+                                    />
+                                    {(filterWasti || filterLayout || filterKhasra || filterPlotNo || filterPropertyType) && (
+                                        <button
+                                            onClick={() => { setFilterWasti(''); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); setFilterPropertyType(''); }}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100 transition-all flex-shrink-0"
+                                        >
+                                            <RotateCcw className="w-3 h-3" /> सर्व रद्द
+                                        </button>
+                                    )}
+                                </div>
                             )}
                         </div>
-                    )}
+                    </div>
+
+
                 </div>
             </div>
+
 
             <div className="flex-1 overflow-hidden p-2 pb-0 flex flex-col">
                 <div className="bg-white rounded-t-2xl shadow-sm border border-slate-200 border-b-0 overflow-hidden flex-1 flex flex-col">
@@ -474,8 +474,10 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                         filterWasti={filterWasti}
                         onEdit={canEdit ? handleEdit : undefined}
                         onDelete={canDelete ? handleDelete : undefined}
-                        onView={setViewId}
+                        // onView={setViewId}
                         onPrint={handlePrint}
+                        onPrintBill={handlePrintBill}
+                        onPrintMultiple={handlePrintMultiple}
                         showActions={true}
                     />
                 </div>

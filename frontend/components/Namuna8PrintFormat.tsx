@@ -260,7 +260,8 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                                                 🧮
                                                                             </button>
                                                                         </div>
-                                                                        <div className="p-1 text-[9px] text-gray-500 font-bold italic">भोगवटादार: {r.occupantName || 'स्वतः'}</div>
+                                                                        <div className="p-1 text-[9px] text-gray-500 font-bold italic border-b border-black/10">भोगवटादार: {r.occupantName || 'स्वतः'}</div>
+                                                                        <div className="p-1 text-[9px] text-slate-500 font-bold">संपर्क: {r.contactNo ? MN(r.contactNo) : '-'}</div>
                                                                     </td>
                                                                     <td rowSpan={rowCount} className="p-1 justify-center items-center text-center font-black align-middle border border-black text-[10px] bg-[#A80D40]/5 leading-tight">
                                                                         {Number(r.propertyLength) > 0 && Number(r.propertyWidth) > 0 ? (
@@ -290,8 +291,12 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                                 <div className="p-1 text-gray-500 font-black text-[8.5px] bg-gray-50">{s ? MN(s.areaSqMt || 0) : '-'}</div>
                                                             </td>
                                                             <td className="p-0 text-center border border-black text-[9px]">
-                                                                <div className="p-1 font-black border-b border-black text-gray-800">{r.constructionYear ? MN(r.constructionYear) : '-'}</div>
-                                                                <div className="p-1 font-bold text-[#A80D40]">({MN(r.propertyAge || 0)} वर्ष)</div>
+                                                                <div className="p-1 font-black border-b border-black text-gray-800">
+                                                                    {s?.propertyType === 'खाली जागा' ? '-' : (r.constructionYear ? MN(r.constructionYear) : '-')}
+                                                                </div>
+                                                                <div className="p-1 font-bold text-[#A80D40]">
+                                                                    {s?.propertyType === 'खाली जागा' ? '' : `(${MN(r.propertyAge || 0)} वर्ष)`}
+                                                                </div>
                                                             </td>
                                                             <td className="p-1 text-right border border-black text-[10px] font-bold">
                                                                 {s?.propertyType === 'खाली जागा' ? MN(s.landRate || 0) : '-'}
@@ -330,7 +335,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                                     <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.specialWaterTax) || 0).toFixed(2))}</td>
                                                                     <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.healthTax) || 0).toFixed(2))}</td>
                                                                     <td rowSpan={rowCount} className="p-1 text-center font-black align-middle border border-black text-[11px] ">{MN(recordTotalTax.toFixed(2))}</td>
-                                                                    <td rowSpan={rowCount} className="p-1 text-[9px] align-middle border border-black whitespace-pre-wrap font-bold text-gray-700">{r.remarksNotes || '-'}</td>
+                                                                    <td rowSpan={rowCount} className="p-1 text-[9px] align-middle border border-black whitespace-pre-wrap font-bold text-gray-700">{(r.remarksNotes || '-').replace(/फेरफार क्र:/g, 'फेरफार बुक क्र:') || '-'}</td>
                                                                 </>
                                                             )}
                                                         </tr>

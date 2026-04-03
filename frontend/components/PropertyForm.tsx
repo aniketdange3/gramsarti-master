@@ -120,7 +120,7 @@ const PropertyForm = ({
             if (str.includes('मासिक सभा')) {
                 setRemarksObj({
                     date: str.match(/(?:दिनांक:)\s*(.*?)(?=[,\n]\s*विषय:|$)/)?.[1]?.trim() || '',
-                    subject: str.match(/विषय:\s*(.*?)(?=[,\n]\s*फेरफार क्र:|$)/)?.[1]?.trim() || '',
+                    subject: str.match(/विषय:\s*(.*?)(?=[,\n]\s*फेरफार बुक क्र:|$)/)?.[1]?.trim() || '',
                     ferfar: str.match(/फेरफार बुक  क्र:\s*(.*?)(?=[,\n]\s*पान क्र:|$)/)?.[1]?.trim() || '',
                     pan: str.match(/पान क्र:\s*(.*?)(?=[,\n]\s*अनु क्र:|$)/)?.[1]?.trim() || '',
                     anu: str.match(/अनु क्र:\s*(.*)$/)?.[1]?.trim() || '',
@@ -137,7 +137,7 @@ const PropertyForm = ({
 
         const hasData = Object.values(newObj).some(v => typeof v === 'string' && v.trim() !== '');
         if (hasData) {
-            const combined = `मासिक सभा\nदिनांक: ${newObj.date}\nविषय: ${newObj.subject}\nफेरफार क्र: ${newObj.ferfar}\nपान क्र: ${newObj.pan}\nअनु क्र: ${newObj.anu}`;
+            const combined = `मासिक सभा\nदिनांक: ${newObj.date}\nविषय: ${newObj.subject}\nफेरफार बुक क्र: ${newObj.ferfar}\nपान क्र: ${newObj.pan}\nअनु क्र: ${newObj.anu}`;
             setFormData(f => ({ ...f, remarksNotes: combined }));
         } else {
             setFormData(f => ({ ...f, remarksNotes: '' }));
@@ -215,7 +215,7 @@ const PropertyForm = ({
             }
             // If not RCC, ensure weightage stays 1.0 (or whatever default)
             if (s.propertyType !== 'आर.सी.सी' && s.propertyType !== 'निवडा' && s.weightage !== 1.0) {
-                 return { ...s, weightage: 1.0 };
+                return { ...s, weightage: 1.0 };
             }
             return s;
         });
@@ -960,9 +960,9 @@ const PropertyForm = ({
                                             />
                                         </div>
                                         <div>
-                                            <FieldLabel>फेरफार क्र</FieldLabel>
+                                            <FieldLabel>फेरफार बुक क्र</FieldLabel>
                                             <TransliterationInput
-                                                placeholder="फेरफार क्र"
+                                                placeholder="फेरफार बुक क्र"
                                                 className={INPUT_CLASSES}
                                                 value={remarksObj.ferfar}
                                                 onChangeText={v => updateRemark('ferfar', v)}

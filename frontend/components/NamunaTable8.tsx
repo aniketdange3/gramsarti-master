@@ -267,8 +267,12 @@ export default function NamunaTable8({
                                         ))}
                                     </td>
                                     <td className="hidden print:table-cell border border-black p-1 text-center text-[8px]">
-                                        <p>{r.constructionYear || '-'}</p>
-                                        <p>{(r as any).buildingAge || '-'}</p>
+                                        {activeSections.some(s => s.propertyType !== 'खाली जागा') ? (
+                                            <>
+                                                <p>{r.constructionYear || '-'}</p>
+                                                <p>{(r as any).buildingAge || '-'}</p>
+                                            </>
+                                        ) : '-'}
                                     </td>
                                     <td className="hidden print:table-cell border border-black p-1 text-right text-[8px]">{MN(r.readyReckonerLand || 0)}</td>
                                     <td className="hidden print:table-cell border border-black p-1 text-right text-[8px]">{MN(r.readyReckonerComposite || 0)}</td>
@@ -313,6 +317,7 @@ export default function NamunaTable8({
                                             <OwnerNameDisplay name={r.ownerName || ''} />
                                         </div>
                                         <div className="text-[10px] font-semibold text-slate-500 mt-0.5">({r.occupantName || 'स्वतः'})</div>
+                                        <div className="text-[10px] text-slate-500 font-bold mt-0.5">संपर्क: {r.contactNo ? MN(r.contactNo) : '-'}</div>
                                         <div className="text-[10px] text-slate-400 mt-1 font-bold">Property ID: {r.propertyId || r.srNo}</div>
                                     </td>
                                     <td className="no-print px-3 py-2.5">
@@ -341,7 +346,7 @@ export default function NamunaTable8({
                                     </td>
                                     <td className="no-print px-3 py-2.5 text-right font-black text-slate-700 text-[13px]">₹{cap.toLocaleString()}</td>
                                     <td className="no-print px-3 py-2.5 text-right font-black text-slate-800 text-[14px] bg-slate-50/50">₹{dTotal.toLocaleString()}</td>
-                                    <td className="no-print px-3 py-2.5 text-left text-[11px] text-slate-500 font-medium max-w-[200px] leading-tight whitespace-pre-wrap">{r.remarksNotes || '-'}</td>
+                                    <td className="no-print px-3 py-2.5 text-left text-[11px] text-slate-500 font-medium max-w-[200px] leading-tight whitespace-pre-wrap">{(r.remarksNotes || '-').replace(/फेरफार क्र:/g, 'फेरफार बुक क्र:')}</td>
                                     {showActions && (
                                         <td className="no-print px-3 py-2.5 text-center sticky right-0 z-20 bg-inherit border-l border-slate-200 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]">
                                             <div className="flex items-center justify-center gap-1.5 group-hover:scale-105 transition-all duration-200">

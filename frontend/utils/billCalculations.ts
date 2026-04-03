@@ -7,7 +7,6 @@ export interface BillCalculation {
     currentTaxTotal: number;
     billTotal: number;
     isDiscountEligible: boolean;
-    isPenaltyEligible: boolean;
 }
 
 /**
@@ -35,9 +34,8 @@ export const calculateBill = (
 
     const discountAmount = isDiscountEligible ? Math.round(currentTaxBase * 0.05) : 0;
     
-    // Check Penalty Eligibility: After December 31st (January, February, March)
-    const isPenaltyEligible = month >= 0 && month <= 2; 
-    const penaltyAmount = isPenaltyEligible ? Math.round((arrearsBase + currentTaxBase) * 0.05) : 0;
+    // Penalty: 5% of Arrears (मागील थकबाकी) only as per Namuna 9 print logic
+    const penaltyAmount = Math.round(arrearsBase * 0.05);
 
     const currentTaxTotal = currentTaxBase - discountAmount;
     const billTotal = arrearsTotal + currentTaxTotal + penaltyAmount;
@@ -51,6 +49,5 @@ export const calculateBill = (
         currentTaxTotal,
         billTotal,
         isDiscountEligible,
-        isPenaltyEligible
     };
 };

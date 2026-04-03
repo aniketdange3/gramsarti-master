@@ -107,7 +107,7 @@ export default function Ferfar({ records, fetchRecords }: Props) {
                     applicant_name: applicantName,
                     applicant_mobile: applicantMobile,
                     ferfar_type: ferfarType,
-                    remarks: `मासिक सभा\nदिनांक: ${remarkDate}\nविषय: ${remarkSubject}\nप्रकार: ${ferfarType}\nफेरफार क्र: ${remarkFerfarNo}\nपान क्र: ${remarkPageNo}\nअनु क्र: ${remarkSerialNo}`
+                    remarks: `मासिक सभा\nदिनांक: ${remarkDate}\nविषय: ${remarkSubject}\nप्रकार: ${ferfarType}\nफेरफार बुक क्र: ${remarkFerfarNo}\nपान क्र: ${remarkPageNo}\nअनु क्र: ${remarkSerialNo}`
                 })
             });
 

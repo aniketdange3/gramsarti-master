@@ -77,13 +77,13 @@ const StatCard = ({ title, value, icon, gradient, textColor }: {
     title: string; value: string | number;
     icon: React.ReactNode; gradient: string; textColor: string;
 }) => (
-    <div className="bg-white rounded-xl px-3 py-2 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200 group flex items-center gap-3">
-        <div className={`w-[30px] h-[30px] shrink-0 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-sm group-hover:scale-110 transition-transform duration-300`}>
-            {React.cloneElement(icon as React.ReactElement, { className: 'w-4 h-4' })}
+    <div className="bg-white rounded-xl px-4 py-3 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200 group flex items-center gap-4">
+        <div className={`w-[36px] h-[36px] shrink-0 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-sm group-hover:scale-110 transition-transform duration-300`}>
+            {React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5' })}
         </div>
         <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight leading-none mb-1 truncate">{title}</p>
-            <p className={`text-sm font-black ${textColor} leading-none tracking-tight`}>{value}</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] leading-none mb-1.5 truncate">{title}</p>
+            <p className={`text-[15px] font-black ${textColor} leading-none tracking-tighter`}>{value}</p>
         </div>
     </div>
 );
@@ -426,58 +426,45 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                 ))}
             </div>
 
-            {/* Header */}
+            {/* Top Action Bar */}
             <header className="bg-white border-b border-gray-100 shrink-0 shadow-sm no-print">
-                <div className="flex items-center justify-between px-4 py-2 gap-3">
-                    {/* Search Bar on the Left */}
-                    <div className="flex items-center gap-2 flex-1 max-w-sm">
-                        <div className="relative w-full max-w-[280px]">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
-                            <TransliterationInput
-                                placeholder="नाव, वॉर्ड, वस्ती शोधा..."
-                                className="w-full pl-10 pr-12 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary focus:bg-white focus:border-transparent outline-none transition-all"
-                                value={searchTerm}
-                                onChangeText={setSearchTerm}
-                            />
-                            {searchTerm && (
-                                <button onClick={() => setSearchTerm('')} className="absolute right-10 top-1/2 -translate-y-1/2 z-10">
-                                    <X className="w-4 h-4 text-gray-400" />
-                                </button>
-                            )}
+                <div className="flex items-center justify-between px-4 py-2.5">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
+                            <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
+                        </div>
+                        <div>
+                            <h2 className="text-sm font-black text-slate-900 tracking-tight leading-none uppercase">मालमत्ता व्यवस्थापन</h2>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Control Panel</p>
                         </div>
                     </div>
 
-                    {/* Action Buttons on the Right */}
-                    <div className="flex gap-2 shrink-0">
+                    <div className="flex items-center gap-2">
                         {isAdmin && (
                             <button
                                 onClick={() => setActiveTab(activeTab === 'dashboard' ? 'user_requests' : 'dashboard')}
-                                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all text-sm font-bold shadow-sm ${activeTab === 'user_requests'
-                                    ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                                    : 'bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50'
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[10px] font-black uppercase tracking-wider shadow-sm border ${activeTab === 'user_requests'
+                                    ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
+                                    : 'bg-white border-indigo-200 text-indigo-600 hover:bg-indigo-50'
                                     }`}
                             >
-                                <Shield className="w-4 h-4" />
-                                <span className="hidden sm:inline">{activeTab === 'user_requests' ? 'डॅशबोर्ड' : 'रोल अ‍ॅक्सेस'}</span>
+                                <Shield className="w-3.5 h-3.5" /> रोल अ‍ॅक्सेस
                             </button>
                         )}
-                        {/* Only users with edit permission can Import / Export / Add */}
                         {(canEdit || isAdmin) && (
                             <>
-                                <label className="flex items-center gap-1.5 bg-primary text-white px-3 py-2 rounded-xl hover:bg-primary-dark transition-all cursor-pointer text-sm font-bold shadow-sm">
-                                    <FileUp className="w-4 h-4" />
-                                    <span className="hidden sm:inline">आयात</span>
+                                <label className="flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-all cursor-pointer text-[10px] font-black uppercase tracking-wider shadow-sm">
+                                    <FileUp className="w-3.5 h-3.5" /> आयात
                                     <input type="file" className="hidden" accept=".xlsx, .xls" onChange={importFromExcel} />
                                 </label>
-                                <button onClick={exportToExcel} className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 px-3 py-2 rounded-xl hover:bg-gray-50 transition-all text-sm font-bold shadow-sm">
-                                    <FileSpreadsheet className="w-4 h-4 text-primary" />
-                                    <span className="hidden sm:inline">एक्सपोर्ट</span>
+                                <button onClick={exportToExcel} className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-all text-[10px] font-black uppercase tracking-wider shadow-sm">
+                                    <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-600" /> एक्सपोर्ट
                                 </button>
                                 <button
                                     onClick={() => { setEditingRecord(null); setVisibleFloorCount(1); setShowForm(true); }}
-                                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark shadow-md shadow-primary/20 transition-all text-sm btn-hover btn-active"
+                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-600 text-white rounded-lg font-black uppercase tracking-wider hover:bg-indigo-700 shadow-md shadow-indigo-600/10 transition-all text-[10px] active:scale-95"
                                 >
-                                    <Plus className="w-4 h-4" /> नवीन नोंद
+                                    <Plus className="w-3.5 h-3.5" /> नवीन नोंद
                                 </button>
                             </>
                         )}
@@ -485,51 +472,115 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                 </div>
             </header>
 
-            <div className="flex-1 overflow-hidden space-y-2 bg-slate-50/50 flex flex-col">
+            <div className="flex-1 overflow-y-auto space-y-2 bg-slate-50/50 flex flex-col px-1.5 py-2">
                 {activeTab === 'user_requests' ? (
                     <UserManagement onAuthError={onAuthError} addToast={addToast} />
                 ) : (
                     <>
-                        {/* Filter Bar moved here */}
-                        <div className="flex items-center gap-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg flex-wrap shadow-sm no-print">
-                            <Filter className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                            <CustomDropdown
-                                value={filterWasti}
-                                onChange={handleWastiChange}
-                                placeholder="वस्ती - सर्व"
-                                options={uniqueWastis.map(w => ({ value: w, label: w }))}
+                        {/* Highlights Row */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0 no-print">
+                            <StatCard 
+                                title="एकूण मालमत्ता" 
+                                value={MN(animCount)} 
+                                icon={<Users />} 
+                                gradient="from-blue-500 to-indigo-600"
+                                textColor="text-indigo-900"
                             />
-                            <CustomDropdown
-                                value={filterLayout}
-                                onChange={handleLayoutChange}
-                                placeholder="लेआउट - सर्व"
-                                options={uniqueLayouts.map(l => ({ value: l, label: l }))}
+                            <StatCard 
+                                title="एकूण मागणी (₹)" 
+                                value={`₹${MN(animDemand)}`} 
+                                icon={<IndianRupee />} 
+                                gradient="from-amber-500 to-orange-600"
+                                textColor="text-orange-900"
                             />
-                            <CustomDropdown
-                                value={filterKhasra}
-                                onChange={handleKhasraChange}
-                                placeholder="खसरा - सर्व"
-                                options={uniqueKhasras.map(k => ({ value: k, label: k }))}
+                            <StatCard 
+                                title="वसूल रक्कम (₹)" 
+                                value={`₹${MN(animPaid)}`} 
+                                icon={<CheckCircle2 />} 
+                                gradient="from-emerald-500 to-teal-600"
+                                textColor="text-emerald-900"
                             />
-                            <CustomDropdown
-                                value={filterPlotNo}
-                                onChange={setFilterPlotNo}
-                                placeholder="प्लॉट - सर्व"
-                                options={uniquePlots.map(p => ({ value: p, label: p }))}
+                            <StatCard 
+                                title="थकबाकी (₹)" 
+                                value={`₹${MN(animBalance)}`} 
+                                icon={<AlertTriangle />} 
+                                gradient="from-rose-500 to-red-600"
+                                textColor="text-red-900"
                             />
-                            <CustomDropdown
-                                value={filterPropertyType}
-                                onChange={setFilterPropertyType}
-                                placeholder="प्रकार - सर्व"
-                                options={dynamicPropertyTypes.map(p => ({ value: p, label: p }))}
+                            <StatCard 
+                                title="वसुली दर (%)" 
+                                value={`${MN(animRecovery / 10)}%`} 
+                                icon={<TrendingUp />} 
+                                gradient="from-violet-500 to-purple-600"
+                                textColor="text-purple-900"
                             />
-                            {hasActiveFilters && (
-                                <button onClick={() => { setFilterWasti(''); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); setFilterPropertyType(''); }}
-                                    className="flex items-center gap-1 text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2.5 py-1.5 rounded-lg hover:bg-rose-100 transition-all btn-hover btn-active">
-                                    <RotateCcw className="w-3 h-3" /> सर्व रद्द
-                                </button>
-                            )}
-                            <span className="ml-auto text-xs text-gray-400 font-medium">{filteredRecords.length} / {records.length} नोंदी</span>
+                        </div>
+
+                        {/* Unified Single-Row Search & Filter Bar */}
+                        <div className="flex items-center gap-2 p-3 bg-white border border-slate-200 rounded-xl shadow-sm no-print flex-wrap lg:flex-nowrap">
+                            {/* Search Component */}
+                            <div className="relative flex-1 min-w-[220px] max-w-sm">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10" />
+                                <TransliterationInput
+                                    placeholder="नाव, प्रभाग, वस्ती शोधा..."
+                                    className="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-100 rounded-lg text-[11px] font-bold focus:ring-4 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 placeholder:font-normal"
+                                    value={searchTerm}
+                                    onChangeText={setSearchTerm}
+                                />
+                                {searchTerm && (
+                                    <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 z-10 text-slate-400 hover:text-rose-500 transition-colors">
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Filters Group */}
+                            <div className="flex items-center gap-1.5 flex-wrap flex-1">
+                                <CustomDropdown
+                                    value={filterWasti}
+                                    onChange={handleWastiChange}
+                                    placeholder="प्रभाग/वस्ती"
+                                    options={uniqueWastis.map(w => ({ value: w, label: w }))}
+                                />
+                                <CustomDropdown
+                                    value={filterLayout}
+                                    onChange={handleLayoutChange}
+                                    placeholder="लेआउट"
+                                    options={uniqueLayouts.map(l => ({ value: l, label: l }))}
+                                />
+                                <CustomDropdown
+                                    value={filterKhasra}
+                                    onChange={handleKhasraChange}
+                                    placeholder="खसरा"
+                                    options={uniqueKhasras.map(k => ({ value: k, label: k }))}
+                                />
+                                <CustomDropdown
+                                    value={filterPlotNo}
+                                    onChange={setFilterPlotNo}
+                                    placeholder="प्लॉट/घर"
+                                    options={uniquePlots.map(p => ({ value: p, label: p }))}
+                                />
+                                <CustomDropdown
+                                    value={filterPropertyType}
+                                    onChange={setFilterPropertyType}
+                                    placeholder="प्रकार"
+                                    options={dynamicPropertyTypes.map(p => ({ value: p, label: p }))}
+                                />
+                                {hasActiveFilters && (
+                                    <button onClick={() => { setFilterWasti(''); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); setFilterPropertyType(''); }}
+                                        className="flex items-center gap-1.5 text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-3 py-2 rounded-xl hover:bg-rose-100 transition-all active:scale-95 whitespace-nowrap">
+                                        <RotateCcw className="w-3 h-3" /> रीसेट
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Stats Counter */}
+                            <div className="hidden lg:flex items-center gap-1.5 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 shrink-0">
+                                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tight whitespace-nowrap">
+                                    नोंदी: <span className="text-indigo-600 font-black">{MN(filteredRecords.length)}</span>
+                                </span>
+                            </div>
                         </div>
 
 
@@ -556,16 +607,16 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                             <div className="flex-1 overflow-auto">
                                 <table className="w-full text-left border-collapse min-w-[900px]">
                                     <thead className="sticky top-0 z-20">
-                                        <tr className="bg-slate-50 text-slate-600 border-b-2 border-slate-200 backdrop-blur-sm bg-white/90">
-                                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest w-[50px] text-center">अ.क्र.</th>
-                                            <th className="px-3 py-3 text-[11px] font-black uppercase tracking-widest w-[110px]">वस्ती</th>
-                                            <th className="px-3 py-3 text-[11px] font-black uppercase tracking-widest w-[80px] text-center">खसरा</th>
-                                            <th className="px-3 py-3 text-[11px] font-black uppercase tracking-widest w-[80px]">मालमत्ता क्र/प्लॉट क्रमांक</th>
-                                            <th className="px-3 py-3 text-[11px] font-black uppercase tracking-widest min-w-[180px]">मालकाचे नाव व पत्ता</th>
-                                            <th className="px-3 py-3 text-[11px] font-black uppercase tracking-widest w-[140px]">प्रकार व क्षेत्रफळ</th>
-                                            <th className="px-3 py-3 text-[11px] font-black uppercase tracking-widest text-right w-[110px]">एकूण कर</th>
-                                            <th className="px-3 py-3 text-[11px] font-black uppercase tracking-widest text-right w-[110px]">एकूण बाकी</th>
-                                            <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-center w-[130px]">कृती</th>
+                                        <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 backdrop-blur-sm bg-white/90">
+                                            <th className="px-2 py-2 text-[9px] font-black uppercase tracking-widest w-[40px] text-center">अ.क्र.</th>
+                                            <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest w-[100px]">वस्ती</th>
+                                            <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest w-[70px] text-center">खसरा</th>
+                                            <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest w-[80px]">मालमत्ता/प्लॉट</th>
+                                            <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest min-w-[160px]">मालकाचे नाव</th>
+                                            <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest w-[120px]">प्रकार/क्षेत्रफळ</th>
+                                            <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest text-right w-[100px]">एकूण कर</th>
+                                            <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest text-right w-[100px]">एकूण बाकी</th>
+                                            <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest text-center w-[110px]">कृती</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
@@ -578,53 +629,50 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                                     ? 'bg-red-50 hover:bg-red-100/80 transition-all border-l-4 border-l-red-500'
                                                     : (idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60')
                                                     }`}>
-                                                    <td className="px-4 py-4 text-center relative">
+                                                    <td className="px-2 py-1.5 text-center relative">
                                                         {isDuplicate && (
                                                             <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center group/alert">
-                                                                <AlertTriangle className="w-4 h-4 text-red-500 animate-pulse cursor-help" />
-                                                                <div className="absolute left-6 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded hidden group-hover/alert:block whitespace-nowrap z-50">
-                                                                    डुप्लिकेट डेटा (Duplicate Data)
+                                                                <AlertTriangle className="w-3 h-3 text-red-500 animate-pulse cursor-help" />
+                                                                <div className="absolute left-6 bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded hidden group-hover/alert:block whitespace-nowrap z-50">
+                                                                    ड्युप्लिकेट
                                                                 </div>
                                                             </div>
                                                         )}
-                                                        <span className={`text-xs font-bold ${isDuplicate ? 'text-red-700' : 'text-slate-400'}`}>{MN(record.srNo)}</span>
+                                                        <span className={`text-[11px] font-bold ${isDuplicate ? 'text-red-700' : 'text-slate-400'}`}>{MN(record.srNo)}</span>
                                                     </td>
-                                                    <td className="px-3 py-4">
+                                                    <td className="px-2 py-1.5">
                                                         <div className="inline-flex flex-col">
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-slate-100 text-slate-600 border border-slate-200 uppercase leading-none">
+                                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-600 border border-slate-200 uppercase leading-none">
                                                                 {record.wastiName || '-'}
                                                             </span>
-                                                            <span className="text-[10px] text-slate-400 font-bold italic mt-1">वॉर्ड {MN(record.wardNo)}</span>
+                                                            <span className="text-[9px] text-slate-400 font-bold italic mt-0.5">W{MN(record.wardNo)}</span>
                                                         </div>
                                                     </td>
-                                                    <td className="px-3 py-4 text-center">
-                                                        <div className="text-[11px] text-indigo-700 font-black uppercase tracking-tight bg-indigo-50 px-2 py-1 rounded inline-block whitespace-nowrap">{MN(record.khasraNo) || '-'}</div>
+                                                    <td className="px-2 py-1.5 text-center">
+                                                        <div className="text-[10px] text-indigo-700 font-black uppercase tracking-tight bg-indigo-50 px-1.5 py-0.5 rounded inline-block whitespace-nowrap">{MN(record.khasraNo) || '-'}</div>
                                                     </td>
-                                                    <td className="px-3 py-4">
-                                                        <div className="text-xs font-bold text-slate-700 tracking-tight">{MN(record.plotNo) || '-'}</div>
+                                                    <td className="px-2 py-1.5">
+                                                        <div className="text-[11px] font-bold text-slate-700 tracking-tight">{MN(record.plotNo) || '-'}</div>
                                                     </td>
-                                                    <td className="px-3 py-4">
-                                                        <div className="font-extrabold text-slate-900 text-[13px] tracking-tight leading-tight uppercase">{record.ownerName}</div>
-                                                        <div className="text-[10px] text-slate-500 font-semibold mt-0.5">({record.occupantName || 'स्वतः'})</div>
-                                                        <div className="text-[10px] text-slate-400 mt-1 font-bold">Property ID: {record.propertyId || record.srNo}</div>
+                                                    <td className="px-2 py-1.5">
+                                                        <div className="font-extrabold text-slate-900 text-[12px] tracking-tight leading-tight uppercase">{record.ownerName}</div>
+                                                        <div className="text-[9px] text-slate-500 font-semibold mt-0.5 opacity-60">({record.occupantName || 'स्वतः'})</div>
                                                     </td>
-                                                    <td className="px-3 py-4">
+                                                    <td className="px-2 py-1.5">
                                                         {record.sections?.filter(s => s.propertyType && s.propertyType !== 'निवडा').map((s, si) => (
-                                                            <div key={si} className="mb-1.5 last:mb-0 pb-1.5 border-b border-slate-100 last:border-0">
-                                                                <div className="text-[10px] font-black text-slate-700 uppercase leading-none mb-1">{s.propertyType}</div>
-                                                                <div className="text-[10px] font-bold text-slate-400 leading-none">
-                                                                    <span className="text-blue-600 font-black">{MN(s.areaSqFt)}</span> sq.ft
-                                                                </div>
+                                                            <div key={si} className="mb-0.5 last:mb-0 pb-0.5 border-b border-slate-100 last:border-0 leading-none">
+                                                                <span className="text-[9px] font-black text-slate-700 uppercase">{s.propertyType}</span>
+                                                                <span className="text-[9px] font-bold text-slate-400 ml-1.5">{MN(s.areaSqFt)} sq.ft</span>
                                                             </div>
                                                         )) || (
-                                                                <div className="text-[10px] text-slate-400 italic">माहिती उपलब्ध नाही</div>
+                                                                <div className="text-[9px] text-slate-400 italic">माहिती नाही</div>
                                                             )}
                                                     </td>
-                                                    <td className="px-3 py-4 text-right">
-                                                        <div className="font-black text-indigo-700 text-[14px] leading-none">₹{Number(record.totalTaxAmount || 0).toLocaleString()}</div>
+                                                    <td className="px-2 py-1.5 text-right">
+                                                        <div className="font-black text-indigo-700 text-[12px] leading-none">₹{Number(record.totalTaxAmount || 0).toLocaleString()}</div>
                                                         {(Number(record.arrearsAmount) > 0 || Number(record.penaltyAmount) > 0) && (
-                                                            <div className="text-[9px] text-rose-500 font-black uppercase mt-1.5 tracking-wider leading-none">
-                                                                +₹{MN((Number(record.arrearsAmount) || 0) + (Number(record.penaltyAmount) || 0))} थकीत
+                                                            <div className="text-[8px] text-rose-500 font-black uppercase mt-0.5 tracking-wider leading-none">
+                                                                +₹{MN((Number(record.arrearsAmount) || 0) + (Number(record.penaltyAmount) || 0))}
                                                             </div>
                                                         )}
                                                     </td>
@@ -638,27 +686,26 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                                             </div>
                                                         )}
                                                     </td>
-                                                    <td className="px-4 py-4 text-center">
-                                                        <div className="flex justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                                                            <button onClick={() => setViewingRecord(record)} className={`w-8 h-8 flex items-center justify-center text-indigo-500 bg-indigo-50 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-indigo-100 ${!canView ? 'hidden' : ''}`} title="तपशील">
-                                                                <Eye className="w-4 h-4" />
+                                                    <td className="px-2 py-1.5 text-center">
+                                                        <div className="flex justify-center gap-1">
+                                                            <button onClick={() => setViewingRecord(record)} className={`w-7 h-7 flex items-center justify-center text-indigo-500 bg-indigo-50 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-indigo-100 ${!canView ? 'hidden' : ''}`} title="तपशील">
+                                                                <Eye className="w-3.5 h-3.5" />
                                                             </button>
                                                             {canEdit && !record.remarksNotes && (
                                                                 <button onClick={() => {
                                                                     const count = record.sections.filter(s => s.propertyType && s.propertyType !== 'निवडा').length;
                                                                     setVisibleFloorCount(count > 0 ? count : 1);
                                                                     setEditingRecord(record); setShowForm(true);
-                                                                }} className="w-8 h-8 flex items-center justify-center text-amber-500 bg-amber-50 rounded-xl hover:bg-amber-500 hover:text-white transition-all shadow-sm border border-amber-100" title="संपादित">
-                                                                    <Edit2 className="w-4 h-4" />
+                                                                }} className="w-7 h-7 flex items-center justify-center text-amber-500 bg-amber-50 rounded-lg hover:bg-amber-500 hover:text-white transition-all shadow-sm border border-amber-100" title="संपादित">
+                                                                    <Edit2 className="w-3.5 h-3.5" />
                                                                 </button>
                                                             )}
-                                                            <button onClick={() => setActiveBillRecord(record)} className="w-8 h-8 flex items-center justify-center text-emerald-500 bg-emerald-50 rounded-xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100 relative group" title="मागणी बिल (Magani Bill)">
-                                                                <FileText className="w-4 h-4" />
-                                                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-[10px] font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl">मागणी बिल प्रिंट</span>
+                                                            <button onClick={() => setActiveBillRecord(record)} className="w-7 h-7 flex items-center justify-center text-emerald-500 bg-emerald-50 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100 relative group" title="मागणी बिल (Magani Bill)">
+                                                                <FileText className="w-3.5 h-3.5" />
                                                             </button>
                                                             {canDelete && !record.remarksNotes && (
-                                                                <button onClick={() => deleteRecord(record.id)} className="w-8 h-8 flex items-center justify-center text-rose-500 bg-rose-50 rounded-xl hover:bg-rose-500 hover:text-white transition-all shadow-sm border border-rose-100" title="हटवा">
-                                                                    <Trash2 className="w-4 h-4" />
+                                                                <button onClick={() => deleteRecord(record.id)} className="w-7 h-7 flex items-center justify-center text-rose-500 bg-rose-50 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm border border-rose-100" title="हटवा">
+                                                                    <Trash2 className="w-3.5 h-3.5" />
                                                                 </button>
                                                             )}
                                                         </div>
@@ -852,20 +899,20 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                         </div>
 
                         <div className="p-8 bg-slate-50/80 border-t border-slate-100 flex gap-4">
-                            <button 
-                                onClick={() => { setActiveBillRecord(viewingRecord); setViewingRecord(null); }} 
+                            <button
+                                onClick={() => { setActiveBillRecord(viewingRecord); setViewingRecord(null); }}
                                 className="flex-1 flex items-center justify-center gap-3 py-4 bg-rose-600 text-white rounded-2xl font-bold hover:bg-rose-700 shadow-lg shadow-rose-600/20 active:scale-95 transition-all text-sm"
                             >
                                 <FileText className="w-4 h-4" /> मागणी बिल प्रिंट
                             </button>
-                            <button 
-                                onClick={() => { window.print(); }} 
+                            <button
+                                onClick={() => { window.print(); }}
                                 className="flex-1 flex items-center justify-center gap-3 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all text-sm"
                             >
                                 <Printer className="w-4 h-4" /> कार्ड प्रिंट
                             </button>
-                            <button 
-                                onClick={() => setViewingRecord(null)} 
+                            <button
+                                onClick={() => setViewingRecord(null)}
                                 className="px-8 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold hover:bg-slate-100 active:scale-95 transition-all text-sm"
                             >
                                 बंद करा

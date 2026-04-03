@@ -40,11 +40,9 @@ export default function App() {
   const [checkedIn, setCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState<string | null>(null);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [editProfile, setEditProfile] = useState<any>(null);
   const [profileSaving, setProfileSaving] = useState(false);
-  const profileRef = useRef<HTMLDivElement>(null);
 
   // ── Auth state ──────────────────────────────────────
   const [token, setToken] = useState<string | null>(localStorage.getItem('gp_token'));
@@ -120,19 +118,8 @@ export default function App() {
     localStorage.removeItem('gp_user');
     setRecords([]);
     setActiveView('dashboard');
-    setProfileOpen(false);
   };
 
-  // Close profile dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
-        setProfileOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const handleProfileSave = async () => {
     if (!editProfile) return;
@@ -271,7 +258,15 @@ export default function App() {
       <div className={`hidden md:flex shrink-0 no-print h-screen sticky top-0 transition-all duration-300 ease-in-out ${desktopSidebarOpen ? 'w-72' : 'w-0 opacity-0 overflow-hidden'
         }`}>
         <div className="w-72">
-          <Sidebar user={user} activeView={activeView} onNavClick={handleNavClick} totalRecords={records.length} navItems={navItems as any} />
+          <Sidebar
+            user={user}
+            activeView={activeView}
+            onNavClick={handleNavClick}
+            totalRecords={records.length}
+            navItems={navItems as any}
+            onLogout={handleLogout}
+            onEditProfile={() => { setEditProfile({ ...user }); setEditProfileOpen(true); }}
+          />
         </div>
       </div>
 
@@ -293,47 +288,55 @@ export default function App() {
           >
             <X className="w-5 h-5 text-gray-700" />
           </button>
-          <Sidebar user={user} activeView={activeView} onNavClick={handleNavClick} totalRecords={records.length} navItems={navItems as any} />
+          <Sidebar
+            user={user}
+            activeView={activeView}
+            onNavClick={handleNavClick}
+            totalRecords={records.length}
+            navItems={navItems as any}
+            onLogout={handleLogout}
+            onEditProfile={() => { setEditProfile({ ...user }); setEditProfileOpen(true); }}
+          />
         </div>
       </div>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50/50">
         {/* Unified Topbar */}
-        <div className="flex items-center justify-between px-8 py-4 bg-white/80 backdrop-blur-md border-b border-slate-200 no-print sticky top-0 z-20">
-          <div className="flex items-center gap-6">
+        <div className="flex items-center justify-between px-4 py-2 bg-white/80 backdrop-blur-md border-b border-slate-200 no-print sticky top-0 z-20">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="md:hidden p-2 hover:bg-slate-100 rounded-xl transition-colors"
+              className="md:hidden p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
             >
-              <Menu className="w-6 h-6 text-slate-700" />
+              <Menu className="w-5 h-5 text-slate-700" />
             </button>
 
             <button
               onClick={() => setDesktopSidebarOpen(!desktopSidebarOpen)}
-              className="hidden md:flex p-2.5 hover:bg-slate-100 rounded-xl transition-all active:scale-90 border border-slate-200 shadow-sm bg-white"
+              className="hidden md:flex p-1.5 hover:bg-slate-100 rounded-lg transition-all active:scale-90 border border-slate-200 shadow-sm bg-white"
               title={desktopSidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
             >
-              {desktopSidebarOpen ? <X className="w-5 h-5 text-slate-600" /> : <Menu className="w-5 h-5 text-indigo-600" />}
+              {desktopSidebarOpen ? <X className="w-4 h-4 text-slate-600" /> : <Menu className="w-4 h-4 text-indigo-600" />}
             </button>
 
             <div className="hidden md:flex flex-col">
-              <h2 className="text-lg font-black text-slate-900 tracking-tight capitalize">
+              <h2 className="text-sm font-black text-slate-900 tracking-tight capitalize leading-none">
                 {activeView.replace(/([A-Z])/g, ' $1').trim()}
               </h2>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-0.5">
                 प्रणाली संचलन केंद्र
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             {/* Attendance Toggle */}
-            <div className="flex items-center gap-3 pr-6 border-r border-slate-200">
+            <div className="flex items-center gap-2 pr-4 border-r border-slate-200">
               {checkedIn && checkInTime && (
-                <div className="bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-xl hidden lg:block animate-in fade-in slide-in-from-right-2">
-                  <p className="text-[9px] text-emerald-600 font-black uppercase leading-none mb-0.5 text-right">सक्रीय सत्र</p>
-                  <p className="text-[11px] text-slate-700 font-bold leading-none">
+                <div className="bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg hidden lg:block animate-in fade-in slide-in-from-right-2">
+                  <p className="text-[8px] text-emerald-600 font-black uppercase leading-none mb-0.5 text-right">सक्रीय</p>
+                  <p className="text-[10px] text-slate-700 font-bold leading-none">
                     {new Date(checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
@@ -358,83 +361,6 @@ export default function App() {
                   </>
                 )}
               </button>
-            </div>
-
-            {/* User Profile Dropdown */}
-            <div className="relative" ref={profileRef}>
-              <button
-                onClick={() => setProfileOpen(!profileOpen)}
-                className={`flex items-center gap-3 border rounded-2xl p-1.5 pr-4 hover:shadow-md transition-all group shrink-0 ${profileOpen ? 'bg-indigo-50 border-indigo-200 shadow-md' : 'bg-white border-slate-200'}`}
-              >
-                <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/40 group-hover:scale-105 transition-transform duration-300">
-                  <User className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-sm font-black text-slate-900 leading-tight">{user?.name || 'User'}</span>
-                  <span className="text-[10px] text-slate-400 font-bold">{ROLE_LABELS[user?.role] || user?.role}</span>
-                </div>
-                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {/* Profile Dropdown */}
-              {profileOpen && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                  {/* Header */}
-                  <div className="p-5 bg-gradient-to-br from-indigo-600 to-violet-600 text-white">
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-                        <User className="w-7 h-7" />
-                      </div>
-                      <div>
-                        <h3 className="font-black text-lg leading-tight">{user?.name}</h3>
-                        <span className="px-2 py-0.5 rounded-md bg-white/15 text-[10px] font-black uppercase tracking-wider mt-1 inline-block">
-                          {ROLE_LABELS[user?.role] || user?.role}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Details */}
-                  <div className="p-4 space-y-2.5 border-b border-slate-100">
-                    {user?.employee_id && (
-                      <div className="flex items-center gap-3 text-sm">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center"><BadgeCheck className="w-4 h-4 text-indigo-500" /></div>
-                        <div><div className="text-[9px] font-black text-slate-400 uppercase">कर्मचारी आयडी</div><div className="font-bold text-slate-700 text-xs">{user.employee_id}</div></div>
-                      </div>
-                    )}
-                    {user?.email && (
-                      <div className="flex items-center gap-3 text-sm">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center"><Mail className="w-4 h-4 text-blue-500" /></div>
-                        <div><div className="text-[9px] font-black text-slate-400 uppercase">ईमेल</div><div className="font-bold text-slate-700 text-xs">{user.email}</div></div>
-                      </div>
-                    )}
-                    {user?.mobile && (
-                      <div className="flex items-center gap-3 text-sm">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center"><Phone className="w-4 h-4 text-emerald-500" /></div>
-                        <div><div className="text-[9px] font-black text-slate-400 uppercase">संपर्क</div><div className="font-bold text-slate-700 text-xs">{user.mobile}</div></div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="p-3 space-y-1.5">
-                    <button
-                      onClick={() => { setEditProfile({ ...user }); setEditProfileOpen(true); setProfileOpen(false); }}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-indigo-50 transition-all group/btn"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center group-hover/btn:bg-indigo-100 transition-colors"><Edit2 className="w-4 h-4 text-slate-500 group-hover/btn:text-indigo-600" /></div>
-                      <div className="text-left"><div className="text-xs font-black text-slate-700">प्रोफाइल संपादित करा</div><div className="text-[10px] font-bold text-slate-400">नाव, ईमेल, संपर्क अद्यतनित करा</div></div>
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-rose-50 transition-all group/btn"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center group-hover/btn:bg-rose-100 transition-colors"><LogOut className="w-4 h-4 text-slate-500 group-hover/btn:text-rose-600" /></div>
-                      <div className="text-left"><div className="text-xs font-black text-slate-700">लॉगआउट</div><div className="text-[10px] font-bold text-slate-400">सत्र संपवा</div></div>
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -509,87 +435,92 @@ export default function App() {
         {/* Edit Profile Modal */}
         {editProfileOpen && editProfile && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300">
-              <div className="p-6 bg-gradient-to-br from-indigo-600 to-violet-600 text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xl font-black tracking-tight">प्रोफाइल संपादित करा</h3>
-                    <p className="text-white/60 text-xs font-bold mt-1">तुमची माहिती अद्यतनित करा</p>
-                  </div>
-                  <button onClick={() => setEditProfileOpen(false)} className="p-2 hover:bg-white/10 rounded-xl transition-all">
-                    <X className="w-5 h-5" />
-                  </button>
+            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-200">
+              {/* Simple Header */}
+              <div className="p-8 pb-0 flex justify-between items-start">
+                <div>
+                  <h3 className="text-2xl font-black text-slate-900 tracking-tighter">प्रोफाइल संपादित करा</h3>
+                  <p className="text-slate-400 text-xs font-bold mt-1">तुमची माहिती अद्यतनित करा</p>
                 </div>
+                <button onClick={() => setEditProfileOpen(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-all text-slate-400">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <div className="p-8 space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">पूर्ण नाव</label>
+
+              <div className="p-8 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">पूर्ण नाव</label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-500 outline-none transition-all"
+                    className="w-full px-5 py-4 bg-white border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-600 outline-none transition-all placeholder:text-slate-300"
+                    placeholder="तुमचे नाव प्रविष्ट करा"
                     value={editProfile.name || ''}
                     onChange={e => setEditProfile({ ...editProfile, name: e.target.value })}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">ईमेल</label>
+
+                <div className="grid grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">ईमेल</label>
                     <input
                       type="email"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-500 outline-none transition-all"
+                      className="w-full px-5 py-4 bg-white border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-600 outline-none transition-all"
                       value={editProfile.email || ''}
                       onChange={e => setEditProfile({ ...editProfile, email: e.target.value })}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">संपर्क क्रमांक</label>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">संपर्क</label>
                     <input
                       type="tel"
                       maxLength={10}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-500 outline-none transition-all"
+                      className="w-full px-5 py-4 bg-white border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-600 outline-none transition-all"
                       value={editProfile.mobile || ''}
                       onChange={e => setEditProfile({ ...editProfile, mobile: e.target.value.replace(/\D/g, '') })}
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">वय</label>
+
+                <div className="grid grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">वय</label>
                     <input
                       type="number"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-500 outline-none transition-all"
+                      className="w-full px-5 py-4 bg-white border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-600 outline-none transition-all"
                       value={editProfile.age || ''}
                       onChange={e => setEditProfile({ ...editProfile, age: e.target.value })}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">कर्मचारी आयडी</label>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">आयडी (ID)</label>
                     <input
                       type="text"
                       disabled
-                      className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-2xl text-sm font-bold text-slate-500 italic cursor-not-allowed"
+                      className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl text-sm font-bold text-slate-400 cursor-not-allowed"
                       value={editProfile.employee_id || ''}
                     />
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">पत्ता</label>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">पत्ता</label>
                   <textarea
                     rows={2}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-500 outline-none transition-all resize-none"
+                    className="w-full px-5 py-4 bg-white border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-600 outline-none transition-all resize-none"
                     value={editProfile.address || ''}
                     onChange={e => setEditProfile({ ...editProfile, address: e.target.value })}
                   />
                 </div>
-                <div className="pt-2 flex gap-3">
+
+                <div className="pt-4 flex gap-4">
                   <button
                     onClick={handleProfileSave}
                     disabled={profileSaving}
-                    className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                    className="flex-1 py-4.5 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                   >
-                    {profileSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> जतन करा</>}
+                    {profileSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin p-2" /> : <><Save className="w-4 h-4" /> जतन करा</>}
                   </button>
-                  <button onClick={() => setEditProfileOpen(false)} className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-200 active:scale-95 transition-all">
+                  <button onClick={() => setEditProfileOpen(false)} className="flex-1 py-4.5 p-2 bg-white border-2 border-slate-200 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-50 active:scale-[0.98] transition-all">
                     रद्द करा
                   </button>
                 </div>

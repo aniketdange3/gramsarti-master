@@ -90,13 +90,13 @@ const StatCard = ({ title, value, icon, gradient, textColor }: {
     title: string; value: string | number;
     icon: React.ReactNode; gradient: string; textColor: string;
 }) => (
-    <div className="bg-white rounded-xl px-4 py-3 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200 group flex items-center gap-4">
-        <div className={`w-[36px] h-[36px] shrink-0 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-sm group-hover:scale-110 transition-transform duration-300`}>
-            {React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5' })}
+    <div className="bg-white rounded-lg px-3 py-2 border border-slate-100 hover:border-indigo-200 transition-all duration-200 group flex items-center gap-2.5">
+        <div className={`w-[28px] h-[28px] shrink-0 rounded-md bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-sm group-hover:scale-110 transition-transform duration-300`}>
+            {React.cloneElement(icon as React.ReactElement, { className: 'w-3.5 h-3.5' })}
         </div>
         <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] leading-none mb-1.5 truncate">{title}</p>
-            <p className={`text-[15px] font-black ${textColor} leading-none tracking-tighter`}>{value}</p>
+            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5 truncate">{title}</p>
+            <p className={`text-xs font-black ${textColor} leading-none tracking-tight`}>{MN(value)}</p>
         </div>
     </div>
 );
@@ -440,8 +440,8 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
             </div>
 
             {/* Top Action Bar */}
-            <header className="bg-white border-b border-gray-100 shrink-0 shadow-sm no-print">
-                <div className="flex items-center justify-between px-4 py-2.5">
+            <header className=" no-print">
+                <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100 bg-white shadow-sm">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
                             <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
@@ -485,52 +485,52 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                 </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto space-y-2 bg-slate-50/50 flex flex-col px-1.5 py-2">
+            <div className="flex-1 overflow-y-auto space-y-2 bg-white flex flex-col px-3 py-3">
                 {activeTab === 'user_requests' ? (
                     <UserManagement onAuthError={onAuthError} addToast={addToast} />
                 ) : (
                     <>
                         {/* Highlights Row */}
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0 no-print">
-                            <StatCard 
-                                title="एकूण मालमत्ता" 
-                                value={MN(animCount)} 
-                                icon={<Users />} 
+                            <StatCard
+                                title="एकूण मालमत्ता"
+                                value={MN(animCount)}
+                                icon={<Users />}
                                 gradient="from-blue-500 to-indigo-600"
                                 textColor="text-indigo-900"
                             />
-                            <StatCard 
-                                title="एकूण मागणी (₹)" 
-                                value={`₹${MN(animDemand)}`} 
-                                icon={<IndianRupee />} 
+                            <StatCard
+                                title="एकूण मागणी (₹)"
+                                value={`₹${MN(animDemand)}`}
+                                icon={<IndianRupee />}
                                 gradient="from-amber-500 to-orange-600"
                                 textColor="text-orange-900"
                             />
-                            <StatCard 
-                                title="वसूल रक्कम (₹)" 
-                                value={`₹${MN(animPaid)}`} 
-                                icon={<CheckCircle2 />} 
+                            <StatCard
+                                title="वसूल रक्कम (₹)"
+                                value={`₹${MN(animPaid)}`}
+                                icon={<CheckCircle2 />}
                                 gradient="from-emerald-500 to-teal-600"
                                 textColor="text-emerald-900"
                             />
-                            <StatCard 
-                                title="थकबाकी (₹)" 
-                                value={`₹${MN(animBalance)}`} 
-                                icon={<AlertTriangle />} 
+                            <StatCard
+                                title="थकबाकी (₹)"
+                                value={`₹${MN(animBalance)}`}
+                                icon={<AlertTriangle />}
                                 gradient="from-rose-500 to-red-600"
                                 textColor="text-red-900"
                             />
-                            <StatCard 
-                                title="वसुली दर (%)" 
-                                value={`${MN(animRecovery / 10)}%`} 
-                                icon={<TrendingUp />} 
+                            <StatCard
+                                title="वसुली दर (%)"
+                                value={`${MN(animRecovery / 10)}%`}
+                                icon={<TrendingUp />}
                                 gradient="from-violet-500 to-purple-600"
                                 textColor="text-purple-900"
                             />
                         </div>
 
                         {/* Unified Single-Row Search & Filter Bar */}
-                        <div className="flex items-center gap-2 p-3 bg-white border border-slate-200 rounded-xl shadow-sm no-print flex-wrap lg:flex-nowrap">
+                        <div className="flex items-center gap-2 p-2 bg-white border border-slate-100 rounded-xl no-print flex-wrap lg:flex-nowrap">
                             {/* Search Component */}
                             <div className="relative flex-1 min-w-[220px] max-w-sm">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10" />
@@ -599,7 +599,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
 
 
                         {/* Records Table */}
-                        <div className="bg-white rounded-t-xl shadow-sm border border-slate-200 border-b-0 overflow-hidden flex-1 flex flex-col min-h-0">
+                        <div className="bg-white rounded-t-xl border border-slate-200 border-b-0 overflow-hidden flex-1 flex flex-col min-h-0">
                             <div className="px-3 py-1.5 border-b border-slate-200 flex flex-wrap gap-2 items-center justify-between bg-white shrink-0 relative z-10">
                                 <h3 className="text-[15px] font-black text-slate-800 tracking-tight">मालमत्ता नोंदींची सूची</h3>
                                 <div className="flex items-center gap-4">
@@ -918,12 +918,12 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                             >
                                 <FileText className="w-4 h-4" /> मागणी बिल प्रिंट
                             </button>
-                            <button
+                            {/* <button
                                 onClick={() => { window.print(); }}
                                 className="flex-1 flex items-center justify-center gap-3 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all text-sm"
                             >
                                 <Printer className="w-4 h-4" /> कार्ड प्रिंट
-                            </button>
+                            </button> */}
                             <button
                                 onClick={() => setViewingRecord(null)}
                                 className="px-8 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold hover:bg-slate-100 active:scale-95 transition-all text-sm"

@@ -1,6 +1,6 @@
 import React from 'react';
 import { hasAccess } from '../utils/permissions';
-import { Settings, LogOut, ChevronDown } from 'lucide-react';
+import { Settings, LogOut, ChevronDown, PanelLeftClose } from 'lucide-react';
 
 interface SidebarProps {
   user: any;
@@ -17,9 +17,10 @@ interface SidebarProps {
   }[];
   onLogout: () => void;
   onEditProfile: () => void;
+  onToggle?: () => void;
 }
 
-export default function Sidebar({ user, activeView, onNavClick, totalRecords, navItems, onLogout, onEditProfile }: SidebarProps) {
+export default function Sidebar({ user, activeView, onNavClick, totalRecords, navItems, onLogout, onEditProfile, onToggle }: SidebarProps) {
   const [profileOpen, setProfileOpen] = React.useState(false);
   const profileRef = React.useRef<HTMLDivElement>(null);
 
@@ -34,11 +35,19 @@ export default function Sidebar({ user, activeView, onNavClick, totalRecords, na
   }, []);
 
   return (
-    <aside className="w-64 h-full flex flex-col bg-[#0F172A] shadow-2xl relative z-10 no-print border-r border-white/5">
-      {/* Logo & Branding Area */}
-      <div className="p-6 mb-2">
-        <div className="flex items-center gap-4 p-4 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md">
-          <div className="shrink-0 w-12 h-12 bg-white p-2 rounded-2xl shadow-xl shadow-indigo-500/20">
+    <aside className="w-72 h-full flex flex-col bg-gradient-to-b from-indigo-800 to-indigo-950 relative z-10 no-print border-r border-white/5 overflow-hidden">
+      <div className="p-4 mb-1 relative group-sidebar">
+        {onToggle && (
+          <button
+            onClick={onToggle}
+            className="absolute -right-3 top-1/2 -translate-y-1/2 z-50 w-10 h-10 bg-indigo-700/50 border border-white/10 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-indigo-600 transition-all group/btn"
+            title="साइडबार बंद करा"
+          >
+            <PanelLeftClose className="w-3.5 h-3.5 group-hover/btn:-translate-x-0.5 transition-transform" />
+          </button>
+        )}
+        <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+          <div className="shrink-0 w-12 h-12 bg-white p-2 rounded-2xl border border-white/20">
             <img src="/images/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <div className="min-w-0">
@@ -56,25 +65,25 @@ export default function Sidebar({ user, activeView, onNavClick, totalRecords, na
         <div className="px-4 mb-4">
           <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">मुख्य मेनू</p>
         </div>
-        
+
         {navItems.filter(item => hasAccess(user, item.id, item.allowedRoles)).map(item => {
           const isActive = activeView === item.id;
           return (
             <button
               key={item.id}
               onClick={() => onNavClick(item.id)}
-              className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl font-bold transition-all duration-300 group relative ${isActive
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold transition-all duration-300 group relative ${isActive
+                ? 'bg-indigo-600 text-white border border-white/10'
                 : 'text-slate-400 hover:bg-white/5 hover:text-white'
                 }`}
             >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm ${isActive 
-                ? 'bg-white/20 text-white' 
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 shadow-sm ${isActive
+                ? 'bg-white/20 text-white'
                 : `bg-slate-800 text-slate-500 group-hover:bg-indigo-500/10 group-hover:text-indigo-400`
                 }`}>
-                {React.cloneElement(item.icon as React.ReactElement, { size: 20 })}
+                {React.cloneElement(item.icon as React.ReactElement, { size: 18 })}
               </div>
-              
+
               <div className="text-left flex-1 min-w-0">
                 <p className="text-sm tracking-tight truncate font-Marathi">{item.label}</p>
                 <p className={`text-[10px] font-medium truncate transition-colors ${isActive ? 'text-indigo-100/70' : 'text-slate-500 group-hover:text-slate-400'}`}>
@@ -118,11 +127,11 @@ export default function Sidebar({ user, activeView, onNavClick, totalRecords, na
           </div>
         )}
 
-        <div 
+        <div
           onClick={() => setProfileOpen(!profileOpen)}
-          className={`flex items-center gap-3 p-2 rounded-2xl transition-all cursor-pointer group border ${profileOpen ? 'bg-white/10 border-white/20' : 'hover:bg-white/5 border-transparent'}`}
+          className={`flex items-center gap-3 p-3 rounded-2xl transition-all cursor-pointer group border ${profileOpen ? 'bg-white/10 border-white/20' : 'hover:bg-white/5 border-transparent'}`}
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black group-hover:scale-105 transition-transform border border-white/10">
             {user?.name?.charAt(0).toUpperCase() || user?.username?.charAt(0).toUpperCase() || 'U'}
           </div>
           <div className="min-w-0 flex-1">
@@ -132,7 +141,7 @@ export default function Sidebar({ user, activeView, onNavClick, totalRecords, na
             </p>
           </div>
           <div className={`text-slate-500 transition-transform duration-300 ${profileOpen ? 'rotate-180' : ''}`}>
-             <ChevronDown className="w-4 h-4" />
+            <ChevronDown className="w-4 h-4" />
           </div>
         </div>
       </div>

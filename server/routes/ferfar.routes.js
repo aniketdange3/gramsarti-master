@@ -21,8 +21,9 @@ router.get('/', async (req, res) => {
 
 // Apply for ferfar (Mutation)
 router.post('/apply', async (req, res) => {
-    const { property_id, new_owner_name, applicant_name, applicant_mobile, remarks } = req.body;
-    console.log(`[FERFAR] Apply request for prop: ${property_id}, new_owner: ${new_owner_name}`);
+    const { property_id: raw_pid, new_owner_name, applicant_name, applicant_mobile, ferfar_type, remarks } = req.body;
+    const property_id = raw_pid ? String(raw_pid).trim() : null;
+    console.log(`[FERFAR] Apply body:`, { property_id, new_owner_name, ferfar_type, applicant_name, applicant_mobile });
 
     if (!property_id || !new_owner_name) {
         return res.status(400).json({ error: 'Property ID and New Owner Name are required' });
@@ -58,8 +59,17 @@ router.post('/apply', async (req, res) => {
 
         res.status(201).json({ message: 'Ferfar request applied successfully', id: result.insertId });
     } catch (err) {
-        console.error('Error applying for ferfar:', err);
-        res.status(500).json({ error: 'Failed to apply ferfar' });
+        console.error('=== FERFAR APPLY ERROR ===');
+        console.error('Message:', err.message);
+        console.error('SQL:', err.sql);
+        console.error('Code:', err.code);
+        console.error('SQLState:', err.sqlState);
+        console.error('==========================');
+        res.status(500).json({ 
+            error: 'Failed to apply ferfar',
+            detail: err.message,
+            code: err.code
+        });
     }
 });
 

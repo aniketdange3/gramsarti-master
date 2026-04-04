@@ -169,7 +169,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                             <div className="p-1 border-b border-white/10 border-dashed">बांधकाम वर्ष</div>
                                             <div className="p-1">वय</div>
                                         </th>
-                                        <th colSpan={2} className="p-1 border border-white/30">रेडी रेकनर दर</th>
+                                        <th colSpan={2} className="p-1 border border-white/30">वार्षिक मूल्य दर</th>
                                         <th rowSpan={2} className="p-0 border border-white/30 w-[50px]">
                                             <div className="p-1 border-b border-white/10 border-dashed">भारांक</div>
                                             <div className="p-1">घसारा</div>
@@ -421,7 +421,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                         <div className="pt-2 border-t-2 border-[#A80D40] text-[#A80D40] uppercase font-black text-[11px] tracking-widest">लिपिक</div>
                                     </div>
                                     <div className="text-center">
-                                        <div className="pt-2 border-t-2 border-[#A80D40] text-[#A80D40] uppercase font-black text-[11px] tracking-widest">सरपंच / उपसरपंच</div>
+                                        {/* <div className="pt-2 border-t-2 border-[#A80D40] text-[#A80D40] uppercase font-black text-[11px] tracking-widest">सरपंच / उपसरपंच</div> */}
                                     </div>
                                     <div className="text-center">
                                         <div className="pt-2 border-t-2 border-[#A80D40] text-[#A80D40] uppercase font-black text-[11px] tracking-widest">ग्रामविकास अधिकारी</div>

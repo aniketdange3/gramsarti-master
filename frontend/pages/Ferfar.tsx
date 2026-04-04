@@ -202,7 +202,7 @@ export default function Ferfar({ records, fetchRecords }: Props) {
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
                                     <input
                                         type="text"
-                                        placeholder="नाव, प्लॉट किंवा अ.क्र. टाका..."
+                                        placeholder="मालकाचे नाव, प्लॉट क्रमांक किंवा अनु. क्र. टाका..."
                                         value={search}
                                         onChange={(e) => { setSearch(e.target.value); setSelectedProp(null); }}
                                         className="w-full pl-11 pr-6 py-3.5 border-2 border-slate-100 rounded-2xl text-sm font-semibold outline-none focus:border-indigo-500 transition-all bg-slate-50/50"

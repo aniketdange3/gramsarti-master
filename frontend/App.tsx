@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, FileText, Receipt, Settings, Menu, X, Home, Activity, ChevronRight, LogOut, User, Shield, IndianRupee, FileWarning, BarChart3, List, ChevronDown, Edit2, Save, Phone, Mail, BadgeCheck, MapPin } from 'lucide-react';
+import { LayoutDashboard, FileText, Receipt, Settings, Menu, X, Home, Activity, ChevronRight, LogOut, User, Shield, IndianRupee, FileWarning, BarChart3, List, ChevronDown, Edit2, Save, Phone, Mail, BadgeCheck, MapPin, PanelLeftClose } from 'lucide-react';
 import { PropertyRecord, DEFAULT_SECTION } from './types';
 import { API_BASE_URL as BASE } from './config';
 
@@ -314,61 +314,68 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50/50">
         {/* Unified Topbar */}
-        <div className="flex items-center justify-between px-4 py-2 bg-white/80 backdrop-blur-md border-b border-slate-200 no-print sticky top-0 z-20">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-6 py-3 bg-white/60 backdrop-blur-xl border-b border-slate-200/50 no-print sticky top-0 z-20 shadow-sm">
+          <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="md:hidden p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
+              className="md:hidden p-2 hover:bg-slate-100 rounded-2xl transition-colors"
             >
               <Menu className="w-5 h-5 text-slate-700" />
             </button>
 
             <button
               onClick={() => setDesktopSidebarOpen(!desktopSidebarOpen)}
-              className="hidden md:flex p-1.5 hover:bg-slate-100 rounded-lg transition-all active:scale-90 border border-slate-200 shadow-sm bg-white"
+              className="hidden md:flex p-2 hover:bg-slate-50 rounded-xl transition-all active:scale-95 border border-slate-200 bg-white shadow-sm group"
               title={desktopSidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
             >
-              {desktopSidebarOpen ? <X className="w-4 h-4 text-slate-600" /> : <Menu className="w-4 h-4 text-indigo-600" />}
+              {desktopSidebarOpen 
+                ? <PanelLeftClose className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" /> 
+                : <Menu className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+              }
             </button>
 
             <div className="hidden md:flex flex-col">
-              <h2 className="text-sm font-black text-slate-900 tracking-tight capitalize leading-none">
-                {activeView.replace(/([A-Z])/g, ' $1').trim()}
+              <h2 className="text-sm font-black text-slate-900 tracking-tight leading-none uppercase">
+                {activeView === 'taxMaster' ? 'प्रणाली संचलन केंद्र' : activeView.replace(/([A-Z])/g, ' $1').trim()}
               </h2>
-              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-0.5">
-                प्रणाली संचलन केंद्र
-              </p>
+              <div className="flex items-center gap-2 mt-1.5">
+                <div className="w-1 h-1 bg-blue-500 rounded-full animate-pulse" />
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] leading-none">
+                  GramSarthi Portal
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             {/* Attendance Toggle */}
-            <div className="flex items-center gap-2 pr-4 border-r border-slate-200">
+            <div className="flex items-center gap-3 pr-2 border-r border-slate-200/50">
               {checkedIn && checkInTime && (
-                <div className="bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg hidden lg:block animate-in fade-in slide-in-from-right-2">
-                  <p className="text-[8px] text-emerald-600 font-black uppercase leading-none mb-0.5 text-right">सक्रीय</p>
-                  <p className="text-[10px] text-slate-700 font-bold leading-none">
+                <div className="flex flex-col items-end hidden lg:flex">
+                  <span className="text-[8px] text-emerald-500 font-black uppercase tracking-widest leading-none mb-1">सक्रीय</span>
+                  <span className="text-xs font-black text-slate-700 leading-none tabular-nums">
                     {new Date(checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
+                  </span>
                 </div>
               )}
               <button
                 onClick={handleAttendanceToggle}
                 disabled={attendanceLoading}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all hover-lift active:scale-95 ${checkedIn
-                  ? 'bg-rose-50 text-rose-600 border border-rose-200 shadow-sm'
-                  : 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                className={`group relative overflow-hidden flex items-center gap-2 px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-500 ${checkedIn
+                  ? 'bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-100 shadow-sm'
+                  : 'bg-[#0f172a] text-white shadow-xl shadow-blue-900/20 hover:shadow-blue-900/30 hover:-translate-y-0.5'
                   }`}
               >
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none" />
                 {attendanceLoading ? (
                   <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
                 ) : checkedIn ? (
                   <>
-                    <X className="w-3 h-3" /> चेक-आऊट
+                    <X className="w-3 h-3 group-hover:rotate-90 transition-transform" /> <span>चेक-आऊट</span>
                   </>
                 ) : (
                   <>
-                    <Activity className="w-3 h-3" /> चेक-इन
+                    <Activity className="w-3.5 h-3.5 text-blue-400 animate-pulse" /> <span>चेक-इन</span>
                   </>
                 )}
               </button>

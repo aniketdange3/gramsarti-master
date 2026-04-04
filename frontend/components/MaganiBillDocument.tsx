@@ -18,7 +18,7 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
     const currYear = PANCHAYAT_CONFIG.financialYear;
 
     const taxMapping = [
-        { name: 'मागील थकबाकी', arrears: Number(record.arrearsAmount) || 0, current: 0, field: 'arrears' },
+        // { name: 'मागील थकबाकी', arrears: Number(record.arrearsAmount) || 0, current: 0, field: 'arrears' },
         { name: 'घर कर', arrears: 0, current: Number(record.propertyTax) || 0, field: 'propertyTax' },
         { name: 'जमीन कर', arrears: 0, current: Number(record.openSpaceTax) || 0, field: 'openSpaceTax' },
         { name: 'दिवाबत्ती कर', arrears: 0, current: Number(record.streetLightTax) || 0, field: 'streetLightTax' },
@@ -26,7 +26,7 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
         { name: 'इमला कर (अतिक्रमण)', arrears: 0, current: Number((record as any).surchargeTotal) || 0, field: 'surchargeTotal' },
         { name: 'कचरा गाडी कर', arrears: 0, current: Number((record as any).wasteCollectionTax) || 0, field: 'wasteCollectionTax' },
         { name: 'विशेष / सामान्य पाणी कर', arrears: 0, current: (Number(record.specialWaterTax) > 0 ? Number(record.specialWaterTax) : (Number(record.generalWaterTax) || 0)), field: 'waterTax' },
-        { name: 'उशिरा भराणा (५% दंड)', arrears: Number(calc.penaltyAmount) || 0, current: 0, field: 'penalty' },
+        { name: '५% दंड थकीत रकमेवर ', arrears: Number(calc.penaltyAmount) || 0, current: 0, field: 'penalty' },
     ];
 
     const currentTotal = taxMapping.reduce((acc, row) => acc + row.current, 0);
@@ -39,7 +39,7 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
             <img
                 src="/images/logo.png"
                 alt="Watermark"
-                className="absolute  top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-55 h-55 opacity-[0.2] pointer-events-none p-10"
+                className="absolute  top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-55 h-55 opacity-[0.3] pointer-events-none p-10"
             />
 
             {/* Copy Label Badge (Integrated with border) */}
@@ -58,37 +58,42 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
                     <img
                         src="/images/logo.png"
                         alt="Logo"
-                        className="absolute top-0 left-0 w-[65px] h-[65px] object-contain"
+                        className="absolute top-0 left-0 w-[90px] h-[90px] object-contain"
                     />
                     <h1 className="text-xl font-black mt-1 mb-1 leading-none">कर मागणी बिल</h1>
                     <p className="text-[10px] font-bold leading-none">(नमुना नं. ९ "क")</p>
-                    <p className="text-xs font-bold mt-1">कार्यालय ग्रामपंचायत {PANCHAYAT_CONFIG.gpName}</p>
+                    <p className="text-[9px] mt-1">[ नियम ३२ (५) पहा ]</p>
+                    <p className="text-xs font-bold mt-1">कार्यालय  गट ग्रामपंचायत {PANCHAYAT_CONFIG.gpName}</p>
                     <p className="text-[10px] font-bold">तालुका {PANCHAYAT_CONFIG.taluka} जि. {PANCHAYAT_CONFIG.jilha}</p>
-                    <p className="text-[9px] mt-1">(महाराष्ट्र शासन ग्रा. पं. कायदा १९५८ कलम १२९ अन्वये)</p>
+
                     <p className="text-[10px]"><b>[ सन {currYear} ]</b></p>
                 </div>
 
                 {/* Owner Info Section */}
                 <div className="mb-4 text-xs">
                     <div className="flex items-baseline gap-2 mb-2">
-                        <span className="flex-1 border-b border-dotted border-gray-600 font-black text-sm">{record.ownerName}</span>
+                        <span className="flex-1 border-b border-dotted border-gray-600 font-black text-sm">श्री/श्रीमती: &nbsp; {record.ownerName}</span>
                     </div>
 
                     <table className="w-full border-collapse border border-gray-600 mb-2 text-center">
                         <tbody>
                             <tr className="text-[9px]">
-                                <td className="border border-gray-600 p-1"><b>वस्ती:</b> {record.wastiName || '-'}</td>
-                                <td className="border border-gray-600 p-1"><b>वार्ड क्र:</b> {MN(record.wardNo)}</td>
-                                <td className="border border-gray-600 p-1"><b>खसरा क्र:</b> {MN(record.khasraNo)}</td>
-                                <td className="border border-gray-600 p-1"><b>मालमत्ता क्र:</b> {MN(record.plotNo)}</td>
-                                <td className="border border-gray-600 p-1"><b>मोबाईल:</b> {MN(record.contactNo || '-')}</td>
+                                <td className="border border-gray-600 p-1"><b>मौजा:</b> {record.wastiName || '-'}</td>
+                                {/* <td className="border border-gray-600 p-1"><b>वार्ड क्र:</b> {MN(record.wardNo)}</td> */}
+                                <td className="border border-gray-600 p-1"><b>खसरा क्र:</b> {(record.khasraNo)}</td>
+                                <td className="border border-gray-600 p-1"><b>प्लॉट क्र:</b> {MN(record.plotNo)}</td>
+                                {/* <td className="border border-gray-600 p-1"><b>मोबाईल:</b> {MN(record.contactNo || '-')}</td> */}
                                 <td className="border border-gray-600 p-1"><b>बिल क्र:</b> {MN(record.srNo)}</td>
+                            </tr>
+                            <tr className="text-[9px]">
+                                <td className="border border-gray-600 p-1 text-left" colSpan={4}>
+                                    <b>लेआऊट / सोसायटीचे नाव:</b>&nbsp;{record.layoutName || '-'}
+                                </td>
                             </tr>
                         </tbody>
                     </table>
-
                     <div className="mb-1">
-                        <p className="text-[10px]"><b>ग्रामपंचायत {PANCHAYAT_CONFIG.gpName} येथील यांचकडून कळविण्यात येते की आपणाकडील ग्रामपंचायतीची खालील दिलेल्या तपशिलाप्रमाणे कराची रक्कम येणे आहे.
+                        <p className="text-[10px]"><b> गट ग्रामपंचायत {PANCHAYAT_CONFIG.gpName} कडून कळविण्यात येते की आपल्या  मालमत्तेचे खालील दिलेल्या तपशिलाप्रमाणे कराची रक्कम वसुली योग्य आहे
                         </b></p>
                     </div>
                 </div>
@@ -112,36 +117,61 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
                                 <td className="p-1 text-right font-black">{MN(Number(tax.arrears || 0) + Number(tax.current || 0))}</td>
                             </tr>
                         ))}
-                        <tr className="border-t border-gray-600 text-white bg-[#7cdc39] font-black">
+                        {/* Total Row */}
+                        <tr className="border-b border-gray-600  font-black">
                             <td className="border-r border-gray-600 p-1">एकूण</td>
                             <td className="border-r border-gray-600 p-1 text-right">{MN(arrearsTotal)}</td>
                             <td className="border-r border-gray-600 p-1 text-right">{MN(currentTotal)}</td>
                             <td className="p-1 text-right text-[12px]">रु.{MN(grandTotal)}</td>
                         </tr>
+                        {/* 5% Discount Row */}
+                        <tr className="border-b border-gray-600 text-gray-800">
+                            <td className="border-r border-gray-600 p-1 font-black text-[9px]">५% सूट (चालू रकमेवर सप्टेंबर पर्यंत)</td>
+                            <td className="border-r border-gray-600 p-1 text-right text-slate-400">-</td>
+                            <td className="border-r border-gray-600 p-1 text-right text-green-700 font-black">({MN((currentTotal * 0.05).toFixed(2))})</td>
+                            <td className="p-1 text-right font-black text-green-700">-{MN((currentTotal * 0.05).toFixed(2))}</td>
+                        </tr>
+                        {/* Net Payable Row */}
+                        <tr className=" border-b border-gray-600 bg-[#7cdc39] text-white font-black">
+                            <td className="border-r border-gray-600 p-1">एकूण देय रक्कम</td>
+                            <td className="border-r border-gray-600 p-1 text-right">{MN(arrearsTotal)}</td>
+                            <td className="border-r border-gray-600 p-1 text-right">{MN((currentTotal - currentTotal * 0.05).toFixed(2))}</td>
+                            <td className="p-1 text-right text-[12px]">{MN((grandTotal - currentTotal * 0.05).toFixed(2))}रु</td>
+                        </tr>
                     </tbody>
                 </table>
 
                 {/* Footer Section */}
-                <div className="mt-8 border-t border-gray-400 pt-3">
-                    <p className="text-[10px] font-black leading-tight mb-2">
-                        सदर बिलाप्रमाणे एकूण अक्षरी रु. {numberToMarathiWords(grandTotal)} फक्त.
+                <div className="mt-1 ">
+                    <p className="text-[10px] font-black leading-tight mb-2 ">
+                        अक्षरी - <span className="underline text-[12px]">{numberToMarathiWords(Math.round(grandTotal - currentTotal * 0.05))} रु.</span> फक्त.
                     </p>
-                    <p className="text-[9px] font-bold leading-tight mb-1">
-                        ही रक्कम बिल मिळाल्यापासून १५ दिवसाच्या आत कार्यालयात आणुन भरावी व लेखी पावती घ्यावी.
+                    <div className="space-y-1 mb-2">
+                        <div className="flex gap-1.5 text-[9px] font-bold leading-tight">
+                            <span className="shrink-0 font-black">•</span>
+                            <p>सदर मागणी बिल मिळाल्यापासून १५ दिवसांच्या आत ग्रा.पं कार्यालयात  कर भरणा करून कर पावती घ्यावी .</p>
+                        </div>
+                        <div className="flex gap-1.5 text-[9px] font-bold leading-tight">
+                            <span className="shrink-0 font-black">•</span>
+                            <p>त्याच प्रमाणे सदर कर भरणा न केल्यास महाराष्ट्र ग्रामपंचायत अधिनियम १९५९ च्या कलम १२९ (२) अन्वये पुढील कायदेशीर कार्यवाही करण्यात येईल, याची नोंद घ्यावी.</p>
+                        </div>
+                    </div>
+                    <p className="text-[9px] font-bold leading-tight">
+                        दिनांक: {record.paymentDate ? MN(record.paymentDate) : '____/____/२०____'}
                     </p>
-                    <p className="text-[9px] font-bold leading-tight mb-4">
-                        त्या प्रमाणे तुमच्याकडून झाले नाही तर महाराष्ट्र शासन सन १९५८ च्या ग्रा.प. का. १२९ च्या नियम नं.३ प्रमाणे तुम्हास नोटिस केली जाईल व पुढील कायदेशीर कार्यवाही केली जाईल.
-                    </p>
-
-                    <div className="flex justify-between items-end text-[10px] mt-6">
-                        <div className="flex flex-col gap-6">
-                            <p className="font-bold">सही (करदाता)</p>
-                            <p>दिनांक: {MN(new Date().toLocaleDateString('mr-IN'))}</p>
+                    <div className="flex justify-between items-end text-[10px] mt-4">
+                        <div className="text-center">
+                            <div className="w-28 h-10 mb-1"></div>
+                            <div className="border-t border-gray-600 pt-1">
+                                <p className="font-black text-[9px]">सही (मालमत्ता धारक )</p>
+                            </div>
                         </div>
                         <div className="text-center">
-                            <div className="w-32 h-16 mb-1 border-b border-gray-400 opacity-20"></div> {/* Signature Space */}
-                            <p className="font-black">सरपंच/सचिव</p>
-                            <p className="text-[8px]">ग्रा. पं. {PANCHAYAT_CONFIG.gpName}</p>
+                            <div className="w-28 h-10 mb-1"></div>
+                            <div className="border-t border-gray-600 pt-1">
+                                <p className="font-black text-[9px]"> सरपंच / ग्रांमपंचायत  अधिकारी</p>
+                                <p className="text-[8px] text-gray-600">गट ग्रा. पं. {PANCHAYAT_CONFIG.gpName}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -178,7 +208,7 @@ export default function MaganiBillDocument({ record }: Props) {
 
             <div className="flex flex-row w-full h-[210mm] overflow-hidden print-container">
                 <BillContent record={record} copyLabel="कार्यालयीन प्रत" />
-                <BillContent record={record} copyLabel="ग्राहक प्रत" />
+                <BillContent record={record} copyLabel="लाभार्थी प्रत" />
             </div>
 
             <div className="no-print mt-8 p-4 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 font-bold max-w-[210mm] mx-auto text-center mb-10 shadow-sm">

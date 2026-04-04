@@ -210,6 +210,7 @@ export interface FerfarRequest {
   created_at: string;
   approved_at?: string;
   approved_by?: number;
+  ferfar_type?: string;
   // Joined fields from properties
   srNo?: number;
   wardNo?: string;

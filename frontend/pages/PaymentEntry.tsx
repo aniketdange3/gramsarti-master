@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '@/config';
 import React, { useState, useEffect, useMemo } from 'react';
+import { useUI } from '../components/UIProvider';
 import { Search, IndianRupee, CreditCard, Banknote, Smartphone, Building2, Receipt, Eye, Calendar, Filter, CheckCircle2 } from 'lucide-react';
 import { PropertyRecord, WASTI_NAMES } from '../types';
 import { matchesSearch } from '../utils/transliterate';
@@ -23,8 +24,6 @@ const MODE_ICONS: Record<string, React.ReactNode> = {
     NetBanking: <Building2 className="w-4 h-4" />,
 };
 
-interface Toast { id: number; message: string; type: 'success' | 'error' }
-
 export default function PaymentEntry({ records, fetchRecords, onUpdateLocalRecord, onAuthError }: PaymentEntryProps) {
     const [search, setSearch] = useState('');
     const [selectedProp, setSelectedProp] = useState<PropertyRecord | null>(null);
@@ -37,7 +36,7 @@ export default function PaymentEntry({ records, fetchRecords, onUpdateLocalRecor
     const [remarks, setRemarks] = useState('');
     const [saving, setSaving] = useState(false);
     const [payments, setPayments] = useState<any[]>([]);
-    const [toasts, setToasts] = useState<Toast[]>([]);
+    const { addToast } = useUI();
     const [viewReceipt, setViewReceipt] = useState<any>(null);
 
     const currentUser = useMemo(() => JSON.parse(localStorage.getItem('gp_user') || '{}'), []);
@@ -47,11 +46,6 @@ export default function PaymentEntry({ records, fetchRecords, onUpdateLocalRecor
     const BASE = `${API_BASE_URL}`;
     const token = localStorage.getItem('gp_token') || '';
 
-    const addToast = (message: string, type: 'success' | 'error') => {
-        const id = Date.now();
-        setToasts(prev => [...prev, { id, message, type }]);
-        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
-    };
 
     const fetchPayments = async () => {
         try {
@@ -127,20 +121,13 @@ export default function PaymentEntry({ records, fetchRecords, onUpdateLocalRecor
         : 0;
 
     return (
-        <div className="flex flex-col h-full bg-slate-50">
-            {/* Toast */}
-            <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none">
-                {toasts.map(t => (
-                    <div key={t.id} className={`pointer-events-auto px-4 py-3 rounded-xl shadow-lg text-sm font-bold flex items-center gap-2 ${t.type === 'success' ? 'bg-success text-white' : 'bg-rose-600 text-white'}`}>
-                        {t.message}
-                    </div>
-                ))}
-            </div>
+        <div className="flex flex-col h-full bg-bg transition-colors duration-300">
+            {/* Global Toasts are handled by UIProvider */}
 
             {/* Header */}
-            <div className="bg-white border-b border-gray-100 px-6 py-4 shadow-sm no-print flex items-center justify-between">
-                <h2 className="text-lg font-black text-gray-800">💰 कर वसुली — Payment Entry</h2>
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">नवीन भरणा नोंदवणे व पावती</p>
+            <div className="bg-surface border-b border-border px-6 py-4 shadow-sm no-print flex items-center justify-between">
+                <h2 className="text-lg font-black text-text">💰 कर वसुली — Payment Entry</h2>
+                <p className="text-xs text-text-muted font-black uppercase tracking-widest mt-1">नवीन भरणा नोंदवणे व पावती</p>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6">

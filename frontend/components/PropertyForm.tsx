@@ -39,10 +39,10 @@ const MN = (v: number | string | undefined) =>
     String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
 
 const FieldLabel = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-    <label className={`block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ${className}`}>{children}</label>
+    <label className={`block text-[10px] font-black text-text-muted uppercase tracking-widest mb-1.5 ${className}`}>{children}</label>
 );
 
-const INPUT_CLASSES = "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white disabled:bg-slate-50 disabled:text-slate-500";
+const INPUT_CLASSES = "w-full border border-border rounded-xl px-3 py-2.5 text-sm font-black focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-surface text-text disabled:bg-surface-hover/50 disabled:text-text-muted";
 
 const FormInput = ({ className = '', ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
     <input
@@ -61,11 +61,11 @@ const FormSelect = ({ className = '', children, ...props }: React.SelectHTMLAttr
 );
 
 const FLOOR_COLORS = [
-    { bg: 'bg-primary/5', border: 'border-primary/20', badge: 'bg-primary', text: 'text-primary-dark', icon: 'bg-primary/10 text-primary' },
-    { bg: 'bg-blue-50', border: 'border-blue-200', badge: 'bg-blue-600', text: 'text-blue-700', icon: 'bg-blue-100 text-blue-600' },
-    { bg: 'bg-indigo-50', border: 'border-indigo-200', badge: 'bg-indigo-600', text: 'text-indigo-700', icon: 'bg-indigo-100 text-indigo-600' },
-    { bg: 'bg-violet-50', border: 'border-violet-200', badge: 'bg-violet-600', text: 'text-violet-700', icon: 'bg-violet-100 text-violet-600' },
-    { bg: 'bg-slate-50', border: 'border-slate-200', badge: 'bg-slate-600', text: 'text-slate-700', icon: 'bg-slate-100 text-slate-600' },
+    { bg: 'bg-primary/5', border: 'border-primary/20', badge: 'bg-primary', text: 'text-primary', icon: 'bg-primary/10 text-primary' },
+    { bg: 'bg-secondary/5', border: 'border-secondary/20', badge: 'bg-secondary', text: 'text-secondary', icon: 'bg-secondary/10 text-secondary' },
+    { bg: 'bg-accent/5', border: 'border-accent/20', badge: 'bg-accent', text: 'text-accent', icon: 'bg-accent/10 text-accent' },
+    { bg: 'bg-success/5', border: 'border-success/20', badge: 'bg-success', text: 'text-success', icon: 'bg-success/10 text-success' },
+    { bg: 'bg-surface-hover/50', border: 'border-border', badge: 'bg-text-muted', text: 'text-text', icon: 'bg-surface-hover text-text-muted' },
 ];
 
 const PropertyForm = ({
@@ -486,17 +486,17 @@ const PropertyForm = ({
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-6">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden flex flex-col">
+            <div className="bg-surface rounded-3xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden flex flex-col border border-border">
                 {/* Modal Header */}
                 <div className="px-7 py-5 flex justify-between items-center shrink-0 shadow-lg relative z-10"
-                    style={{ background: 'linear-gradient(135deg, #544CE6, #302C80)' }}>
+                    style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))' }}>
                     <div>
                         <h2 className="text-xl font-black text-white flex items-center gap-2">
                             <Building2 className="w-6 h-6" />
                             {initialData ? 'नोंद सुधारा' : 'नवीन मालमत्ता नोंद'}
                         </h2>
-                        <p className="text-primary-light text-xs mt-0.5 font-medium">
-                            {initialData ? `अ.क्र. ${initialData.srNo} • ${initialData.ownerName}` : 'नवीन नोंदणी'}
+                        <p className="text-white/70 text-xs mt-0.5 font-black uppercase tracking-widest">
+                            {initialData ? `अ.क्र. ${MN(initialData.srNo)} • ${initialData.ownerName}` : 'नवीन नोंदणी'}
                         </p>
                     </div>
                     <button onClick={onCancel} className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white no-print">
@@ -517,8 +517,8 @@ const PropertyForm = ({
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
                     <div className="p-6 space-y-6">
                         {/* Section 1: Location & Identification */}
-                        <div className="bg-primary/5 rounded-2xl p-5 border border-primary/10">
-                            <h3 className="text-sm font-black text-primary-dark uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <div className="bg-surface-hover/50 rounded-2xl p-5 border border-border">
+                            <h3 className="text-sm font-black text-text uppercase tracking-wider mb-4 flex items-center gap-2">
                                 <div className="w-5 h-5 bg-primary/10 rounded-lg flex items-center justify-center text-primary text-xs font-black">१</div>
                                 स्थान व ओळख (Location & ID)
                             </h3>
@@ -597,9 +597,9 @@ const PropertyForm = ({
                         </div>
 
                         {/* Section 2: Ownership Details */}
-                        <div className="bg-blue-50/50 rounded-2xl p-5 border border-blue-100">
-                            <h3 className="text-sm font-black text-blue-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <div className="w-5 h-5 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 text-xs font-black">२</div>
+                        <div className="bg-surface rounded-2xl p-5 border border-border shadow-sm">
+                            <h3 className="text-sm font-black text-secondary uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <div className="w-5 h-5 bg-secondary/10 rounded-lg flex items-center justify-center text-secondary text-xs font-black">२</div>
                                 मालकाचा तपशील (Ownership)
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -607,7 +607,7 @@ const PropertyForm = ({
                                     <FieldLabel>{LABELS.ownerName}</FieldLabel>
                                     <TransliterationInput
                                         placeholder={PLACEHOLDERS.ownerName}
-                                        className={`${INPUT_CLASSES} border-2 border-blue-100 font-bold`}
+                                        className={`${INPUT_CLASSES} border-primary/30 font-black text-base`}
                                         value={formData.ownerName}
                                         onChangeText={val => setFormData({ ...formData, ownerName: val })}
                                         required
@@ -634,7 +634,7 @@ const PropertyForm = ({
                                     />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-blue-100/50">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-border">
                                 <div>
                                     <FieldLabel>{LABELS.lengthFt} (एकूण)</FieldLabel>
                                     <FormInput type="number" placeholder={PLACEHOLDERS.length}
@@ -1102,21 +1102,21 @@ const PropertyForm = ({
                     </div>
 
                     {/* Footer */}
-                    <div className="px-6 py-4 border-t bg-gray-50 flex justify-between items-center shrink-0">
-                        <div className="text-xs text-gray-400 font-medium">
-                            {formData.wastiName && <span className="bg-indigo-50 text-indigo-600 font-bold px-2 py-1 rounded-lg">{formData.wastiName}</span>}
+                    <div className="px-6 py-4 border-t border-border bg-surface flex justify-between items-center shrink-0">
+                        <div className="text-xs text-text-muted font-black uppercase tracking-widest">
+                            {formData.wastiName && <span className="bg-primary/5 text-primary px-2 py-1 rounded-lg">{formData.wastiName}</span>}
                         </div>
                         <div className="flex gap-3">
                             <button type="button" onClick={onCancel}
-                                className="px-5 py-2.5 text-gray-600 hover:bg-gray-200 rounded-xl font-bold transition-colors text-sm">
-                                रद्द करा
+                                className="px-5 py-2.5 text-text-muted hover:bg-surface-hover rounded-xl font-black transition-all text-sm uppercase tracking-widest">
+                                रद्द करा (Cancel)
                             </button>
                             <button type="submit" disabled={saving}
-                                className="px-8 py-2.5 bg-primary text-white rounded-xl font-black hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all text-sm flex items-center gap-2 disabled:opacity-70">
+                                className="px-8 py-2.5 bg-primary text-white rounded-xl font-black hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all text-sm flex items-center gap-2 disabled:opacity-70 uppercase tracking-widest">
                                 {saving ? (
                                     <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> जतन होत आहे...</>
                                 ) : (
-                                    <><Save className="w-4 h-4" /> जतन करा</>
+                                    <><Save className="w-4 h-4" /> जतन करा (Save)</>
                                 )}
                             </button>
                         </div>

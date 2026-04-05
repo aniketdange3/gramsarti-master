@@ -11,6 +11,7 @@
  */
 
 const express = require('express');
+const compression = require('compression');
 const cors = require('cors');
 const { db, initializeDatabase } = require('./database');
 const authRoutes = require('./routes/auth.routes');
@@ -19,6 +20,7 @@ const maganiRoutes = require('./routes/magani.routes');
 const attendanceRoutes = require('./routes/attendance.routes');
 
 const app = express();
+app.use(compression());
 
 app.use(cors({
     origin: function (origin, callback) {
@@ -519,6 +521,7 @@ const clearTaxRatesCache = () => {
 app.get('/api/tax-rates', async (req, res) => {
     try {
         // जर कॅशे उपलब्ध असेल तर थेट कॅशेमधून डेटा पाठवा (Optimized Caching)
+        res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
         if (taxRatesCache) {
             console.log('[CACHE] Returning cached tax rates');
             return res.json(taxRatesCache);
@@ -608,6 +611,7 @@ app.post('/api/system-config', async (req, res) => {
 // Get all categories
 app.get('/api/master/categories', async (req, res) => {
     try {
+        res.setHeader('Cache-Control', 'public, max-age=3600');
         const [rows] = await db.query('SELECT * FROM master_categories ORDER BY name_mr ASC');
         res.json(rows);
     } catch (err) {
@@ -689,6 +693,7 @@ app.delete('/api/master/items/:id', async (req, res) => {
 
 app.get('/api/master/depreciation', async (req, res) => {
     try {
+        res.setHeader('Cache-Control', 'public, max-age=3600');
         const [rows] = await db.query('SELECT * FROM depreciation_rates ORDER BY min_age ASC');
         res.json(rows);
     } catch (err) {

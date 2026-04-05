@@ -13,6 +13,7 @@
 
 import { API_BASE_URL } from '@/config';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useUI } from '../components/UIProvider';
 import { Plus, FileSpreadsheet, Search, Edit2, Trash2, X, ChevronRight, ChevronLeft, FileDown, Printer, FileUp, FileText, Receipt, Eye, TrendingUp, Users, IndianRupee, AlertTriangle, CheckCircle2, Filter, RotateCcw, Shield } from 'lucide-react';
 import { PropertyRecord, PropertySection, DEFAULT_SECTION, FLOOR_NAMES, PROPERTY_TYPES, WASTI_NAMES } from '../types';
 import { ROLES } from './Login';
@@ -46,19 +47,6 @@ const sortKhasra = (a: string, b: string) => {
     return aEng.localeCompare(bEng, undefined, { numeric: true, sensitivity: 'base' });
 };
 
-// --- Toast Notification ---
-interface Toast { id: number; message: string; type: 'success' | 'error' | 'info'; }
-
-const useToast = () => {
-    const [toasts, setToasts] = useState<Toast[]>([]);
-    const addToast = useCallback((message: string, type: Toast['type'] = 'info') => {
-        const id = Date.now();
-        setToasts(prev => [...prev, { id, message, type }]);
-        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
-    }, []);
-    return { toasts, addToast };
-};
-
 // --- Marathi Numerals ---
 const MN = (v: number | string | undefined) =>
     String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
@@ -90,13 +78,13 @@ const StatCard = ({ title, value, icon, gradient, textColor }: {
     title: string; value: string | number;
     icon: React.ReactNode; gradient: string; textColor: string;
 }) => (
-    <div className="bg-white rounded-lg px-3 py-2 border border-slate-100 hover:border-indigo-200 transition-all duration-200 group flex items-center gap-2.5">
-        <div className={`w-[28px] h-[28px] shrink-0 rounded-md bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-sm group-hover:scale-110 transition-transform duration-300`}>
-            {React.cloneElement(icon as React.ReactElement, { className: 'w-3.5 h-3.5' })}
+    <div className="bg-surface rounded-xl px-4 py-3 border border-border hover:border-primary/30 transition-all duration-300 group flex items-center gap-4 shadow-sm hover:shadow-md">
+        <div className={`w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+            {React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5' })}
         </div>
         <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5 truncate">{title}</p>
-            <p className={`text-xs font-black ${textColor} leading-none tracking-tight`}>{MN(value)}</p>
+            <p className="text-[10px] font-black text-text-muted uppercase tracking-widest leading-none mb-1 truncate">{title}</p>
+            <p className={`text-base font-black ${textColor} leading-none tracking-tight`}>{MN(value)}</p>
         </div>
     </div>
 );
@@ -133,7 +121,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
     const ITEMS_PER_PAGE = 25;
     const [activeTab, setActiveTab] = useState<'dashboard' | 'user_requests'>(initialTab || 'dashboard');
     const [activeBillRecord, setActiveBillRecord] = useState<PropertyRecord | null>(null);
-    const { toasts, addToast } = useToast();
+    const { addToast } = useUI();
 
     const currentUser = useMemo(() => JSON.parse(localStorage.getItem('gp_user') || '{}'), []);
     const isAdmin = currentUser.role === 'super_admin' || currentUser.role === 'gram_sachiv' || currentUser.role === 'gram_sevak';
@@ -429,17 +417,6 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
 
     return (
         <>
-            {/* Toast Container */}
-            <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none">
-                {toasts.map(t => (
-                    <div key={t.id} className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-white text-sm font-bold backdrop-blur-sm pointer-events-auto transition-all duration-300 animate-in slide-in-from-right ${t.type === 'success' ? 'bg-success/95' :
-                        t.type === 'error' ? 'bg-rose-600/95' : 'bg-primary/95'
-                        }`}>
-                        {t.message}
-                    </div>
-                ))}
-            </div>
-
             {/* Top Action Bar */}
             <header className=" no-print">
                 <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100 bg-white shadow-sm">

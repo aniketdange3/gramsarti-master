@@ -25,6 +25,8 @@ import Reports from './pages/Reports';
 import { TaxMaster as TaxMaster_Modernized } from './components/TaxMaster';
 import Ferfar from './pages/Ferfar';
 import Sidebar from './components/Sidebar';
+import { UIProvider, useUI } from './components/UIProvider';
+import { Sun, Moon } from 'lucide-react';
 
 type ViewType = 'dashboard' | 'namuna8' | 'namuna9' | 'taxMaster' | 'payments' | 'magani' | 'reports' | 'roleAccess' | 'ferfar';
 
@@ -69,6 +71,18 @@ export default function App() {
   // Fetch data on login
   useEffect(() => {
     if (isLoggedIn) {
+      // 1. Load from cache immediately for "Instant Start"
+      const cached = localStorage.getItem('gp_records');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) {
+            setRecords(parsed);
+            setIsLoading(false); // Hide loader if we have cache
+          }
+        } catch (e) { console.error('Cache parse error:', e); }
+      }
+
       fetchRecords();
       fetchTaxRates();
       fetchAttendanceStatus();
@@ -216,6 +230,8 @@ export default function App() {
         }))
       }));
       setRecords(normalizedData);
+      // 2. Update cache for next reload
+      localStorage.setItem('gp_records', JSON.stringify(normalizedData));
     } catch (error) {
       console.error('Error fetching records:', error);
     } finally {
@@ -239,22 +255,51 @@ export default function App() {
     setRecords(prev => prev.filter(r => r.id !== id));
   };
 
-  // ── If not logged in, show Login page ──
-  if (!isLoggedIn) {
-    return <Login onLogin={handleLogin} />;
-  }
+  return (
+    <UIProvider>
+      {!isLoggedIn ? (
+        <Login onLogin={handleLogin} />
+      ) : (
+        <AppContent 
+          user={user}
+          activeView={activeView}
+          setActiveView={setActiveView}
+          records={records}
+          fetchRecords={fetchRecords}
+          handleUpdateLocalRecord={handleUpdateLocalRecord}
+          handleRemoveLocalRecord={handleRemoveLocalRecord}
+          handleLogout={handleLogout}
+          taxRates={taxRates}
+          selectedRecordId={selectedRecordId}
+          setSelectedRecordId={setSelectedRecordId}
+          isLoading={isLoading}
+          checkedIn={checkedIn}
+          checkInTime={checkInTime}
+          attendanceLoading={attendanceLoading}
+          handleAttendanceToggle={handleAttendanceToggle}
+          setEditProfile={setEditProfile}
+          setEditProfileOpen={setEditProfileOpen}
+          editProfileOpen={editProfileOpen}
+          editProfile={editProfile}
+          profileSaving={profileSaving}
+          handleProfileSave={handleProfileSave}
+        />
+      )}
+    </UIProvider>
+  );
+}
 
-  const navItems: { id: ViewType; label: string; sublabel: string; icon: React.ReactNode; color: string; allowedRoles?: string[] }[] = [
-    { id: 'dashboard', label: 'डैशबोर्ड', sublabel: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, color: 'from-violet-500 to-indigo-600' },
-    { id: 'namuna8', label: 'नमुना ८', sublabel: 'Assessment Register', icon: <FileText className="w-5 h-5" />, color: 'from-sky-500 to-blue-600' },
-    { id: 'namuna9', label: 'नमुना ९', sublabel: 'Tax Notice', icon: <Receipt className="w-5 h-5" />, color: 'from-emerald-500 to-green-600' },
-    // { id: 'payments', label: 'कर वसुली', sublabel: 'Payment Entry', icon: <IndianRupee className="w-5 h-5" />, color: 'from-teal-500 to-cyan-600', allowedRoles: ['super_admin', 'gram_sevak', 'operator', 'gram_sachiv', 'bill_operator'] },
-    // { id: 'magani', label: 'मागणी बिल', sublabel: 'Recovery System', icon: <FileWarning className="w-5 h-5" />, color: 'from-rose-500 to-red-600', allowedRoles: ['super_admin', 'gram_sevak', 'operator', 'gram_sachiv'] },
-    // { id: 'reports', label: 'अहवाल', sublabel: 'Reports', icon: <BarChart3 className="w-5 h-5" />, color: 'from-purple-500 to-fuchsia-600', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
-    { id: 'ferfar', label: 'फेरफार नोंदवही', sublabel: 'Mutation Register', icon: <FileText className="w-5 h-5" />, color: 'from-fuchsia-500 to-purple-600', allowedRoles: ['super_admin', 'gram_sevak', 'operator'] },
-    { id: 'roleAccess', label: 'रोल अ‍ॅक्सेस', sublabel: 'Role Access', icon: <Shield className="w-5 h-5" />, color: 'from-rose-600 to-rose-400', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
-    { id: 'taxMaster', label: 'प्रणाली संचलन केंद्र', sublabel: 'Tax Master', icon: <Settings className="w-5 h-5" />, color: 'from-amber-500 to-orange-500', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
-  ];
+function AppContent({
+  user, activeView, setActiveView, records, fetchRecords, 
+  handleUpdateLocalRecord, handleRemoveLocalRecord, handleLogout,
+  taxRates, selectedRecordId, setSelectedRecordId, isLoading,
+  checkedIn, checkInTime, attendanceLoading, handleAttendanceToggle,
+  setEditProfile, setEditProfileOpen, editProfileOpen, editProfile,
+  profileSaving, handleProfileSave
+}: any) {
+  const { darkMode, toggleDarkMode } = useUI();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
 
   const handleNavClick = (viewId: ViewType) => {
     setActiveView(viewId);
@@ -262,9 +307,23 @@ export default function App() {
     setSidebarOpen(false);
   };
 
+  const handleViewRecord = (id: string, view: 'namuna8' | 'namuna9') => {
+    setSelectedRecordId(id);
+    setActiveView(view);
+    setSidebarOpen(false);
+  };
+
+  const navItems: any[] = [
+    { id: 'dashboard', label: 'डैशबोर्ड', sublabel: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, color: 'from-violet-500 to-indigo-600' },
+    { id: 'namuna8', label: 'नमुना ८', sublabel: 'Assessment Register', icon: <FileText className="w-5 h-5" />, color: 'from-sky-500 to-blue-600' },
+    { id: 'namuna9', label: 'नमुना ९', sublabel: 'Tax Notice', icon: <Receipt className="w-5 h-5" />, color: 'from-emerald-500 to-green-600' },
+    { id: 'ferfar', label: 'फेरफार नोंदवही', sublabel: 'Mutation Register', icon: <FileText className="w-5 h-5" />, color: 'from-fuchsia-500 to-purple-600', allowedRoles: ['super_admin', 'gram_sevak', 'operator'] },
+    { id: 'roleAccess', label: 'रोल अ‍ॅक्सेस', sublabel: 'Role Access', icon: <Shield className="w-5 h-5" />, color: 'from-rose-600 to-rose-400', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
+    { id: 'taxMaster', label: 'प्रणाली संचलन केंद्र', sublabel: 'Tax Master', icon: <Settings className="w-5 h-5" />, color: 'from-amber-500 to-orange-500', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
+  ];
 
   return (
-    <div className="min-h-screen bg-background flex" style={{ fontFamily: '"Noto Sans Devanagari", sans-serif' }}>
+    <div className="min-h-screen bg-bg flex transition-colors duration-300" style={{ fontFamily: '"Inter", "Noto Sans Devanagari", sans-serif' }}>
       {/* Desktop Sidebar */}
       <div className={`hidden md:flex shrink-0 no-print h-screen sticky top-0 transition-all duration-300 ease-in-out ${desktopSidebarOpen ? 'w-72' : 'w-0 opacity-0 overflow-hidden'}`}>
         <div className="w-72 h-full">
@@ -339,7 +398,21 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleDarkMode}
+              className="p-2.5 rounded-xl border border-border bg-surface hover:bg-surface-hover text-text-muted transition-all active:scale-95 shadow-sm overflow-hidden relative group"
+              title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              <div className={`transition-transform duration-500 ${darkMode ? 'rotate-[360deg] scale-0' : 'rotate-0 scale-100'}`}>
+                <Sun className="w-4.5 h-4.5 text-amber-500" />
+              </div>
+              <div className={`absolute inset-0 flex items-center justify-center transition-transform duration-500 ${darkMode ? 'rotate-0 scale-100' : 'rotate-[-360deg] scale-0'}`}>
+                <Moon className="w-4.5 h-4.5 text-indigo-400" />
+              </div>
+            </button>
+
             {/* Attendance Toggle */}
             <div className="flex items-center gap-3 pr-2 border-r border-slate-200/50">
               {checkedIn && checkInTime && (
@@ -444,25 +517,25 @@ export default function App() {
 
         {/* Edit Profile Modal */}
         {editProfileOpen && editProfile && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-200">
-              {/* Simple Header */}
-              <div className="p-8 pb-0 flex justify-between items-start">
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-surface rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-border">
+              {/* Premium Header */}
+              <div className="p-8 pb-4 flex justify-between items-start bg-primary text-white">
                 <div>
-                  <h3 className="text-2xl font-black text-slate-900 tracking-tighter">प्रोफाइल संपादित करा</h3>
-                  <p className="text-slate-400 text-xs font-bold mt-1">तुमची माहिती अद्यतनित करा</p>
+                  <h3 className="text-2xl font-black tracking-tighter">प्रोफाइल संपादित करा</h3>
+                  <p className="text-white/70 text-xs font-black uppercase tracking-widest mt-1">UPDATE ADMINISTRATIVE PROFILE</p>
                 </div>
-                <button onClick={() => setEditProfileOpen(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-all text-slate-400">
+                <button onClick={() => setEditProfileOpen(false)} className="p-2 hover:bg-white/10 rounded-xl transition-all text-white">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="p-8 space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">पूर्ण नाव</label>
+                  <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] ml-1">पूर्ण नाव (FULL NAME)</label>
                   <input
                     type="text"
-                    className="w-full px-5 py-4 bg-white border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-600 outline-none transition-all placeholder:text-slate-300"
+                    className="w-full px-5 py-4 bg-surface-hover/50 border border-border rounded-2xl text-sm font-black text-text focus:border-primary outline-none transition-all"
                     placeholder="तुमचे नाव प्रविष्ट करा"
                     value={editProfile.name || ''}
                     onChange={e => setEditProfile({ ...editProfile, name: e.target.value })}
@@ -471,20 +544,20 @@ export default function App() {
 
                 <div className="grid grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">ईमेल</label>
+                    <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] ml-1">ईमेल (EMAIL)</label>
                     <input
                       type="email"
-                      className="w-full px-5 py-4 bg-white border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-600 outline-none transition-all"
+                      className="w-full px-5 py-4 bg-surface-hover/50 border border-border rounded-2xl text-sm font-black text-text focus:border-primary outline-none transition-all"
                       value={editProfile.email || ''}
                       onChange={e => setEditProfile({ ...editProfile, email: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">संपर्क</label>
+                    <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] ml-1">संपर्क (MOBILE)</label>
                     <input
                       type="tel"
                       maxLength={10}
-                      className="w-full px-5 py-4 bg-white border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-600 outline-none transition-all"
+                      className="w-full px-5 py-4 bg-surface-hover/50 border border-border rounded-2xl text-sm font-black text-text focus:border-primary outline-none transition-all"
                       value={editProfile.mobile || ''}
                       onChange={e => setEditProfile({ ...editProfile, mobile: e.target.value.replace(/\D/g, '') })}
                     />
@@ -493,30 +566,30 @@ export default function App() {
 
                 <div className="grid grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">वय</label>
+                    <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] ml-1">वय (AGE)</label>
                     <input
                       type="number"
-                      className="w-full px-5 py-4 bg-white border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-600 outline-none transition-all"
+                      className="w-full px-5 py-4 bg-surface-hover/50 border border-border rounded-2xl text-sm font-black text-text focus:border-primary outline-none transition-all"
                       value={editProfile.age || ''}
                       onChange={e => setEditProfile({ ...editProfile, age: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">आयडी (ID)</label>
+                    <label className="text-[10px] font-black text-text-light uppercase tracking-[0.2em] ml-1">आयडी (ID)</label>
                     <input
                       type="text"
                       disabled
-                      className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl text-sm font-bold text-slate-400 cursor-not-allowed"
+                      className="w-full px-5 py-4 bg-surface-hover border border-border rounded-2xl text-sm font-black text-text-light cursor-not-allowed"
                       value={editProfile.employee_id || ''}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">पत्ता</label>
+                  <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] ml-1">पत्ता (ADDRESS)</label>
                   <textarea
                     rows={2}
-                    className="w-full px-5 py-4 bg-white border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-600 outline-none transition-all resize-none"
+                    className="w-full px-5 py-4 bg-surface-hover/50 border border-border rounded-2xl text-sm font-black text-text focus:border-primary outline-none transition-all resize-none"
                     value={editProfile.address || ''}
                     onChange={e => setEditProfile({ ...editProfile, address: e.target.value })}
                   />
@@ -526,12 +599,12 @@ export default function App() {
                   <button
                     onClick={handleProfileSave}
                     disabled={profileSaving}
-                    className="flex-1 py-4.5 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="flex-1 py-4.5 bg-primary text-white rounded-2xl font-black text-sm hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-primary/20 uppercase tracking-widest"
                   >
-                    {profileSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin p-2" /> : <><Save className="w-4 h-4" /> जतन करा</>}
+                    {profileSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> जतन करा (SAVE)</>}
                   </button>
-                  <button onClick={() => setEditProfileOpen(false)} className="flex-1 py-4.5 p-2 bg-white border-2 border-slate-200 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-50 active:scale-[0.98] transition-all">
-                    रद्द करा
+                  <button onClick={() => setEditProfileOpen(false)} className="flex-1 py-4.5 p-2 bg-surface border border-border text-text-muted rounded-2xl font-black text-sm hover:bg-surface-hover active:scale-[0.98] transition-all uppercase tracking-widest">
+                    रद्द करा (CANCEL)
                   </button>
                 </div>
               </div>

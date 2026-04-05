@@ -64,6 +64,23 @@ const addColumnIfNotExists = async (connection, table, column, definition) => {
     }
 };
 
+// Helper: safely add index if it doesn't exist
+const addIndexIfNotExists = async (connection, table, indexName, columns) => {
+    try {
+        const [idxs] = await connection.query(
+            `SELECT INDEX_NAME FROM information_schema.STATISTICS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?`,
+            [table, indexName]
+        );
+        if (idxs.length === 0) {
+            await connection.query(`ALTER TABLE \`${table}\` ADD INDEX \`${indexName}\` (${columns})`);
+            console.log(`  Added index ${indexName} on ${table}(${columns})`);
+        }
+    } catch (err) {
+        console.error(`  Failed to add index ${indexName}:`, err.message);
+    }
+};
+
 const initializeDatabase = async () => {
     try {
         await ensureDatabase();
@@ -282,6 +299,14 @@ const initializeDatabase = async () => {
         */
         console.log('Properties table ready');
 
+        // Performance Optimization: Non-Unique Indexes
+        await addIndexIfNotExists(connection, 'properties', 'idx_prop_srNo', 'srNo');
+        await addIndexIfNotExists(connection, 'properties', 'idx_prop_wardNo', 'wardNo');
+        await addIndexIfNotExists(connection, 'properties', 'idx_prop_wasti', 'wastiName');
+        await addIndexIfNotExists(connection, 'properties', 'idx_prop_owner', 'ownerName(100)');
+        await addIndexIfNotExists(connection, 'properties', 'idx_prop_propId', 'propertyId');
+        await addIndexIfNotExists(connection, 'properties', 'idx_prop_status', 'status');
+
         // ──────────────────────────────────────────────
         // 3. PROPERTY SECTIONS TABLE (unchanged)
         // ──────────────────────────────────────────────
@@ -318,6 +343,7 @@ const initializeDatabase = async () => {
         }
 
         console.log('Property sections table ready');
+        await addIndexIfNotExists(connection, 'property_sections', 'idx_section_propId', 'propertyId');
 
         // ──────────────────────────────────────────────
         // 4. TAX RATES TABLE (+ interest/penalty)
@@ -383,6 +409,8 @@ const initializeDatabase = async () => {
         await addColumnIfNotExists(connection, 'payments', 'receipt_book', 'VARCHAR(50) DEFAULT NULL');
 
         console.log('Payments table ready');
+        await addIndexIfNotExists(connection, 'payments', 'idx_payments_propId', 'property_id');
+        await addIndexIfNotExists(connection, 'payments', 'idx_payments_receipt', 'receipt_no');
 
         // ──────────────────────────────────────────────
         // 6. TAX HEAD ALLOCATIONS (per payment breakdown)

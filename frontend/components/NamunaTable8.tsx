@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Eye, Edit2, Trash2, Printer, Calculator, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PropertyRecord } from '../types';
 import OwnerNameDisplay from './OwnerNameDisplay';
@@ -23,7 +23,7 @@ interface Props {
 const MN = (v: number | string | undefined) =>
     String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 100;
 
 export default function NamunaTable8({
     records,
@@ -52,48 +52,50 @@ export default function NamunaTable8({
     const pageRecords = showAll ? records : records.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
     // ── Totals (current page only) ──────────────────────────────────────────
-    const totals = pageRecords.reduce((a, r) => {
-        const sectionsData = (r.sections as any[])?.filter(s => s.propertyType && s.propertyType !== 'निवडा') || [];
-        
-        // 1. Calculate Per-Section Taxes
-        const sectionTaxes = sectionsData.map(s => {
-            const dep = Number(s?.depreciationRate) || 1;
-            const weight = Number(s?.weightage) || 1;
-            const bVal = Math.round((Number(s?.buildingValue) || 0) * dep * weight);
-            const lVal = Math.round((Number(s?.openSpaceValue) || 0) * weight);
-            
-            const floorFactor = 1 + ((s.floorIndex || 0) * 0.2);
-            const divisor = 2705 * floorFactor;
-            
-            const tB = Math.round((bVal * Number(s?.buildingTaxRate || 0)) / divisor);
-            const tO = Math.round((lVal * Number(s?.openSpaceTaxRate || 0)) / divisor);
-            return { bVal, lVal, tB, tO };
-        });
+    const totals = useMemo(() => {
+        return pageRecords.reduce((a, r) => {
+            const sectionsData = (r.sections as any[])?.filter(s => s.propertyType && s.propertyType !== 'निवडा') || [];
 
-        // 2. Sum up property-level values
-        const bSum = sectionTaxes.reduce((sum, d) => sum + d.bVal, 0);
-        const lSum = sectionTaxes.reduce((sum, d) => sum + d.lVal, 0);
-        const pTaxSum = sectionTaxes.reduce((sum, d) => sum + d.tB + d.tO, 0);
+            // 1. Calculate Per-Section Taxes
+            const sectionTaxes = sectionsData.map(s => {
+                const dep = Number(s?.depreciationRate) || 1;
+                const weight = Number(s?.weightage) || 1;
+                const bVal = Math.round((Number(s?.buildingValue) || 0) * dep * weight);
+                const lVal = Math.round((Number(s?.openSpaceValue) || 0) * weight);
 
-        const dTotal = pTaxSum + (Number(r.streetLightTax) || 0) +
-            (Number(r.healthTax) || 0) +
-            (Number(r.generalWaterTax) || 0) + (Number(r.specialWaterTax) || 0) +
-            (Number(r.wasteCollectionTax) || 0);
+                const floorFactor = 1 + ((s.floorIndex || 0) * 0.2);
+                const divisor = 2705 * floorFactor;
 
-        const isPaid = (Number(r.paidAmount) || 0) > 0;
+                const tB = Math.round((bVal * Number(s?.buildingTaxRate || 0)) / divisor);
+                const tO = Math.round((lVal * Number(s?.openSpaceTaxRate || 0)) / divisor);
+                return { bVal, lVal, tB, tO };
+            });
 
-        return {
-            cap: a.cap + bSum + lSum,
-            prop: a.prop + pTaxSum,
-            lite: a.lite + (Number(r.streetLightTax) || 0),
-            hlth: (a as any).hlth + (Number(r.healthTax) || 0),
-            gwat: a.gwat + (Number(r.generalWaterTax) || 0),
-            swat: a.swat + (Number(r.specialWaterTax) || 0),
-            waste: a.waste + (Number(r.wasteCollectionTax) || 0),
-            dtot: a.dtot + dTotal,
-            rtot: a.rtot + (isPaid ? dTotal : 0),
-        };
-    }, { cap: 0, prop: 0, lite: 0, hlth: 0, gwat: 0, swat: 0, waste: 0, dtot: 0, rtot: 0 });
+            // 2. Sum up property-level values
+            const bSum = sectionTaxes.reduce((sum, d) => sum + d.bVal, 0);
+            const lSum = sectionTaxes.reduce((sum, d) => sum + d.lVal, 0);
+            const pTaxSum = sectionTaxes.reduce((sum, d) => sum + d.tB + d.tO, 0);
+
+            const dTotal = pTaxSum + (Number(r.streetLightTax) || 0) +
+                (Number(r.healthTax) || 0) +
+                (Number(r.generalWaterTax) || 0) + (Number(r.specialWaterTax) || 0) +
+                (Number(r.wasteCollectionTax) || 0);
+
+            const isPaid = (Number(r.paidAmount) || 0) > 0;
+
+            return {
+                cap: a.cap + bSum + lSum,
+                prop: a.prop + pTaxSum,
+                lite: a.lite + (Number(r.streetLightTax) || 0),
+                hlth: a.hlth + (Number(r.healthTax) || 0),
+                gwat: a.gwat + (Number(r.generalWaterTax) || 0),
+                swat: a.swat + (Number(r.specialWaterTax) || 0),
+                waste: a.waste + (Number(r.wasteCollectionTax) || 0),
+                dtot: a.dtot + dTotal,
+                rtot: a.rtot + (isPaid ? dTotal : 0),
+            };
+        }, { cap: 0, prop: 0, lite: 0, hlth: 0, gwat: 0, swat: 0, waste: 0, dtot: 0, rtot: 0 });
+    }, [pageRecords]);
 
     // Global serial number offset
     const offset = showAll ? 0 : (safePage - 1) * PAGE_SIZE;
@@ -186,21 +188,21 @@ export default function NamunaTable8({
                         </tr>
 
                         {/* Simplified UI Header (Screen Only) - MODERNIZED */}
-                        <tr className="no-print bg-slate-50 text-slate-600 border-b-2 border-slate-200 sticky top-0 z-20 backdrop-blur-sm bg-white/90">
-                            <th className="px-3 py-3 text-center text-[10px] font-black uppercase w-[50px] tracking-widest">अ.क्र.</th>
+                        <tr className="no-print bg-surface-hover/50 text-text-muted border-b border-border sticky top-0 z-20 backdrop-blur-sm">
+                            <th className="px-3 py-3 text-center text-xs font-black uppercase w-[50px] tracking-widest">अ.क्र.</th>
 
-                            <th className="px-3 py-3 text-left text-[11px] font-black uppercase tracking-wider w-[100px]">वस्ती</th>
-                            <th className="px-3 py-3 text-left text-[11px] font-black uppercase tracking-wider w-[80px]">खसरा</th>
-                            <th className="px-3 py-3 text-left text-[11px] font-black uppercase tracking-wider w-[80px]">प्लॉट</th>
-                            <th className="px-3 py-3 text-left text-[11px] font-black uppercase tracking-wider min-w-[160px]">मालकाचे नाव व पत्ता</th>
-                            <th className="px-3 py-3 text-left text-[11px] font-black uppercase tracking-wider min-w-[120px]">प्रकार व वर्णन</th>
-                            <th className="px-3 py-3 text-right text-[11px] font-black uppercase tracking-wider min-w-[80px]">क्षेत्रफळ</th>
-                            <th className="px-3 py-3 text-right text-[11px] font-black uppercase tracking-wider min-w-[140px]">कराचा तपशील</th>
-                            <th className="px-3 py-3 text-right text-[11px] font-black uppercase tracking-wider min-w-[100px]">भांडवली मूल्य</th>
-                            <th className="px-3 py-3 text-right text-[11px] font-black uppercase tracking-wider min-w-[100px]">एकूण कर</th>
-                            <th className="px-3 py-3 text-left text-[11px] font-black uppercase tracking-wider min-w-[120px]">शेरा</th>
+                            <th className="px-3 py-3 text-left text-xs font-black uppercase tracking-wider w-[100px]">वस्ती</th>
+                            <th className="px-3 py-3 text-left text-xs font-black uppercase tracking-wider w-[80px]">खसरा</th>
+                            <th className="px-3 py-3 text-left text-xs font-black uppercase tracking-wider w-[80px]">प्लॉट</th>
+                            <th className="px-3 py-3 text-left text-xs font-black uppercase tracking-wider min-w-[160px]">मालकाचे नाव व पत्ता</th>
+                            <th className="px-3 py-3 text-left text-xs font-black uppercase tracking-wider min-w-[120px]">प्रकार व वर्णन</th>
+                            <th className="px-3 py-3 text-right text-xs font-black uppercase tracking-wider min-w-[80px]">क्षेत्रफळ</th>
+                            <th className="px-3 py-3 text-right text-xs font-black uppercase tracking-wider min-w-[140px]">कराचा तपशील</th>
+                            <th className="px-3 py-3 text-right text-xs font-black uppercase tracking-wider min-w-[100px]">भांडवली मूल्य</th>
+                            <th className="px-3 py-3 text-right text-xs font-black uppercase tracking-wider min-w-[100px]">एकूण कर</th>
+                            <th className="px-3 py-3 text-left text-xs font-black uppercase tracking-wider min-w-[120px]">शेरा</th>
                             {showActions && (
-                                <th className="no-print px-3 py-3 text-center text-[11px] font-black uppercase tracking-wider w-[120px] sticky right-0 z-30 bg-slate-50/90 backdrop-blur-sm border-l border-slate-200 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]">
+                                <th className="no-print px-3 py-3 text-center text-xs font-black uppercase sticky right-0 z-20 bg-surface border-l border-border w-[180px]">
                                     कृती
                                 </th>
                             )}
@@ -210,19 +212,19 @@ export default function NamunaTable8({
                     <tbody className="divide-y divide-primary/10">
                         {pageRecords.map((r, idx) => {
                             const activeSections = (r.sections as any[])?.filter(s => s.propertyType && s.propertyType !== 'निवडा') || [];
-                            
+
                             // 3. Pre-calculate on-the-fly taxes for the entire record
                             const recordTaxDetails = activeSections.map(s => {
                                 const dep = Number(s?.depreciationRate) || 1;
                                 const weight = Number(s?.weightage) || 1;
                                 const finalBVal = Math.round((Number(s?.buildingValue) || 0) * dep * weight);
                                 const finalLVal = Math.round((Number(s?.openSpaceValue) || 0) * weight);
-                                
+
                                 // Unified Formula: Tax = (CV * Rate) / (2705 * FloorFactor)
                                 // Floor Factor: Ground=1.0, First=1.2, Second=1.4...
                                 const floorFactor = 1 + ((s.floorIndex || 0) * 0.2);
                                 const divisor = 2705 * floorFactor;
-                                
+
                                 const sTaxB = Math.round((finalBVal * Number(s?.buildingTaxRate || 0)) / divisor);
                                 const sTaxO = Math.round((finalLVal * Number(s?.openSpaceTaxRate || 0)) / divisor);
                                 return { b: finalBVal, o: finalLVal, tb: sTaxB, to: sTaxO, rowGharpatti: sTaxB + sTaxO };
@@ -299,62 +301,60 @@ export default function NamunaTable8({
                                     <td className="hidden print:table-cell border border-black p-1 text-[8px] whitespace-pre-wrap">{r.remarksNotes || '-'}</td>
 
                                     {/* Simplified UI Row (Screen Only) - MODERNIZED */}
-                                    <td className="no-print px-3 py-2.5 text-center font-bold text-slate-400 text-[11px]">{MN(offset + idx + 1)}</td>
+                                    <td className="no-print px-3 py-2.5 text-center font-black text-text-light text-xs">{MN(offset + idx + 1)}</td>
 
                                     <td className="no-print px-3 py-2.5">
-                                        <div className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-slate-100 text-slate-600 border border-slate-200 uppercase leading-none">
+                                        <div className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-surface-hover text-text-muted border border-border uppercase leading-none">
                                             {r.wastiName || '-'}
                                         </div>
                                     </td>
                                     <td className="no-print px-3 py-2.5">
-                                        <div className="text-[11px] text-indigo-700 font-black uppercase tracking-tight bg-indigo-50 px-2 py-1 rounded inline-block">{MN(r.khasraNo) || '-'}</div>
+                                        <div className="text-xs text-primary font-black uppercase tracking-tight bg-primary/5 px-2 py-1 rounded inline-block">{MN(r.khasraNo) || '-'}</div>
                                     </td>
                                     <td className="no-print px-3 py-2.5">
-                                        <div className="text-xs font-bold text-slate-700 tracking-tight">{MN(r.plotNo) || '-'}</div>
+                                        <div className="text-xs font-black text-text tracking-tight">{MN(r.plotNo) || '-'}</div>
                                     </td>
                                     <td className="no-print px-3 py-2.5">
-                                        <div className="font-extrabold text-slate-800 text-[13px] tracking-tight leading-tight uppercase">
+                                        <div className="font-black text-text text-sm tracking-tight leading-tight uppercase">
                                             <OwnerNameDisplay name={r.ownerName || ''} />
                                         </div>
-                                        <div className="text-[10px] font-semibold text-slate-500 mt-0.5">({r.occupantName || 'स्वतः'})</div>
-                                        <div className="text-[10px] text-slate-500 font-bold mt-0.5">संपर्क: {r.contactNo ? MN(r.contactNo) : '-'}</div>
-                                        <div className="text-[10px] text-slate-400 mt-1 font-bold">Property ID: {r.propertyId || r.srNo}</div>
+                                        <div className="text-[10px] font-bold text-text-muted mt-0.5">({r.occupantName || 'स्वतः'})</div>
+                                        <div className="text-[10px] text-text-light font-black mt-0.5 uppercase tracking-widest leading-none">MOB: {r.contactNo ? MN(r.contactNo) : '-'}</div>
+                                        <div className="text-[9px] text-text-muted mt-1 font-black uppercase tracking-wider">ID: {r.propertyId || r.srNo}</div>
                                     </td>
                                     <td className="no-print px-3 py-2.5">
                                         {activeSections.map((s, si) => (
-                                            <div key={si} className="text-[11px] font-bold text-slate-600 mb-1 border-b border-slate-100 last:border-0 pb-1">
+                                            <div key={si} className="text-[11px] font-black text-text-light mb-1 border-b border-border/50 last:border-0 pb-1">
                                                 {s.propertyType}
                                             </div>
                                         )) || '-'}
                                     </td>
-                                    <td className="no-print px-3 py-2.5 text-right font-semibold text-[11px] text-slate-600">
+                                    <td className="no-print px-3 py-2.5 text-right font-black text-xs text-text-muted">
                                         {activeSections.map((s, si) => (
-                                            <div key={si} className="mb-1 border-b border-slate-100 last:border-0 pb-1">
-                                                <span className="font-bold text-slate-800">{MN(s.areaSqFt)}</span> चौ.फु.
+                                            <div key={si} className="mb-1 border-b border-border/50 last:border-0 pb-1">
+                                                <span className="font-black text-text">{MN(s.areaSqFt)}</span> <span className="text-[10px]">Sq.Ft</span>
                                             </div>
                                         )) || '-'}
                                     </td>
                                     <td className="no-print px-3 py-2.5 text-right">
-                                        <div className="text-[9px] space-y-0.5 text-slate-500 font-bold uppercase tracking-tight">
-                                            {dProp > 0 && <div>मालमत्ता कर: ₹{MN(dProp)}</div>}
-                                            {dLight > 0 && <div>दिवा बत्ती कर: ₹{MN(dLight)}</div>}
-                                            {dHealth > 0 && <div>आरोग्य कर: ₹{MN(dHealth)}</div>}
-                                            {dGenWater > 0 && <div>सामान्य पाणी कर: ₹{MN(dGenWater)}</div>}
-                                            {dSpecWater > 0 && <div>विशेष पाणी कर: ₹{MN(dSpecWater)}</div>}
-                                            {dWaste > 0 && <div>कचरा संकलन कर: ₹{MN(dWaste)}</div>}
+                                        <div className="text-[10px] space-y-0.5 text-text-muted font-black uppercase tracking-tight">
+                                            {dProp > 0 && <div>🏠 कर: <span className="text-text">₹{MN(dProp)}</span></div>}
+                                            {dLight > 0 && <div>💡 दिवा: <span className="text-text">₹{MN(dLight)}</span></div>}
+                                            {dHealth > 0 && <div>🏥 आरोग्य: <span className="text-text">₹{MN(dHealth)}</span></div>}
+                                            {dGenWater > 0 && <div>💧 पाणी: <span className="text-text">₹{MN(dGenWater)}</span></div>}
                                         </div>
                                     </td>
-                                    <td className="no-print px-3 py-2.5 text-right font-black text-slate-700 text-[13px]">₹{cap.toLocaleString()}</td>
-                                    <td className="no-print px-3 py-2.5 text-right font-black text-slate-800 text-[14px] bg-slate-50/50">₹{dTotal.toLocaleString()}</td>
-                                    <td className="no-print px-3 py-2.5 text-left text-[11px] text-slate-500 font-medium max-w-[200px] leading-tight whitespace-pre-wrap">{(r.remarksNotes || '-').replace(/फेरफार क्र:/g, 'फेरफार बुक क्र:')}</td>
+                                    <td className="no-print px-3 py-2.5 text-right font-black text-text text-sm">₹{MN(cap)}</td>
+                                    <td className="no-print px-3 py-2.5 text-right font-black text-primary text-sm bg-surface-hover/30">₹{MN(dTotal)}</td>
+                                    <td className="no-print px-3 py-2.5 text-left text-[11px] text-text-muted font-bold max-w-[200px] leading-tight whitespace-pre-wrap">{(r.remarksNotes || '-').replace(/फेरफार क्र:/g, 'फेरफार बुक क्र:') || '-'}</td>
                                     {showActions && (
-                                        <td className="no-print px-3 py-2.5 text-center sticky right-0 z-20 bg-inherit border-l border-slate-200 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]">
-                                            <div className="flex items-center justify-center gap-1.5 group-hover:scale-105 transition-all duration-200">
-                                                {onView && <button onClick={() => onView(r.id)} title="पहा" className="w-8 h-8 flex items-center justify-center text-slate-500 bg-white rounded-lg hover:bg-slate-100 hover:text-slate-700 transition-all border border-slate-200 shadow-sm"><Eye className="w-4" /></button>}
-                                                {onPrint && <button onClick={() => onPrint(r.id)} title="प्रिंट करा" className="w-8 h-8 flex items-center justify-center text-indigo-500 bg-white rounded-lg hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-indigo-100 shadow-sm"><Printer className="w-4" /></button>}
-                                                {onCalculate && <button onClick={() => onCalculate(r)} title="गणना सूत्र" className="w-8 h-8 flex items-center justify-center text-emerald-500 bg-white rounded-lg hover:bg-emerald-50 hover:text-emerald-600 transition-all border border-emerald-100 shadow-sm"><Calculator className="w-4" /></button>}
-                                                {onEdit && <button onClick={() => onEdit(r)} title="सुधारा" className="w-8 h-8 flex items-center justify-center text-slate-500 bg-white rounded-lg hover:bg-slate-100 hover:text-slate-700 transition-all border border-slate-200 shadow-sm"><Edit2 className="w-4" /></button>}
-                                                {onDelete && <button onClick={() => onDelete(r.id)} title="हटवा" className="w-8 h-8 flex items-center justify-center text-rose-500 bg-white rounded-lg hover:bg-rose-50 hover:text-rose-600 transition-all border border-rose-100 shadow-sm"><Trash2 className="w-4" /></button>}
+                                        <td className="no-print px-3 py-2.5 text-center sticky right-0 z-20 bg-surface border-l border-border shadow-[-8px_0_15px_-5px_rgba(0,0,0,0.1)]">
+                                            <div className="flex items-center justify-center gap-1.5 transition-all duration-300">
+                                                {onView && <button onClick={() => onView(r.id)} title="पहा" className="btn-action w-8 h-8"><Eye className="w-4" /></button>}
+                                                {onPrint && <button onClick={() => onPrint(r.id)} title="प्रिंट करा" className="btn-action w-8 h-8 text-secondary border-secondary/20 hover:bg-secondary/5"><Printer className="w-4" /></button>}
+                                                {onCalculate && <button onClick={() => onCalculate(r)} title="गणना सूत्र" className="btn-action w-8 h-8 text-primary border-primary/20 hover:bg-primary/5"><Calculator className="w-4" /></button>}
+                                                {onEdit && <button onClick={() => onEdit(r)} title="सुधारा" className="btn-action w-8 h-8 text-text-muted"><Edit2 className="w-4" /></button>}
+                                                {onDelete && <button onClick={() => onDelete(r.id)} title="हटवा" className="btn-action w-8 h-8 text-error border-error/20 hover:bg-error/5"><Trash2 className="w-4" /></button>}
                                             </div>
                                         </td>
                                     )}
@@ -426,7 +426,7 @@ export default function NamunaTable8({
                     <div className="flex items-center gap-1 sm:ml-auto w-full sm:w-auto justify-center">
                         <button onClick={() => setPage(1)} disabled={safePage === 1}
                             className="px-2 h-8 flex items-center justify-center text-[11px] font-black rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-40 shadow-sm transition-all">«</button>
-                        
+
                         <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
                             className="px-3 h-8 flex items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-40 shadow-sm transition-all text-[10px] font-black uppercase">
                             ‹ मागील

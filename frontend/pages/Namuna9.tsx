@@ -46,6 +46,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
     const [dynamicPropertyTypes, setDynamicPropertyTypes] = useState<string[]>([]);
     const [printRecords, setPrintRecords] = useState<PropertyRecord[] | null>(null);
     const [activeBillRecord, setActiveBillRecord] = useState<PropertyRecord | null>(null);
+    const [printPageSize, setPrintPageSize] = useState<number>(2);
 
     const currentUser = useMemo(() => JSON.parse(localStorage.getItem('gp_user') || '{}'), []);
     const isAdmin = currentUser.role === 'super_admin' || currentUser.role === 'gram_sachiv' || currentUser.role === 'gram_sevak';
@@ -287,6 +288,10 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                             padding: 0 !important;
                             background: white !important;
                         }
+                        * {
+                            box-shadow: none !important;
+                            overflow: visible !important;
+                        }
                         .no-print { display: none !important; }
                     }
                 `}</style>
@@ -295,15 +300,32 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                         className="flex items-center gap-2 text-sm font-bold text-gray-600 px-4 py-2 rounded-xl hover:bg-gray-100 border border-gray-200 transition-all">
                         <ArrowLeft className="w-4 h-4" /> यादीकडे परत
                     </button>
-                    <div className="flex-1" />
+
+                    <div className="flex-1 flex justify-center">
+                        <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                            <button
+                                onClick={() => setPrintPageSize(2)}
+                                className={`px-4 py-1.5 text-[10px] font-black rounded-lg transition-all ${printPageSize === 2 ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}
+                            >
+                                २ प्रति / पेज (पूर्ण)
+                            </button>
+                            <button
+                                onClick={() => setPrintPageSize(3)}
+                                className={`px-4 py-1.5 text-[10px] font-black rounded-lg transition-all ${printPageSize === 3 ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}
+                            >
+                                ३ प्रति / पेज (संक्षिप्त)
+                            </button>
+                        </div>
+                    </div>
+
                     <button onClick={() => window.print()}
-                        className="flex items-center gap-2 text-sm font-bold text-white bg-primary px-5 py-2 rounded-xl hover:bg-primary-dark transition-all">
+                        className="flex items-center gap-2 text-sm font-bold text-white bg-indigo-600 px-6 py-2 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20">
                         <Printer className="w-4 h-4" /> प्रिंट करा
                     </button>
                 </div>
                 <div className="flex-1 overflow-auto p-4 flex justify-center no-print-bg print-parent">
                     <div className="w-full">
-                        <Namuna9PrintFormat records={printRecords} />
+                        <Namuna9PrintFormat records={printRecords} pageSize={printPageSize} />
                     </div>
                 </div>
             </div>

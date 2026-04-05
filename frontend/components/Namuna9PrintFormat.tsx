@@ -25,13 +25,14 @@ const TAX_MAPPING = [
 
 interface Namuna9PrintFormatProps {
     records: any[];
+    pageSize?: number;
 }
 
-export default function Namuna9PrintFormat({ records }: Namuna9PrintFormatProps) {
-    // Group records by 2 for better fit on legal landscape as per image
+export default function Namuna9PrintFormat({ records, pageSize = 2 }: Namuna9PrintFormatProps) {
+    // Group records by pageSize for better fit on legal landscape
     const recordChunks = [];
-    for (let i = 0; i < records.length; i += 2) {
-        recordChunks.push(records.slice(i, i + 2));
+    for (let i = 0; i < records.length; i += pageSize) {
+        recordChunks.push(records.slice(i, i + pageSize));
     }
 
     const currentYear = new Date().getFullYear();
@@ -41,48 +42,62 @@ export default function Namuna9PrintFormat({ records }: Namuna9PrintFormatProps)
     const fyEnd = fyStart + 1;
 
     return (
-        <div className="namuna9-print-root bg-gray-100 min-h-screen p-2">
+        <div className="namuna9-print-root  ">
             <style dangerouslySetInnerHTML={{
                 __html: `
                 @media print {
                     @page {
                         size: legal landscape;
-                        margin: 5mm;
+                        margin: 0;
                     }
                     body, html {
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
                         color-adjust: exact !important;
                         width: 100%;
+                        background: white !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+                    * {
+                        box-shadow: none !important;
+                        text-shadow: none !important;
+                        overflow: visible !important;
                     }
                     .page-container {
                         page-break-after: always;
                         break-after: page;
                         box-shadow: none !important;
                         border: none !important;
-                        padding: 10px !important;
+                        padding: 10mm !important;
                         width: 100% !important;
                         max-width: none !important;
                         position: relative !important;
                     }
+                    .page-container:last-child {
+                        page-break-after: auto !important;
+                        break-after: auto !important;
+                    }
                     .no-print { display: none !important; }
+                    .namuna9-print-root {
+                        padding: 0 !important;
+                        margin: 0 !important;
+                    }
                 }
                 .page-container {
                     width: 100%;
                     max-width: 1350px;
-                    margin: 10px auto;
+                    height: auto;
                     padding: 15px;
                     background: white;
-                    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-                    border: 1px solid #ddd;
                     font-family: 'Poppins', 'Inter', sans-serif;
                 }
                 table, th, td {
-                    border: 1.2px solid #1e3a8a !important;
+                    border: 1px solid #1e3a8a !important;
                 }
                 .header-logo {
-                    width: 45px;
-                    height: 45px;
+                    width: 66px;
+                    height: 66px;
                 }
             `}} />
 
@@ -130,34 +145,36 @@ export default function Namuna9PrintFormat({ records }: Namuna9PrintFormatProps)
                 });
 
                 return (
-                    <div key={chunkIdx} className="page-container relative overflow-visible">
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.05]">
-                            <img src="/images/logo.png" className="w-[450px]" alt="Watermark" />
+                    <div key={chunkIdx} className="page-container relative overflow-visible shadow-sm print:shadow-none">
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.2]">
+                            <img src="/images/logo.png" className="w-[480px] h-[480px] object-contain" alt="Watermark" />
                         </div>
 
                         <div className="relative z-10">
-                            {/* Compact Header Section */}
-                            <div className="flex justify-between items-start mb-1 px-2 border-b border-blue-200 pb-1">
-                                <div className="header-logo">
-                                    <img src="/images/logo.png" alt="GP Logo" className="w-70 h-70 " />
-                                </div>
+                            {/* Conditional Header Section - Hide if 3 or more per page */}
+                            {pageSize < 3 && (
+                                <div className="flex justify-between items-start mb-0.5 px-2 ">
+                                    <div className="header-logo">
+                                        <img src="/images/logo.png" alt="GP Logo" className="w-10 h-10 " />
+                                    </div>
 
-                                <div className="text-center flex-1">
-                                    <h1 className="text-lg font-black text-blue-950 tracking-tight leading-none">गट ग्रामपंचायत वेळा हरिश्चंद्र</h1>
-                                    <h2 className="text-sm font-black text-blue-800 mt-0.5">नमुना ९ </h2>
-                                    <p className="text-[9px] font-bold text-gray-500">[ नियम २२(९), ३२(४), ५(६) ]</p>
-                                    <p className="font-bold text-[10px] text-blue-900">सन {MN(fyStart)} - {MN(fyEnd)} करांची आकारणी मागणी नोंदवही </p>
-                                </div>
+                                    <div className="text-center flex-1">
+                                        <h1 className="text-lg font-black text-blue-950 tracking-tight leading-none">गट ग्रामपंचायत वेळा हरिश्चंद्र</h1>
+                                        <h2 className="text-sm font-black text-blue-800 mt-0.5">नमुना ९ </h2>
+                                        <p className="text-[9px] font-bold text-gray-500">[ नियम २२(९), ३२(४), ५(६) ]</p>
+                                        <p className="font-bold text-[10px] text-blue-900">सन {MN(fyStart)} - {MN(fyEnd)} करांची आकारणी मागणी नोंदवही </p>
+                                    </div>
 
-                                <div className=" text-black font-medium leading-none pt-1">
-                                    <p className="text-[10px] font-bold tracking-tighter uppercase whitespace-nowrap">मौजा {PANCHAYAT_CONFIG.mouza}</p>
-                                    <p className="text-[9px] mt-1">तहसील: नागपूर (ग्रामीण)</p>
-                                    <p className="text-[8px] font-normal italic text-slate-400 mt-2">पान नं. ...........</p>
+                                    <div className=" text-black font-medium leading-none pt-1">
+                                        <p className="text-[10px] font-bold tracking-tighter uppercase whitespace-nowrap">मौजा {PANCHAYAT_CONFIG.mouza}</p>
+                                        <p className="text-[9px] mt-1">तहसील: नागपूर (ग्रामीण)</p>
+                                        <p className="text-[8px] font-normal italic text-slate-400 mt-2">पान नं. ...........</p>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Main Table */}
-                            <table className="w-full text-[8px] border-collapse leading-[1.1]">
+                            <table className={`w-full border-collapse ${pageSize >= 3 ? 'text-[7px] leading-none' : 'text-[7.5px] leading-[1.05]'}`}>
                                 <thead className="bg-[#1e40af] text-white">
                                     <tr>
                                         <th className="p-0.5 w-[25px]" rowSpan={2}>अ.क्र.</th>
@@ -183,7 +200,7 @@ export default function Namuna9PrintFormat({ records }: Namuna9PrintFormatProps)
                                 </thead>
 
                                 {chunk.map((r, rIdx) => {
-                                    const globalIdx = chunkIdx * 2 + rIdx + 1;
+                                    const globalIdx = chunkIdx * pageSize + rIdx + 1;
 
                                     const originalArrears = Number(r.arrearsAmount) || 0;
                                     // Penalty on Arrears only (5%)
@@ -250,10 +267,10 @@ export default function Namuna9PrintFormat({ records }: Namuna9PrintFormatProps)
                                                             {hIdx === 0 && (
                                                                 <>
                                                                     <td className="text-center font-bold text-[10px] bg-slate-50" rowSpan={11}>{MN(globalIdx)}</td>
-                                                                    <td className="p-1 px-2 align-center text-blue-950 font-black " rowSpan={11}>
-                                                                        <div className="text-[12px] ">{r.ownerName}</div>
-                                                                        <div className="text-[9px] text-gray-800 mt-3 font-normal italic">भोगवटाधारक:  <b>{r.occupantName || 'स्वतः'}</b></div>
-                                                                        <div className="text-[9px] mt-4 font-bold text-slate-800 uppercase"> पत्ता :{r.wastiName} </div>
+                                                                    <td className={`p-1 px-2 align-center text-blue-950 font-black ${pageSize >= 3 ? 'leading-tight' : ''}`} rowSpan={11}>
+                                                                        <div className={pageSize >= 3 ? 'text-[9.5px]' : 'text-[12px]'}>{r.ownerName}</div>
+                                                                        <div className={`text-[8px] text-gray-800 font-normal italic ${pageSize >= 3 ? 'mt-1' : 'mt-3'}`}>भोगवटाधारक:  <b>{r.occupantName || 'स्वतः'}</b></div>
+                                                                        <div className={`text-[8px] font-bold text-slate-800 uppercase ${pageSize >= 3 ? 'mt-1' : 'mt-4'}`}> पत्ता :{r.wastiName} </div>
                                                                     </td>
                                                                     <td className="text-center p-0.5 text-[9px] font-bold" rowSpan={11}>
                                                                         <div className="mb-0.5">{r.propertyId ? MN(r.propertyId) : ''}</div>
@@ -355,7 +372,7 @@ export default function Namuna9PrintFormat({ records }: Namuna9PrintFormatProps)
 
                                                 {/* Recovery Section (Actuals) */}
                                                 <td className="p-0.5 px-2  uppercase tracking-tighter bg-blue-900/40" colSpan={3}>एकूण </td>
-                                                <td className=" pr-1.5 p-0.5 border-l border-white/20">{MN(((r as any)._arrearsPaid + (r as any)._penaltyPaid).toFixed(2))}</td>
+                                                <td className=" pr-1.5 p-0.5 border-l border-white/20">{MN(paidAmount.toFixed(2))}</td>
 
                                             </tr>
                                         </tbody>

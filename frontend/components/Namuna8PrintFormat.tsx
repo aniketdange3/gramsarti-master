@@ -61,7 +61,6 @@ export default function Namuna8PrintFormat({ records }: Props) {
                 }
                 .no-print-bg { background: none !important; }
                 .page-container {
-                    background: transparent;
                     width: 355.6mm; /* Legal Landscape Width */
                     height: 215.9mm; /* Legal Landscape Height */
                     margin: 0 auto;
@@ -90,8 +89,8 @@ export default function Namuna8PrintFormat({ records }: Props) {
             {recordChunks.map((chunk, chunkIdx) => (
                 <div key={chunkIdx} className="page-container relative overflow-visible">
                     {/* Watermark */}
-                    <div className="absolute inset-0   flex items-center justify-center pointer-events-none opacity-[0.1]">
-                        <img src="/images/logo.png" className="w-[550px] h-[550px] object-contain " alt="Watermark" />
+                    <div className="absolute inset-0   flex items-center justify-center pointer-events-none opacity-[0.3]">
+                        <img src="/images/logo.png" className="w-[450px] h-[450px] object-contain " alt="Watermark" />
                     </div>
 
                     <div className="relative z-10 w-full flex flex-col justify-center items-center">
@@ -120,7 +119,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                 </div>
 
                                 {/* Right: Location Details */}
-                                <div className="flex-shrink-0 text-right space-y-1 bg-[#A80D40]/5 p-6 rounded-[32px] border border-[#A80D40]/10 min-w-[200px]">
+                                <div className="flex-shrink-0 text-right space-y-1 bg-[#fff8f8] p-6 rounded-[32px] border border-[#A80D40]/20 min-w-[200px]">
                                     <p className="text-[13px] font-black flex justify-between gap-4">
                                         <span className="text-gray-500 uppercase tracking-tighter">मौजा:</span>
                                         <span className="text-[#A80D40]">{chunk[0]?.wastiName || PANCHAYAT_CONFIG.mouza || 'वेळा'}</span>
@@ -142,8 +141,8 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                 </div>
                             </div>
 
-                            {/* Main Table */}
-                            <table className="w-full text-[10px] border-collapse border-2 border-[#4a0000] leading-tight mt-2 shadow-xl">
+                            {/* Main Table - bg-white ensures watermark is hidden behind data */}
+                            <table className="w-full text-[10px] border-collapse border-2 border-[#4a0000] leading-tight mt-2 bg-white">
                                 <thead>
                                     <tr className="text-white bg-brand-gradient">
                                         <th rowSpan={2} className="p-1 border border-white/40 w-[25px]">अ.क्र.</th>
@@ -237,7 +236,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                     const sTaxO = details?.sTaxO || 0;
 
                                                     return (
-                                                        <tr key={sIdx} className={sIdx % 2 === 0 ? "bg-white" : "bg-red-50/20"}>
+                                                        <tr key={sIdx} className={sIdx % 2 === 0 ? "bg-white" : "bg-[#fef7f7]"}>
                                                             {sIdx === 0 && (
                                                                 <>
                                                                     <td rowSpan={rowCount} className="p-1 text-center font-black align-middle border border-black text-xs text-[#A80D40]">{MN(srNo)}</td>

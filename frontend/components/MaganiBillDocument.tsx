@@ -18,15 +18,14 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
     const currYear = PANCHAYAT_CONFIG.financialYear;
 
     const taxMapping = [
-        // { name: 'मागील थकबाकी', arrears: Number(record.arrearsAmount) || 0, current: 0, field: 'arrears' },
-        { name: 'घर कर', arrears: 0, current: Number(record.propertyTax) || 0, field: 'propertyTax' },
+        { name: 'घर कर', arrears: Number(record.arrearsAmount) || 0, current: Number(record.propertyTax) || 0, field: 'propertyTax' },
         { name: 'जमीन कर', arrears: 0, current: Number(record.openSpaceTax) || 0, field: 'openSpaceTax' },
         { name: 'दिवाबत्ती कर', arrears: 0, current: Number(record.streetLightTax) || 0, field: 'streetLightTax' },
         { name: 'आरोग्य कर', arrears: 0, current: Number(record.healthTax) || 0, field: 'healthTax' },
         { name: 'इमला कर (अतिक्रमण)', arrears: 0, current: Number((record as any).surchargeTotal) || 0, field: 'surchargeTotal' },
         { name: 'कचरा गाडी कर', arrears: 0, current: Number((record as any).wasteCollectionTax) || 0, field: 'wasteCollectionTax' },
         { name: 'विशेष / सामान्य पाणी कर', arrears: 0, current: (Number(record.specialWaterTax) > 0 ? Number(record.specialWaterTax) : (Number(record.generalWaterTax) || 0)), field: 'waterTax' },
-        { name: '५% दंड थकीत रकमेवर ', arrears: Number(calc.penaltyAmount) || 0, current: 0, field: 'penalty' },
+        { name: '५% दंड थकीत रकमेवर', arrears: Number(calc.penaltyAmount) || 0, current: 0, field: 'penalty' },
     ];
 
     const currentTotal = taxMapping.reduce((acc, row) => acc + row.current, 0);
@@ -122,7 +121,7 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
                             <td className="border-r border-gray-600 p-1">एकूण</td>
                             <td className="border-r border-gray-600 p-1 text-right">{MN(arrearsTotal)}</td>
                             <td className="border-r border-gray-600 p-1 text-right">{MN(currentTotal)}</td>
-                            <td className="p-1 text-right text-[12px]">रु.{MN(grandTotal)}</td>
+                            <td className="p-1 text-right text-[12px]">{MN(grandTotal)}</td>
                         </tr>
                         {/* 5% Discount Row */}
                         <tr className="border-b border-gray-600 text-gray-800">
@@ -133,10 +132,10 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
                         </tr>
                         {/* Net Payable Row */}
                         <tr className=" border-b border-gray-600 bg-[#7cdc39] text-white font-black">
-                            <td className="border-r border-gray-600 p-1">एकूण देय रक्कम</td>
+                            <td className="border-r border-gray-600 p-1">एकूण</td>
                             <td className="border-r border-gray-600 p-1 text-right">{MN(arrearsTotal)}</td>
                             <td className="border-r border-gray-600 p-1 text-right">{MN((currentTotal - currentTotal * 0.05).toFixed(2))}</td>
-                            <td className="p-1 text-right text-[12px]">{MN((grandTotal - currentTotal * 0.05).toFixed(2))}रु</td>
+                            <td className="p-1 text-right text-[12px]">{MN((grandTotal - currentTotal * 0.05).toFixed(2))}</td>
                         </tr>
                     </tbody>
                 </table>

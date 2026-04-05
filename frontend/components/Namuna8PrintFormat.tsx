@@ -80,8 +80,8 @@ export default function Namuna8PrintFormat({ records }: Props) {
                     border: 1px solid #a9a9a9fc !important;
                 }
                 .header-logo {
-                    width: 85px;
-                    height: 85px;
+                    width: 100px;
+                    height: 100px;
                 }
                 .text-brand-red { color: #bf0644f1; }
                 .bg-brand-gradient { background: #a02f37ff; }

@@ -22,7 +22,7 @@ import Login from './pages/Login';
 import PaymentEntry from './pages/PaymentEntry';
 import MaganiBill from './pages/MaganiBill';
 import Reports from './pages/Reports';
-import { TaxMaster as TaxMaster_Modernized } from './components/TaxMaster';
+import TaxMaster from './pages/TaxMaster';
 import Ferfar from './pages/Ferfar';
 import Sidebar from './components/Sidebar';
 import { UIProvider } from './components/UIProvider';
@@ -439,7 +439,7 @@ export default function App() {
           <Reports records={records} onAuthError={handleLogout} />
         )}
         {activeView === 'taxMaster' && (
-          <TaxMaster_Modernized onClose={() => setActiveView('dashboard')} />
+          <TaxMaster />
         )}
         {activeView === 'ferfar' && (
           <Ferfar records={records} fetchRecords={fetchRecords} />

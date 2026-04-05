@@ -266,9 +266,8 @@ export default function App() {
   return (
     <div className="min-h-screen bg-background flex" style={{ fontFamily: '"Noto Sans Devanagari", sans-serif' }}>
       {/* Desktop Sidebar */}
-      <div className={`hidden md:flex shrink-0 no-print h-screen sticky top-0 transition-all duration-300 ease-in-out ${desktopSidebarOpen ? 'w-72' : 'w-0 opacity-0 overflow-hidden'
-        }`}>
-        <div className="w-72">
+      <div className={`hidden md:flex shrink-0 no-print h-screen sticky top-0 transition-all duration-300 ease-in-out ${desktopSidebarOpen ? 'w-72' : 'w-0 opacity-0 overflow-hidden'}`}>
+        <div className="w-72 h-full">
           <Sidebar
             user={user}
             activeView={activeView}
@@ -290,15 +289,8 @@ export default function App() {
       )}
 
       {/* Mobile Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 md:hidden transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}>
-        <div className="relative h-full">
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="absolute top-4 right-[-48px] z-50 p-2 bg-white rounded-full shadow-lg"
-          >
-            <X className="w-5 h-5 text-gray-700" />
-          </button>
+      <div className={`fixed inset-y-0 left-0 z-50 md:hidden transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="relative h-full w-72">
           <Sidebar
             user={user}
             activeView={activeView}
@@ -317,10 +309,10 @@ export default function App() {
         <div className="flex items-center justify-between px-6 py-3 bg-white/60 backdrop-blur-xl border-b border-slate-200/50 no-print sticky top-0 z-20 shadow-sm">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setSidebarOpen(true)}
-              className="md:hidden p-2 hover:bg-slate-100 rounded-2xl transition-colors"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="md:hidden p-2 hover:bg-slate-100 rounded-2xl transition-all active:scale-95 border border-slate-200 bg-white shadow-sm"
             >
-              <Menu className="w-5 h-5 text-slate-700" />
+              {sidebarOpen ? <X className="w-5 h-5 text-rose-600" /> : <Menu className="w-5 h-5 text-slate-700" />}
             </button>
 
             <button
@@ -328,8 +320,8 @@ export default function App() {
               className="hidden md:flex p-2 hover:bg-slate-50 rounded-xl transition-all active:scale-95 border border-slate-200 bg-white shadow-sm group"
               title={desktopSidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
             >
-              {desktopSidebarOpen 
-                ? <PanelLeftClose className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" /> 
+              {desktopSidebarOpen
+                ? <PanelLeftClose className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" />
                 : <Menu className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
               }
             </button>

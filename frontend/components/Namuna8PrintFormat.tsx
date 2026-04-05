@@ -146,54 +146,54 @@ export default function Namuna8PrintFormat({ records }: Props) {
                             <table className="w-full text-[10px] border-collapse border-2 border-[#4a0000] leading-tight mt-2 shadow-xl">
                                 <thead>
                                     <tr className="text-white bg-brand-gradient">
-                                        <th rowSpan={2} className="p-1 border border-white/30 w-[25px]">अ.क्र.</th>
-                                        <th rowSpan={2} className="p-0 border border-white/30 w-[80px]">
-                                            <div className="p-1 border-b border-white/10 border-dashed">वस्ती नाव</div>
+                                        <th rowSpan={2} className="p-1 border border-white/40 w-[25px]">अ.क्र.</th>
+                                        <th rowSpan={2} className="p-0 border border-white/40 w-[80px]">
+                                            <div className="p-1 border-b  border-white/40border-dashed">वस्ती नाव</div>
                                             <div className="p-1">खसरा क्र.</div>
                                         </th>
-                                        <th rowSpan={2} className="p-0 border border-white/30 w-[60px]">
-                                            <div className="p-1 border-b border-white/10 border-dashed">मालमत्ता</div>
+                                        <th rowSpan={2} className="p-0 border border-white/40 w-[60px]">
+                                            <div className="p-1 border-b  border-white/40border-dashed">मालमत्ता</div>
                                             <div className="p-1">प्लॉट क्र.</div>
                                         </th>
-                                        <th rowSpan={2} className="p-0 border border-white/30 w-[160px]">
-                                            <div className="p-1 border-b border-white/10 border-dashed">मालकाचे नाव</div>
+                                        <th rowSpan={2} className="p-0 border border-white/40 w-[160px]">
+                                            <div className="p-1 border-b  border-white/40border-dashed">मालकाचे नाव</div>
                                             <div className="p-1">भोगवटादाराचे नाव</div>
                                         </th>
-                                        <th rowSpan={2} className="p-0 border border-white/30 w-[50px]">
-                                            <div className="p-1 border-b border-white/10 border-dashed">एकूण</div>
+                                        <th rowSpan={2} className="p-0 border border-white/40 w-[50px]">
+                                            <div className="p-1 border-b  border-white/40border-dashed">एकूण</div>
                                             <div className="p-1">क्षेत्रफळ</div>
                                         </th>
-                                        <th rowSpan={2} className="p-1 border border-white/30 w-[100px]">मालमत्ता प्रकार</th>
-                                        <th rowSpan={2} className="p-1 border border-white/30 w-[60px]">क्षेत्रफळ <br />(चौ.फूट / चौ.मी)</th>
-                                        <th rowSpan={2} className="p-0 border border-white/30 w-[70px]">
-                                            <div className="p-1 border-b border-white/10 border-dashed">बांधकाम वर्ष</div>
+                                        <th rowSpan={2} className="p-1 border border-white/40 w-[100px]">मालमत्ता प्रकार</th>
+                                        <th rowSpan={2} className="p-1 border border-white/40 w-[60px]">क्षेत्रफळ <br />(चौ.फूट / चौ.मी)</th>
+                                        <th rowSpan={2} className="p-0 border border-white/40 w-[70px]">
+                                            <div className="p-1 border-b  border-white/40border-dashed">बांधकाम वर्ष</div>
                                             <div className="p-1">वय</div>
                                         </th>
-                                        <th colSpan={2} className="p-1 border border-white/30">वार्षिक मूल्य दर</th>
-                                        <th rowSpan={2} className="p-0 border border-white/30 w-[50px]">
-                                            <div className="p-1 border-b border-white/10 border-dashed">भारांक</div>
+                                        <th colSpan={2} className="p-1 border border-white/40">वार्षिक मूल्य दर</th>
+                                        <th rowSpan={2} className="p-0 border border-white/40 w-[50px]">
+                                            <div className="p-1 border-b  border-white/40border-dashed">भारांक</div>
                                             <div className="p-1">घसारा</div>
                                         </th>
-                                        <th rowSpan={2} className="p-0 border border-white/30 w-[80px]">
-                                            <div className="p-1 border-b border-white/10 border-dashed">भांडवली मूल्य</div>
+                                        <th rowSpan={2} className="p-0 border border-white/40 w-[80px]">
+                                            <div className="p-1 border-b  border-white/40border-dashed">भांडवली मूल्य</div>
                                             <div className="p-1">(रु.)</div>
                                         </th>
-                                        <th rowSpan={2} className="p-0 border border-white/30 w-[40px]">
-                                            <div className="p-1 border-b border-white/10 border-dashed">कराचा दर</div>
+                                        <th rowSpan={2} className="p-0 border border-white/40 w-[40px]">
+                                            <div className="p-1 border-b  border-white/40border-dashed">कराचा दर</div>
                                             <div className="p-1">(पैसे)</div>
                                         </th>
-                                        <th colSpan={6} className="p-1 border border-white/30 uppercase tracking-widest text-[9px]">आकारणी केलेल्या करांची रक्कम (रु.)</th>
-                                        <th rowSpan={2} className="p-1 border border-white/30 w-[80px]">शेरा</th>
+                                        <th colSpan={6} className="p-1 border border-white/40 uppercase tracking-widest text-[9px]">आकारणी केलेल्या करांची रक्कम (रु.)</th>
+                                        <th rowSpan={2} className="p-1 border border-white/40 w-[80px]">शेरा</th>
                                     </tr>
                                     <tr className="text-white text-[8.5px] font-black bg-brand-gradient uppercase tracking-wider">
-                                        <th className="p-1 border border-white/30">जमीन</th>
-                                        <th className="p-1 border border-white/30">बांधकाम</th>
-                                        <th className="p-1 border border-white/30 w-[50px]">मालमत्ता <br />कर </th>
-                                        <th className="p-1 border border-white/30 w-[50px]">दिवाबत्ती <br />कर</th>
-                                        <th className="p-1 border border-white/30 w-[50px]">सा. पाणी <br />कर</th>
-                                        <th className="p-1 border border-white/30 w-[50px]">वि. पाणी <br />कर</th>
-                                        <th className="p-1 border border-white/30 w-[50px]">कचरागाडी <br />कर</th>
-                                        <th className="p-1 border border-white/30 w-[60px]">एकूण</th>
+                                        <th className="p-1 border border-white/40">जमीन</th>
+                                        <th className="p-1 border border-white/40">बांधकाम</th>
+                                        <th className="p-1 border border-white/40 w-[50px]">मालमत्ता <br />कर </th>
+                                        <th className="p-1 border border-white/40 w-[50px]">दिवाबत्ती <br />कर</th>
+                                        <th className="p-1 border border-white/40 w-[50px]">सा. पाणी <br />कर</th>
+                                        <th className="p-1 border border-white/40 w-[50px]">वि. पाणी <br />कर</th>
+                                        <th className="p-1 border border-white/40 w-[50px]">कचरागाडी <br />कर</th>
+                                        <th className="p-1 border border-white/40 w-[60px]">एकूण</th>
                                     </tr>
                                 </thead>
 
@@ -348,7 +348,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                 <tfoot>
                                     <tr className="text-white font-black text-[10px] bg-brand-gradient">
                                         <td colSpan={6} className="p-3 text-right  uppercase tracking-widest opacity-80 text-white font-black whitespace-nowrap"></td>
-                                        {/* <td className="p-1 text-center border-white/30 bg-brand-gradient">
+                                        {/* <td className="p-1 text-center border-white/40 bg-brand-gradient">
                                             {MN(chunk.reduce((sum: number, r: any) => sum + (r.sections?.reduce((s2: number, s: any) => s2 + (Number(s.areaSqFt) || 0), 0) || 0), 0))}
                                         </td> */}
                                         <td className="bg-brand-gradient border-white/20"></td>
@@ -358,7 +358,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                             &nbsp;
                                         </td>
                                         <td className="bg-brand-gradient border-white/20"></td>
-                                        <td className="p-0 text-right border-white/30 text-[9px] bg-brand-gradient">
+                                        <td className="p-0 text-right border-white/40 text-[9px] bg-brand-gradient">
                                             <div className="p-1 font-black bg-brand-gradient">
                                                 {MN(chunk.reduce((sum: number, r: any) => {
                                                     const active = (r.sections || [])
@@ -378,19 +378,19 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                 }, 0).toFixed(2))}
                                             </div>
                                         </td>
-                                        <td className="p-1 text-right border-white/30 bg-brand-gradient">
+                                        <td className="p-1 text-right border-white/40 bg-brand-gradient">
                                             {MN(chunk.reduce((sum: number, r: any) => sum + (Number(r.streetLightTax) || 0), 0).toFixed(2))}
                                         </td>
-                                        <td className="p-1 text-right border-white/30 bg-brand-gradient">
+                                        <td className="p-1 text-right border-white/40 bg-brand-gradient">
                                             {MN(chunk.reduce((sum: number, r: any) => sum + (Number(r.generalWaterTax) || 0), 0).toFixed(2))}
                                         </td>
-                                        <td className="p-1 text-right border-white/30 bg-brand-gradient">
+                                        <td className="p-1 text-right border-white/40 bg-brand-gradient">
                                             {MN(chunk.reduce((sum: number, r: any) => sum + (Number(r.specialWaterTax) || 0), 0).toFixed(2))}
                                         </td>
-                                        <td className="p-1 text-right border-white/30 bg-brand-gradient">
+                                        <td className="p-1 text-right border-white/40 bg-brand-gradient">
                                             {MN(chunk.reduce((sum: number, r: any) => sum + (Number(r.healthTax) || 0), 0).toFixed(2))}
                                         </td>
-                                        <td className="p-2 text-right border border-white/30 text-[12px] bg-brand-gradient text-white ">
+                                        <td className="p-2 text-right border border-white/40 text-[12px] bg-brand-gradient text-white ">
                                             {MN(chunk.reduce((sum: number, r: any) => {
                                                 const active = (r.sections || [])
                                                     .map((s, idx) => ({ ...s, floorIndex: idx }))
@@ -409,7 +409,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                 return sum + rGhar + other;
                                             }, 0).toFixed(2))}
                                         </td>
-                                        <td className="p-1 text-center border-white/30 uppercase text-[9px] font-black">प्रमाणित</td>
+                                        <td className="p-1 text-center border-white/40 uppercase text-[9px] font-black">प्रमाणित</td>
                                     </tr>
                                 </tfoot>
                             </table>

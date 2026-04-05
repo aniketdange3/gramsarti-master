@@ -223,21 +223,22 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
     }, [records]);
 
     const stats = useMemo(() => {
-        const currentTax = records.reduce((sum, r) => sum + (Number(r.totalTaxAmount) || 0), 0);
-        const totalArrears = records.reduce((sum, r) => sum + (Number(r.arrearsAmount) || 0), 0);
-        const totalPaid = records.reduce((sum, r) => sum + (Number(r.paidAmount) || 0), 0);
-        const totalDemand = currentTax + totalArrears;
-        const totalBalance = totalDemand - totalPaid;
-        const recoveryRate = totalDemand > 0 ? (totalPaid / totalDemand) * 100 : 0;
+        const chaluTax = records.reduce((sum, r) => sum + (Number(r.totalTaxAmount) || 0), 0);
+        const magilTax = records.reduce((sum, r) => sum + (Number(r.arrearsAmount) || 0), 0);
+        const wasuli = records.reduce((sum, r) => sum + (Number(r.paidAmount) || 0), 0);
+        const totalDemand = chaluTax + magilTax;
+        const baki = totalDemand - wasuli;
+        const recoveryRate = totalDemand > 0 ? (wasuli / totalDemand) * 100 : 0;
 
-        return { currentTax, totalArrears, totalPaid, totalDemand, totalBalance, recoveryRate, count: records.length };
+        return { chaluTax, magilTax, wasuli, totalDemand, baki, recoveryRate, count: records.length };
     }, [records]);
 
     // Animated counters
     const animCount = useCountUp(stats.count);
-    const animDemand = useCountUp(Math.round(stats.totalDemand / 100));
-    const animPaid = useCountUp(Math.round(stats.totalPaid / 100));
-    const animBalance = useCountUp(Math.round(stats.totalBalance / 100));
+    const animMagil = useCountUp(Math.round(stats.magilTax));
+    const animChalu = useCountUp(Math.round(stats.chaluTax));
+    const animWasuli = useCountUp(Math.round(stats.wasuli));
+    const animBaki = useCountUp(Math.round(stats.baki));
     const animRecovery = useCountUp(Math.round(stats.recoveryRate * 10));
 
     const handleSave = async (record: PropertyRecord) => {
@@ -491,7 +492,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                 ) : (
                     <>
                         {/* Highlights Row */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0 no-print">
+                        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 shrink-0 no-print">
                             <StatCard
                                 title="एकूण मालमत्ता"
                                 value={MN(animCount)}
@@ -500,25 +501,32 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                 textColor="text-indigo-900"
                             />
                             <StatCard
-                                title="एकूण मागणी (₹)"
-                                value={`₹${MN(animDemand)}`}
+                                title="मागील थकबाकी (₹)"
+                                value={`₹${MN(animMagil)}`}
+                                icon={<AlertTriangle />}
+                                gradient="from-rose-500 to-red-600"
+                                textColor="text-red-900"
+                            />
+                            <StatCard
+                                title="चालू मागणी (₹)"
+                                value={`₹${MN(animChalu)}`}
                                 icon={<IndianRupee />}
                                 gradient="from-amber-500 to-orange-600"
                                 textColor="text-orange-900"
                             />
                             <StatCard
                                 title="वसूल रक्कम (₹)"
-                                value={`₹${MN(animPaid)}`}
+                                value={`₹${MN(animWasuli)}`}
                                 icon={<CheckCircle2 />}
                                 gradient="from-emerald-500 to-teal-600"
                                 textColor="text-emerald-900"
                             />
                             <StatCard
-                                title="थकबाकी (₹)"
-                                value={`₹${MN(animBalance)}`}
-                                icon={<AlertTriangle />}
-                                gradient="from-rose-500 to-red-600"
-                                textColor="text-red-900"
+                                title="एकुण बाकी (₹)"
+                                value={`₹${MN(animBaki)}`}
+                                icon={<IndianRupee />}
+                                gradient="from-indigo-500 to-blue-600"
+                                textColor="text-indigo-900"
                             />
                             <StatCard
                                 title="वसुली दर (%)"
@@ -627,8 +635,10 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                             <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest w-[80px]">मालमत्ता/प्लॉट</th>
                                             <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest min-w-[160px]">मालकाचे नाव</th>
                                             <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest w-[120px]">प्रकार/क्षेत्रफळ</th>
-                                            <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest text-right w-[100px]">एकूण कर</th>
-                                            <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest text-right w-[100px]">एकूण बाकी</th>
+                                            <th className="px-3 py-2 text-right text-[9px] font-black uppercase tracking-widest w-[80px]">मागील थकबाकी</th>
+                                            <th className="px-3 py-2 text-right text-[9px] font-black uppercase tracking-widest w-[80px]">चालू मागणी</th>
+                                            <th className="px-3 py-2 text-right text-[9px] font-black uppercase tracking-widest w-[80px]">वसूल रक्कम</th>
+                                            <th className="px-3 py-2 text-right text-[10px] font-black uppercase tracking-widest w-[90px]">एकुण बाकी</th>
                                             <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest text-center w-[110px]">कृती</th>
                                         </tr>
                                     </thead>
@@ -651,7 +661,9 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                                                 </div>
                                                             </div>
                                                         )}
-                                                        <span className={`text-[11px] font-bold ${isDuplicate ? 'text-red-700' : 'text-slate-400'}`}>{MN(record.srNo)}</span>
+                                                        <span className={`text-[11px] font-bold ${isDuplicate ? 'text-red-700' : 'text-slate-400'}`}>
+                                                            {MN((showAll ? 0 : (currentPage - 1) * ITEMS_PER_PAGE) + idx + 1)}
+                                                        </span>
                                                     </td>
                                                     <td className="px-2 py-1.5">
                                                         <div className="inline-flex flex-col">
@@ -681,23 +693,19 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                                                 <div className="text-[9px] text-slate-400 italic">माहिती नाही</div>
                                                             )}
                                                     </td>
-                                                    <td className="px-2 py-1.5 text-right">
-                                                        <div className="font-black text-indigo-700 text-[12px] leading-none">₹{Number(record.totalTaxAmount || 0).toLocaleString()}</div>
-                                                        {(Number(record.arrearsAmount) > 0 || Number(record.penaltyAmount) > 0) && (
-                                                            <div className="text-[8px] text-rose-500 font-black uppercase mt-0.5 tracking-wider leading-none">
-                                                                +₹{MN((Number(record.arrearsAmount) || 0) + (Number(record.penaltyAmount) || 0))}
-                                                            </div>
-                                                        )}
+                                                    <td className="px-3 py-1.5 text-right">
+                                                        <div className="font-bold text-rose-500 text-[11px] leading-none">₹{MN(Number(record.arrearsAmount || 0))}</div>
                                                     </td>
-                                                    <td className="px-3 py-4 text-right">
-                                                        <div className="font-black text-rose-600 text-[14px] leading-none">
-                                                            ₹{Number(Number(record.totalTaxAmount || 0) + Number(record.arrearsAmount || 0) + Number(record.penaltyAmount || 0) - Number(record.paidAmount || 0) - Number(record.discountAmount || 0)).toLocaleString()}
+                                                    <td className="px-3 py-1.5 text-right">
+                                                        <div className="font-bold text-indigo-700 text-[11px] leading-none">₹{MN(Number(record.totalTaxAmount || 0))}</div>
+                                                    </td>
+                                                    <td className="px-3 py-1.5 text-right">
+                                                        <div className="font-bold text-emerald-600 text-[11px] leading-none">₹{MN(Number(record.paidAmount || 0))}</div>
+                                                    </td>
+                                                    <td className="px-3 py-1.5 text-right bg-slate-50/50">
+                                                        <div className="font-black text-slate-900 text-[12px] leading-none">
+                                                            ₹{MN(Number(record.totalTaxAmount || 0) + Number(record.arrearsAmount || 0) + (Number(record.penaltyAmount) || 0) - Number(record.paidAmount || 0) - (Number(record.discountAmount) || 0))}
                                                         </div>
-                                                        {Number(record.paidAmount) > 0 && (
-                                                            <div className="text-[9px] text-emerald-600 font-black uppercase mt-1.5 tracking-wider leading-none">
-                                                                (₹{MN(record.paidAmount)} वसूल)
-                                                            </div>
-                                                        )}
                                                     </td>
                                                     <td className="px-2 py-1.5 text-center">
                                                         <div className="flex justify-center gap-1">

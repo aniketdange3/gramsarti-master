@@ -16,6 +16,10 @@ import * as XLSX from 'xlsx';
 import { EXCEL_HEADERS } from '../constants';
 import { FileUp, FileSpreadsheet, Calculator } from 'lucide-react';
 
+const MN = (v: number | string | undefined) =>
+    String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
+
+
 interface Namuna8Props {
     records: PropertyRecord[];
     selectedId: string | null;
@@ -359,125 +363,120 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
     // }
 
     return (
-        <div className="flex flex-col h-full bg-slate-50/50">
-            {/* ── TOP HEADER ── */}
-            <div className="bg-white border-b border-gray-100 px-4 py-2.5 shadow-sm no-print shrink-0 relative z-20">
-                <div className="flex items-center justify-between">
-                    {/* Action Button (Left) */}
-                    {/* <div className="flex items-center gap-2">
-                        {canAdd && (
-                            <button onClick={() => { setEditingRecord(null); setShowForm(true); setVisibleFloorCount(1); }}
-                                className="flex items-center gap-2 text-sm font-black text-white bg-primary px-4 py-2 rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all active:scale-95">
-                                <Plus className="w-4 h-4" /> नवीन नोंद
-                            </button>
-                        )}
-                        <label className="flex items-center gap-1.5 bg-slate-100 text-slate-700 px-3 py-2 rounded-xl hover:bg-slate-200 transition-all cursor-pointer text-xs font-bold border border-slate-200">
-                            <FileUp className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">आयात</span>
-                            <input type="file" className="hidden" accept=".xlsx, .xls" onChange={importFromExcel} />
-                        </label>
-                        <button onClick={exportToExcel} className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-600 px-3 py-2 rounded-xl hover:bg-slate-50 transition-all text-xs font-bold shadow-sm">
-                            <FileSpreadsheet className="w-3.5 h-3.5 text-primary" />
-                            <span className="hidden sm:inline">एक्सपोर्ट</span>
-                        </button>
-                        <button
-                            onClick={() => {
-                                if (records.length > 0) setCalculationProperty(records[0]);
-                                else alert('गणना पाहण्यासाठी किमान एक नोंद असणे आवश्यक आहे.');
-                            }}
-                            className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-2 rounded-xl hover:bg-emerald-100 transition-all text-xs font-bold shadow-sm"
-                        >
-                            <Calculator className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">गणना सूत्र मार्गदर्शक</span>
-                        </button>
-                    </div> */}
-
-                    {/* Title & Info (Right) */}
-                    <div className="text-start">
-                        <h2 className="text-2xl font-black text-gray-800 flex gap-2 leading-none whitespace-nowrap pb-2 "> नमुना ८
-                        </h2>
-                        <span className="text-[10px] font-bold bg-primary/5 text-primary px-2 py-1 rounded-lg border border-primary/20 tracking-tighter uppercase">  मालमत्ता आकारणी नोंदवही</span>
-
-                    </div>
-                    <div className="px-2 py-1.5 no-print shrink-0">
-                        <div className="flex flex-wrap items-center gap-2 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
-                            {/* Search Field */}
-                            <div className="relative group w-56 lg:w-72">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10 group-focus-within:text-primary transition-colors" />
-                                <TransliterationInput
-                                    placeholder="नाव, प्लॉट शोधा..."
-                                    value={searchTerm}
-                                    onChangeText={setSearchTerm}
-                                    className="w-full pl-9 pr-10 py-1.5 bg-slate-50 border-transparent rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                                />
-                                {searchTerm && (
-                                    <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
-                                        <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
-                                    </button>
-                                )}
-                            </div>
-
-                            <div className="w-px h-5 bg-slate-200 mx-1 hidden sm:block" />
-
-                            {/* Advanced Filters */}
-                            {(canFilter || isAdmin) && (
-                                <div className="flex items-center gap-1">
-                                    <CustomDropdown
-                                        value={filterWasti}
-                                        onChange={handleWastiChange}
-                                        placeholder="वस्ती - सर्व"
-                                        options={uniqueWastis.map(w => ({ value: w, label: w }))}
-                                    />
-                                    <CustomDropdown
-                                        value={filterLayout}
-                                        onChange={handleLayoutChange}
-                                        placeholder="लेआउट - सर्व"
-                                        options={uniqueLayouts.map(l => ({ value: l, label: l }))}
-                                    />
-                                    <CustomDropdown
-                                        value={filterKhasra}
-                                        onChange={handleKhasraChange}
-                                        placeholder="खसरा - सर्व"
-                                        options={uniqueKhasras.map(k => ({ value: k, label: k }))}
-                                    />
-                                    <CustomDropdown
-                                        value={filterPlotNo}
-                                        onChange={setFilterPlotNo}
-                                        placeholder="प्लॉट - सर्व"
-                                        options={uniquePlots.map(p => ({ value: p, label: p }))}
-                                    />
-                                    <CustomDropdown
-                                        value={filterPropertyType}
-                                        onChange={setFilterPropertyType}
-                                        placeholder="प्रकार - सर्व"
-                                        options={dynamicPropertyTypes.map(p => ({ value: p, label: p }))}
-                                    />
-                                    {(filterWasti || filterLayout || filterKhasra || filterPlotNo || filterPropertyType) && (
-                                        <button
-                                            onClick={() => { setFilterWasti(''); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); setFilterPropertyType(''); }}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100 transition-all flex-shrink-0"
-                                        >
-                                            <RotateCcw className="w-3 h-3" /> सर्व रद्द
-                                        </button>
-                                    )}
-                                </div>
-                            )}
+        <div className="flex flex-col h-full bg-slate-50/50 overflow-hidden">
+            {/* Top Action Bar */}
+            <header className="no-print shrink-0">
+                <div className="gp-action-bar">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
+                            <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
+                        </div>
+                        <div>
+                            <h2 className="gp-section-title">नमुना ८</h2>
+                            <p className="gp-section-subtitle">मालमत्ता आकारणी नोंदवही</p>
                         </div>
                     </div>
+
+                    <div className="flex items-center gap-2">
+                        {canAdd && (
+                            <>
+                                <label className="gp-btn-secondary cursor-pointer">
+                                    <FileUp className="w-3.5 h-3.5" /> आयात
+                                    <input type="file" className="hidden" accept=".xlsx, .xls" onChange={importFromExcel} />
+                                </label>
+                                <button onClick={exportToExcel} className="gp-btn-secondary">
+                                    <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-600" /> एक्सपोर्ट
+                                </button>
+                                <button
+                                    onClick={() => { setEditingRecord(null); setVisibleFloorCount(1); setShowForm(true); }}
+                                    className="gp-btn-primary"
+                                >
+                                    <Plus className="w-3.5 h-3.5" /> नवीन नोंद
+                                </button>
+                            </>
+                        )}
+                    </div>
                 </div>
-            </div>
+            </header>
 
-            {/* ── FILTER BAR (Like Dashboard UI) ── */}
+            {/* Main Content Area */}
+            <div className="flex-1 overflow-hidden flex flex-col px-3 py-3 gap-3">
+                {/* Unified Search & Filter Bar */}
+                <div className="flex items-center gap-2 p-2 bg-white border border-slate-100 rounded-xl no-print flex-wrap lg:flex-nowrap shrink-0">
+                    {/* Search Component */}
+                    <div className="relative flex-1 min-w-[220px] max-w-sm">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10" />
+                        <TransliterationInput
+                            placeholder="नाव, प्लॉट शोधा..."
+                            className="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-100 rounded-lg text-[11px] font-bold focus:ring-4 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400"
+                            value={searchTerm}
+                            onChangeText={setSearchTerm}
+                        />
+                        {searchTerm && (
+                            <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
+                                <X className="w-3.5 h-3.5 text-slate-400 hover:text-rose-500" />
+                            </button>
+                        )}
+                    </div>
 
+                    {/* Filters Group */}
+                    <div className="flex items-center gap-1.5 flex-wrap flex-1">
+                        <CustomDropdown
+                            value={filterWasti}
+                            onChange={handleWastiChange}
+                            placeholder="वस्ती - सर्व"
+                            options={uniqueWastis.map(w => ({ value: w, label: w }))}
+                        />
+                        <CustomDropdown
+                            value={filterLayout}
+                            onChange={handleLayoutChange}
+                            placeholder="लेआउट - सर्व"
+                            options={uniqueLayouts.map(l => ({ value: l, label: l }))}
+                        />
+                        <CustomDropdown
+                            value={filterKhasra}
+                            onChange={handleKhasraChange}
+                            placeholder="खसरा - सर्व"
+                            options={uniqueKhasras.map(k => ({ value: k, label: k }))}
+                        />
+                        <CustomDropdown
+                            value={filterPlotNo}
+                            onChange={setFilterPlotNo}
+                            placeholder="प्लॉट - सर्व"
+                            options={uniquePlots.map(p => ({ value: p, label: p }))}
+                        />
+                        <CustomDropdown
+                            value={filterPropertyType}
+                            onChange={setFilterPropertyType}
+                            placeholder="प्रकार - सर्व"
+                            options={dynamicPropertyTypes.map(p => ({ value: p, label: p }))}
+                        />
+                        {(filterWasti || filterLayout || filterKhasra || filterPlotNo || filterPropertyType) && (
+                            <button
+                                onClick={() => { setFilterWasti(''); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); setFilterPropertyType(''); }}
+                                className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 rounded-xl hover:bg-rose-100 transition-all flex-shrink-0"
+                            >
+                                <RotateCcw className="w-3 h-3" /> रीसेट
+                            </button>
+                        )}
+                    </div>
 
-            <div className="flex-1 overflow-auto p-2">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-visible min-w-fit">
+                    {/* Stats Counter */}
+                    <div className="hidden lg:flex items-center gap-1.5 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 shrink-0">
+                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tight whitespace-nowrap">
+                            नोंदी: <span className="text-indigo-600 font-black">{MN(filteredRecords.length)}</span>
+                        </span>
+                    </div>
+                </div>
+
+                {/* Table Area */}
+                <div className="flex-1 overflow-auto bg-white rounded-2xl shadow-sm border border-gray-100">
                     <NamunaTable8
                         records={filteredRecords}
                         filterWasti={filterWasti}
                         onEdit={canEdit ? handleEdit : undefined}
                         onDelete={canDelete ? handleDelete : undefined}
-                        // onView={setViewId}
                         onPrint={handlePrint}
                         onCalculate={(r) => setCalculationProperty(r)}
                         showActions={true}
@@ -485,7 +484,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
                 </div>
             </div>
 
-            {/* Calculation Guide Modal */}
+            {/* Modals */}
             {calculationProperty && (
                 <CalculationGuide
                     property={calculationProperty}
@@ -493,7 +492,6 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
                 />
             )}
 
-            {/* Property Form Modal */}
             {showForm && (
                 <PropertyForm
                     initialData={editingRecord || undefined}

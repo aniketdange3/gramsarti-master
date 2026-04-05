@@ -272,7 +272,7 @@ export default function Namuna9PrintFormat({ records }: Namuna9PrintFormatProps)
                                             <td className="text-right pr-1.5 p-0.5 bg-blue-900 text-white text-[9px] shadow-lg">{MN(grandTotalDemand.toFixed(2))}</td>
                                             <td className="p-0.5 px-2 text-right italic text-[7px] text-emerald-600">वसूल एकूण</td>
                                             <td className="text-right pr-1.5 p-0.5 text-emerald-800 font-black">{MN(((r as any)._arrearsPaid + (r as any)._penaltyPaid).toFixed(2))}</td>
-                                            <td className="text-right pr-1.5 p-0.5 text-emerald-700">{MN(Object.values((r as any)._headRecoveryMap).reduce((a: any, b: any) => a + b, 0).toFixed(2))}</td>
+                                            <td className="text-right pr-1.5 p-0.5 text-emerald-700">{MN(Number(Object.values((r as any)._headRecoveryMap || {}).reduce((a: number, b: any) => a + (Number(b) || 0), 0)).toFixed(2))}</td>
                                             <td className="text-right pr-1.5 p-0.5 bg-emerald-700 text-white shadow-lg">{MN(paidAmount.toFixed(2))}</td>
                                         </tr>
 

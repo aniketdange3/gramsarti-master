@@ -164,33 +164,31 @@ export default function NamunaTable9({
 
                 <table className="w-full border-collapse text-[10px] relative z-10">
                     <thead>
-                        <tr className="no-print bg-surface-hover/50 text-text-muted border-b border-border sticky top-0 z-20 backdrop-blur-sm">
-                            <th className="px-3 py-3 text-center w-[40px]">
+                        <tr className="gp-table-header-row">
+                            <th className="gp-table-header-cell text-center w-[40px]">
                                 <input
                                     type="checkbox"
-                                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                                    className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                                     checked={pageRecords.length > 0 && pageRecords.every(r => r.id && selectedIds.has(r.id))}
                                     onChange={toggleAllPage}
                                 />
                             </th>
-                            <th className="px-3 py-3 text-center text-xs font-black uppercase w-[50px] tracking-widest">अ.क्र.</th>
-                            <th className="px-3 py-3 text-left text-xs font-black uppercase tracking-wider w-[100px]">वस्ती</th>
-                            <th className="px-3 py-3 text-left text-xs font-black uppercase tracking-wider w-[80px]">खसरा</th>
-                            <th className="px-3 py-3 text-left text-xs font-black uppercase tracking-wider w-[80px]">प्लॉट</th>
-                            <th className="px-3 py-3 text-left text-xs font-black uppercase tracking-wider min-w-[160px]">मालकाचे नाव व पत्ता</th>
-                            <th className="px-3 py-3 text-left text-xs font-black uppercase tracking-wider min-w-[120px]">प्रकार व वर्णन</th>
-                            <th className="px-3 py-3 text-right text-xs font-black uppercase tracking-wider min-w-[80px]">क्षेत्रफळ</th>
-                            <th className="px-3 py-3 text-right text-xs font-black uppercase tracking-wider min-w-[140px]">कराचा तपशील</th>
-                            <th className="px-3 py-3 text-right text-xs font-black uppercase tracking-wider min-w-[100px]">मागील थकबाकी</th>
-                            <th className="px-3 py-3 text-right text-xs font-black uppercase tracking-wider min-w-[100px]">चालू मागणी</th>
-                            <th className="px-3 py-3 text-right text-xs font-black uppercase tracking-wider min-w-[100px]">एकूण मागणी</th>
-                            <th className="px-3 py-3 text-left text-xs font-black uppercase tracking-wider min-w-[90px]">पावती तपशील</th>
-                            <th className="px-3 py-3 text-right text-xs font-black uppercase tracking-wider min-w-[100px]">मागील वसुली</th>
-                            <th className="px-3 py-3 text-right text-xs font-black uppercase tracking-wider min-w-[100px]">चालू वसुली</th>
-                            <th className="px-3 py-3 text-right text-xs font-black uppercase tracking-wider min-w-[100px]">एकूण वसुली</th>
-                            <th className="px-3 py-3 text-right text-xs font-black uppercase tracking-wider min-w-[120px]">एकूण बाकी</th>
+                            <th className="gp-table-header-cell text-center w-[50px]">अ.क्र.</th>
+                            <th className="gp-table-header-cell text-left w-[100px]">वस्ती</th>
+                            <th className="gp-table-header-cell text-left w-[80px]">खसरा</th>
+                            <th className="gp-table-header-cell text-left w-[80px]">प्लॉट</th>
+                            <th className="gp-table-header-cell text-left min-w-[160px]">मालकाचे नाव</th>
+                            <th className="gp-table-header-cell text-left min-w-[120px]">प्रकार</th>
+                            <th className="gp-table-header-cell text-right min-w-[80px]">क्षेत्रफळ</th>
+                            <th className="gp-table-header-cell text-right min-w-[120px]">कराचा तपशील</th>
+                            <th className="gp-table-header-cell text-right min-w-[90px]">मागील थकबाकी</th>
+                            <th className="gp-table-header-cell text-right min-w-[90px]">चालू मागणी</th>
+                            <th className="gp-table-header-cell text-right min-w-[100px]">एकूण मागणी</th>
+                            <th className="gp-table-header-cell text-left min-w-[100px]">पावती तपशील</th>
+                            <th className="gp-table-header-cell text-right min-w-[90px]">वसुली</th>
+                            <th className="gp-table-header-cell text-right min-w-[90px]">एकूण बाकी</th>
                             {showActions && (
-                                <th className="no-print px-3 py-3 text-center text-xs font-black uppercase sticky right-0 z-20 bg-surface border-l border-border w-[180px]">
+                                <th className="gp-table-header-cell text-center sticky right-0 z-20 bg-slate-50/90 border-l border-slate-200 w-[140px]">
                                     कृती
                                 </th>
                             )}
@@ -211,101 +209,104 @@ export default function NamunaTable9({
                             const cWScreen = Math.min(remPScr, current);
 
                             return (
-                                <tr key={r.id ?? rIdx} className={`no-print hover:bg-surface-hover transition-colors group ${rIdx % 2 === 0 ? 'bg-surface' : 'bg-surface-hover/30'} ${r.id && selectedIds.has(r.id) ? 'bg-primary-soft' : ''}`}>
-                                    <td className="px-3 py-2.5 text-center">
+                                <tr key={r.id ?? rIdx} className={`hover:bg-indigo-50/30 transition-colors group ${rIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'} ${r.id && selectedIds.has(r.id) ? 'bg-indigo-100/50' : ''}`}>
+                                    <td className="px-3 py-2 text-center">
                                         <input
                                             type="checkbox"
-                                            className="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary"
+                                            className="w-3 h-3 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                                             checked={!!(r.id && selectedIds.has(r.id))}
                                             onChange={() => r.id && toggleSelection(r.id)}
                                         />
                                     </td>
-                                    <td className="px-3 py-2.5 text-center">
-                                        <span className="text-xs font-black text-text-light">{MN(offset + rIdx + 1)}</span>
+                                    <td className="px-3 py-2 text-center font-black text-slate-400 text-xs">{MN(offset + rIdx + 1)}</td>
+
+                                    <td className="px-3 py-2">
+                                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-600 border border-slate-200 uppercase leading-none">
+                                            {r.wastiName || '-'}
+                                        </div>
                                     </td>
-                                    <td className="px-3 py-2.5">
-                                        <span className="text-[10px] font-black text-text-muted uppercase">{r.wastiName || '-'}</span>
-                                        <div className="text-[9px] text-text-light font-bold mt-0.5">वॉर्ड {MN(r.wardNo)}</div>
+                                    <td className="px-3 py-2">
+                                        <div className="text-[10px] text-indigo-700 font-black uppercase tracking-tight bg-indigo-50 px-1.5 py-0.5 rounded inline-block whitespace-nowrap">{MN(r.khasraNo) || '-'}</div>
                                     </td>
-                                    <td className="px-3 py-2.5">
-                                        <div className="text-xs text-accent font-black uppercase tracking-tight bg-accent/5 px-2 py-1 rounded inline-block">{MN(r.khasraNo) || '-'}</div>
+                                    <td className="px-3 py-2">
+                                        <div className="text-[11px] font-bold text-slate-700 tracking-tight">{MN(r.plotNo) || '-'}</div>
                                     </td>
-                                    <td className="px-3 py-2.5">
-                                        <div className="text-sm font-black text-text uppercase tracking-tight">{MN(r.plotNo) || '-'}</div>
+                                    <td className="px-3 py-2">
+                                        <div className="font-extrabold text-slate-900 text-[12px] tracking-tight leading-tight uppercase">{r.ownerName}</div>
+                                        <div className="text-[9px] text-slate-500 font-semibold mt-0.5 opacity-60">({r.occupantName || 'स्वतः'})</div>
                                     </td>
-                                    <td className="px-3 py-2.5">
-                                        <div className="font-black text-text text-sm tracking-tight leading-tight uppercase">{r.ownerName}</div>
-                                        <div className="text-[10px] font-bold text-text-muted mt-0.5">({r.occupantName || 'स्वतः'})</div>
-                                        <div className="text-[9px] text-text-muted mt-1 font-black uppercase tracking-wider">ID: {r.propertyId || r.srNo}</div>
-                                    </td>
-                                    <td className="px-3 py-2.5">
+                                    <td className="px-3 py-2">
                                         {r.sections?.filter(s => s.propertyType && s.propertyType !== 'निवडा').map((s, si) => (
-                                            <div key={si} className="text-sm font-black text-text-muted mb-1 border-b border-border last:border-0 pb-1">
+                                            <div key={si} className="text-[9px] font-black text-slate-700 mb-0.5 border-b border-slate-100 last:border-0 pb-0.5 leading-none">
                                                 {s.propertyType}
                                             </div>
                                         )) || '-'}
                                     </td>
-                                    <td className="px-3 py-2.5 text-right font-semibold text-sm text-text-muted">
+                                    <td className="px-3 py-2 text-right">
                                         {r.sections?.filter(s => s.propertyType && s.propertyType !== 'निवडा').map((s, si) => (
-                                            <div key={si} className="mb-1 border-b border-border last:border-0 pb-1">
-                                                <span className="font-black text-text">{MN(s.areaSqFt)}</span> चौ.फु.
+                                            <div key={si} className="mb-0.5 border-b border-slate-100 last:border-0 pb-0.5 leading-none">
+                                                <span className="font-bold text-slate-900 text-[10px]">{MN(s.areaSqFt)}</span> <span className="text-[8px] text-slate-400 font-bold uppercase">Sq.Ft</span>
                                             </div>
                                         )) || '-'}
                                     </td>
-                                    <td className="px-3 py-2.5 text-right">
-                                        <div className="text-[9px] space-y-0.5 text-text-muted font-black uppercase tracking-tight">
-                                            {Number(r.propertyTax) > 0 && <div>मालमत्ता कर: ₹{MN(Number(r.propertyTax).toFixed(2))}</div>}
-                                            {Number(r.streetLightTax) > 0 && <div>दिवा बत्ती कर: ₹{MN(Number(r.streetLightTax).toFixed(2))}</div>}
-                                            {Number(r.healthTax) > 0 && <div>आरोग्य कर: ₹{MN(Number(r.healthTax).toFixed(2))}</div>}
-                                            {Number(r.generalWaterTax) > 0 && <div>सामान्य पाणी कर: ₹{MN(Number(r.generalWaterTax).toFixed(2))}</div>}
-                                            {Number(r.specialWaterTax) > 0 && <div>विशेष पाणी कर: ₹{MN(Number(r.specialWaterTax).toFixed(2))}</div>}
-                                            {Number(r.wasteCollectionTax) > 0 && <div>कचरा संकलन कर: ₹{MN(Number(r.wasteCollectionTax).toFixed(2))}</div>}
-                                            {Number(r.openSpaceTax) > 0 && <div>जमीन कर: ₹{MN(Number(r.openSpaceTax).toFixed(2))}</div>}
+                                    <td className="px-3 py-2 text-right">
+                                        <div className="text-[9px] space-y-0.5 text-slate-500 font-bold uppercase tracking-tight leading-none">
+                                            {Number(r.propertyTax) > 0 && <div>🏠 कर: <span className="text-slate-900 font-black">₹{MN(Number(r.propertyTax).toFixed(2))}</span></div>}
+                                            {Number(r.streetLightTax) > 0 && <div>💡 दिवा: <span className="text-slate-900 font-black">₹{MN(Number(r.streetLightTax).toFixed(2))}</span></div>}
                                         </div>
                                     </td>
 
-                                    <td className="px-3 py-2.5 text-right">
-                                        <div className={`text-base font-black ${arrears > 0 ? 'text-error' : 'text-text-light'}`}>₹{MN(arrears.toFixed(2))}</div>
+                                    <td className="px-3 py-2 text-right">
+                                        <div className={`text-[11px] font-black ${arrears > 0 ? 'text-rose-600' : 'text-slate-400'}`}>₹{MN(arrears.toFixed(2))}</div>
                                     </td>
-                                    <td className="px-3 py-2.5 text-right">
-                                        <div className="text-base font-black text-text">₹{MN(current.toFixed(2))}</div>
+                                    <td className="px-3 py-2 text-right">
+                                        <div className="text-[11px] font-black text-slate-900">₹{MN(current.toFixed(2))}</div>
                                     </td>
-                                    <td className="px-3 py-2.5 text-right bg-surface-hover/50">
-                                        <div className="text-lg font-black text-secondary dark:text-primary">₹{MN(demand.toFixed(2))}</div>
+                                    <td className="px-3 py-2 text-right bg-indigo-50/30">
+                                        <div className="text-[12px] font-black text-indigo-700">₹{MN(demand.toFixed(2))}</div>
                                     </td>
-                                    <td className="px-3 py-2.5 text-left border-r border-border">
-                                        <div className="text-xs text-text-muted font-black mb-1">
+                                    <td className="px-3 py-2 text-left">
+                                        <div className="text-[9px] text-slate-500 font-bold mb-0.5 whitespace-nowrap">
                                             {r.paymentDate ? (r.paymentDate.includes('-') ? r.paymentDate.split('-').reverse().join('/') : r.paymentDate) : '-'}
                                         </div>
                                         {r.receiptNo ? (
-                                            <div className="text-[11px] font-black text-success flex items-center gap-1">
-                                                <CheckCircle2 className="w-3.5 h-3.5" /> {MN(r.receiptNo)}
+                                            <div className="text-[10px] font-black text-emerald-600 flex items-center gap-1 leading-none">
+                                                <CheckCircle2 className="w-3 h-3" /> {MN(r.receiptNo)}
                                             </div>
                                         ) : (
-                                            <div className="text-[10px] text-text-light font-black uppercase tracking-wider">थकीत (Unpaid)</div>
+                                            <div className="text-[8px] text-slate-400 font-black uppercase tracking-wider leading-none">थकीत</div>
                                         )}
                                     </td>
 
-                                    <td className="px-3 py-2.5 text-right bg-emerald-50/20 dark:bg-emerald-900/10">
-                                        <div className={`text-base font-black ${mWScreen > 0 ? 'text-success' : 'text-text-light'}`}>₹{MN(mWScreen.toFixed(2))}</div>
+                                    <td className="px-3 py-2 text-right bg-emerald-50/30">
+                                        <div className="text-[12px] font-black text-emerald-600">₹{MN(paid.toFixed(2))}</div>
                                     </td>
-                                    <td className="px-3 py-2.5 text-right bg-emerald-50/20 dark:bg-emerald-900/10 text-success font-black">
-                                        <div className={`text-base font-black ${cWScreen > 0 ? 'text-success' : 'text-text-light'}`}>₹{MN(cWScreen.toFixed(2))}</div>
-                                    </td>
-                                    <td className="px-3 py-2.5 text-right bg-emerald-50/50 dark:bg-emerald-900/20">
-                                        <div className="text-lg font-black text-success">₹{MN(paid.toFixed(2))}</div>
-                                    </td>
-                                    <td className="px-3 py-2.5 text-right bg-rose-50/50 dark:bg-rose-900/20">
-                                        <div className="text-lg font-black text-error">₹{MN(balance.toFixed(2))}</div>
+                                    <td className="px-3 py-2 text-right bg-rose-50/30">
+                                        <div className="text-[12px] font-black text-rose-600">₹{MN(balance.toFixed(2))}</div>
                                     </td>
                                     {showActions && (
-                                        <td className="no-print px-3 py-2.5 text-center sticky right-0 z-20 bg-surface border-l border-border shadow-[-8px_0_15px_-5px_rgba(0,0,0,0.1)]">
-                                            <div className="flex items-center justify-center gap-1.5 transition-all duration-200">
-                                                {onView && <button onClick={() => onView(r.id)} className="btn-action w-9 h-9" title="पहा"><Eye className="w-4.5 h-4.5" /></button>}
-                                                {onPrint && <button onClick={() => onPrint(r.id)} className="btn-action w-9 h-9 text-accent border-accent/20 hover:bg-accent/5" title="नमुना ९ प्रिंट"><Printer className="w-4.5 h-4.5" /></button>}
-                                                {onPrintBill && <button onClick={() => onPrintBill(r.id)} className="btn-action w-9 h-9 text-success border-success/20 hover:bg-success/5" title="मागणी बिल"><FileText className="w-4.5 h-4.5" /></button>}
-                                                {onEdit && <button onClick={() => onEdit(r)} className="btn-action w-9 h-9 text-text-muted" title="संपादित करा"><Edit2 className="w-4.5 h-4.5" /></button>}
-                                                {onDelete && <button onClick={() => onDelete(r.id)} className="btn-action w-9 h-9 text-error border-error/20 hover:bg-error/5" title="हटवा"><Trash2 className="w-4.5 h-4.5" /></button>}
+                                        <td className="no-print px-3 py-2 text-center sticky right-0 z-20 bg-white border-l border-slate-200 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.05)]">
+                                            <div className="flex items-center justify-center gap-1">
+                                                {onPrint && (
+                                                    <button onClick={() => onPrint(r.id)} className="w-7 h-7 flex items-center justify-center text-indigo-500 bg-indigo-50 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-indigo-100" title="नमुना ९ प्रिंट">
+                                                        <Printer className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
+                                                {onPrintBill && (
+                                                    <button onClick={() => onPrintBill(r.id)} className="w-7 h-7 flex items-center justify-center text-emerald-500 bg-emerald-50 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100" title="मागणी बिल">
+                                                        <FileText className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
+                                                {onEdit && (
+                                                    <button onClick={() => onEdit(r)} className="w-7 h-7 flex items-center justify-center text-amber-500 bg-amber-50 rounded-lg hover:bg-amber-500 hover:text-white transition-all shadow-sm border border-amber-100" title="संपादित करा">
+                                                        <Edit2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
+                                                {onDelete && (
+                                                    <button onClick={() => onDelete(r.id)} className="w-7 h-7 flex items-center justify-center text-rose-500 bg-rose-50 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm border border-rose-100" title="हटवा">
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     )}

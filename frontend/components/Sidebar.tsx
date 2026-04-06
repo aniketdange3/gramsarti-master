@@ -37,7 +37,7 @@ export default function Sidebar({ user, activeView, onNavClick, totalRecords, na
   return (
     <aside className="w-full h-full flex flex-col bg-indigo-950 relative z-10 no-print border-r border-white/5 overflow-hidden font-sans">
       <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 to-transparent pointer-events-none" />
-      
+
       <div className="p-4 mb-2 relative z-10">
         {onToggle && (
           <button
@@ -49,14 +49,14 @@ export default function Sidebar({ user, activeView, onNavClick, totalRecords, na
           </button>
         )}
         <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-lg">
-          <div className="shrink-0 w-10 h-10 bg-white shadow-xl shadow-indigo-500/20 p-1.5 rounded-xl border border-white/20 transform hover:scale-105 transition-transform duration-300">
+          <div className="shrink-0 w-12 h-12 bg-white shadow-xl shadow-indigo-500/20 p-2 rounded-xl border border-white/20 transform hover:scale-105 transition-transform duration-300">
             <img src="/images/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
-          <div className="min-w-0">
-            <h1 className="font-black text-white text-lg tracking-tight leading-none">GramSarthi</h1>
-            <div className="mt-1 flex flex-col">
-              <span className="text-[7px] font-black text-indigo-400 uppercase tracking-widest leading-none">ग्रामपंचायत</span>
-              <span className="text-white/40 text-[9px] font-bold truncate leading-none mt-0.5">वेळा हरिश्चंद्र</span>
+          <div className="min-w-0 flex-1">
+            <h1 className="font-black text-white text-xl tracking-tight leading-none">GramSarthi</h1>
+            <div className="mt-1.5 flex flex-col gap-0.5">
+              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.15em] leading-none">ग्रामपंचायत</span>
+              <span className="text-white/70 text-[11px] font-bold truncate leading-none">वेळा हरिश्चंद्र</span>
             </div>
           </div>
         </div>
@@ -133,9 +133,8 @@ export default function Sidebar({ user, activeView, onNavClick, totalRecords, na
 
         <div
           onClick={() => setProfileOpen(!profileOpen)}
-          className={`group flex items-center gap-3 p-2 rounded-2xl transition-all duration-200 cursor-pointer border ${
-            profileOpen ? 'bg-indigo-900/50 border-indigo-500/30' : 'hover:bg-white/5 border-transparent'
-          }`}
+          className={`group flex items-center gap-3 p-2 rounded-2xl transition-all duration-200 cursor-pointer border ${profileOpen ? 'bg-indigo-900/50 border-indigo-500/30' : 'hover:bg-white/5 border-transparent'
+            }`}
         >
           <div className="relative">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white text-base font-black shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform border border-white/20">

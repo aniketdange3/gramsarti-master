@@ -147,7 +147,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 2 }: Namuna9Pri
                 return (
                     <div key={chunkIdx} className="page-container relative overflow-visible shadow-sm print:shadow-none">
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.2]">
-                            <img src="/images/logo.png" className="w-[480px] h-[480px] object-contain" alt="Watermark" />
+                            <img src="/images/logo.png" className="w-[400px] h-[400px] object-contain" alt="Watermark" />
                         </div>
 
                         <div className="relative z-10">
@@ -296,8 +296,9 @@ export default function Namuna9PrintFormat({ records, pageSize = 2 }: Namuna9Pri
                                                             {hIdx === 0 && (
                                                                 <>
                                                                     <td className="text-center p-0.5 font-bold text-[8px] bg-slate-50/30" rowSpan={11}>
-                                                                        <div className="mb-1">{r.receiptNo ? MN(r.receiptNo) : '-'}</div>
-                                                                        <div className="text-[6px] text-slate-300">{r.receiptBook ? `B.${MN(r.receiptBook)}` : ''}</div>
+                                                                        <div className="text-[6px] text-slate-300 border-b border-black p-2">{r.receiptBook ? `B.${MN(r.receiptBook)}` : ''}</div>
+
+                                                                        <div className="mb-1 p-2 ">{r.receiptNo ? MN(r.receiptNo) : '-'}</div>
                                                                     </td>
                                                                     <td className="text-center p-0.5 font-bold text-slate-500 text-[6px]" rowSpan={11}>
                                                                         {r.paymentDate || '-'}

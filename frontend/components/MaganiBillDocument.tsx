@@ -160,10 +160,14 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
                     </p>
                     <div className="flex justify-between items-end text-[10px] mt-4">
                         <div className="text-center">
-                            <div className="w-28 h-10 mb-1"></div>
-                            <div className="border-t border-gray-600 pt-1">
-                                <p className="font-black text-[9px]">सही (मालमत्ता धारक )</p>
-                            </div>
+                            {copyLabel !== 'लाभार्थी प्रत' && (
+                                <>
+                                    <div className="w-28 h-10 mb-1"></div>
+                                    <div className="border-t border-gray-600 pt-1">
+                                        <p className="font-black text-[9px]">सही (मालमत्ता धारक )</p>
+                                    </div>
+                                </>
+                            )}
                         </div>
                         <div className="text-center">
                             <div className="w-28 h-10 mb-1"></div>

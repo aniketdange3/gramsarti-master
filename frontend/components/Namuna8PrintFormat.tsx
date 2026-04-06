@@ -181,7 +181,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                             <div className="p-1 border-b  border-white/40border-dashed">कराचा दर</div>
                                             <div className="p-1">(पैसे)</div>
                                         </th>
-                                        <th colSpan={6} className="p-1 border border-white/40 uppercase tracking-widest text-[9px]">आकारणी केलेल्या करांची रक्कम (रु.)</th>
+                                        <th colSpan={7} className="p-1 border border-white/40 uppercase tracking-widest text-[9px]">आकारणी केलेल्या करांची रक्कम (रु.)</th>
                                         <th rowSpan={2} className="p-1 border border-white/40 w-[80px]">शेरा</th>
                                     </tr>
                                     <tr className="text-white text-[8.5px] font-black bg-brand-gradient uppercase tracking-wider">
@@ -189,9 +189,13 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                         <th className="p-1 border border-white/40">बांधकाम</th>
                                         <th className="p-1 border border-white/40 w-[50px]">मालमत्ता <br />कर </th>
                                         <th className="p-1 border border-white/40 w-[50px]">दिवाबत्ती <br />कर</th>
-                                        <th className="p-1 border border-white/40 w-[50px]">सा. पाणी <br />कर</th>
-                                        <th className="p-1 border border-white/40 w-[50px]">वि. पाणी <br />कर</th>
+                                        <th className="p-1 border border-white/40 w-[50px]">आरोग्य <br />कर</th>
+                                        <th className="p-1 border border-white/40 w-[50px]">सामान्य पाणी
+                                            <br />कर</th>
+                                        <th className="p-1 border border-white/40 w-[50px]">विशेष पाणी
+                                            <br />कर</th>
                                         <th className="p-1 border border-white/40 w-[50px]">कचरागाडी <br />कर</th>
+
                                         <th className="p-1 border border-white/40 w-[60px]">एकूण</th>
                                     </tr>
                                 </thead>
@@ -219,9 +223,10 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                         const recordTotalGharpatti = recordTaxDetails.reduce((sum, d) => sum + d.rowGharpatti, 0);
                                         const recordTotalTax = recordTotalGharpatti +
                                             (Number(r.streetLightTax) || 0) +
+                                            (Number(r.healthTax) || 0) +
+                                            (Number(r.wasteCollectionTax) || 0) +
                                             (Number(r.generalWaterTax) || 0) +
-                                            (Number(r.specialWaterTax) || 0) +
-                                            (Number(r.healthTax) || 0);
+                                            (Number(r.specialWaterTax) || 0);
 
                                         const totalArea = Number(r.totalAreaSqFt) > 0 ? Number(r.totalAreaSqFt) : activeSections.reduce((sum: number, s: any) => sum + (Number(s?.areaSqFt) || 0), 0);
                                         const srNo = chunkIdx * RECORDS_PER_PAGE + rIdx + 1;
@@ -263,19 +268,21 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                                         <div className="p-1 text-[9px] text-slate-500 font-bold">संपर्क: {r.contactNo ? MN(r.contactNo) : '-'}</div>
                                                                     </td>
                                                                     <td rowSpan={rowCount} className="p-1 justify-center items-center text-center font-black align-middle border border-black text-[10px] bg-[#A80D40]/5 leading-tight">
-                                                                        {Number(r.propertyLength) > 0 && Number(r.propertyWidth) > 0 ? (
-                                                                            <div className="flex flex-col items-center justify-center gap-1">
-                                                                                <span className="text-[#A80D40] whitespace-nowrap">
-                                                                                    {MN(r.propertyLength)} × {MN(r.propertyWidth)} = {MN(r.totalAreaSqFt || totalArea)} <span className="text-[8px] font-bold text-gray-500">SqFt</span>
+                                                                        <div className="flex flex-col items-center justify-center gap-0.5">
+                                                                            {Number(r.propertyLength) > 0 && Number(r.propertyWidth) > 0 && (
+                                                                                <span className="text-[#A80D40] whitespace-nowrap text-[9px]">
+                                                                                    {MN(r.propertyLength)} × {MN(r.propertyWidth)}
                                                                                 </span>
-                                                                                <span title="चौरस मीटर" className="text-[9px] text-gray-600">({MN(r.totalAreaSqMt || 0)} <span className="text-[7.5px]">SqMt</span>)</span>
-                                                                            </div>
-                                                                        ) : (
-                                                                            <div className="flex flex-col items-center justify-center gap-1">
-                                                                                <span title="चौरस फूट" className="text-[#A80D40] whitespace-nowrap">{MN(totalArea)} <span className="text-[8px] font-bold text-gray-500">SqFt</span></span>
-                                                                                {Number(r.totalAreaSqMt) > 0 && <span title="चौरस मीटर" className="text-[9px] text-gray-600">({MN(r.totalAreaSqMt)} <span className="text-[7.5px]">SqMt</span>)</span>}
-                                                                            </div>
-                                                                        )}
+                                                                            )}
+                                                                            <span className="text-[#952B32] font-black whitespace-nowrap">
+                                                                                {MN(r.totalAreaSqFt || totalArea)} <span className="text-[8px] font-bold text-gray-500">SqFt</span>
+                                                                            </span>
+                                                                            {Number(r.totalAreaSqMt || 0) > 0 && (
+                                                                                <span title="चौरस मीटर" className="text-[9px] text-gray-600 italic border-t border-black">
+                                                                                    ({MN(r.totalAreaSqMt || 0)} <span className="text-[7.5px]">SqMt</span>)
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
                                                                     </td>
                                                                 </>
                                                             )}
@@ -330,9 +337,11 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                             {sIdx === 0 && (
                                                                 <>
                                                                     <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.streetLightTax) || 0).toFixed(2))}</td>
+                                                                    <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.healthTax) || 0).toFixed(2))}</td>
                                                                     <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.generalWaterTax) || 0).toFixed(2))}</td>
                                                                     <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.specialWaterTax) || 0).toFixed(2))}</td>
-                                                                    <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.healthTax) || 0).toFixed(2))}</td>
+                                                                    <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.wasteCollectionTax) || 0).toFixed(2))}</td>
+
                                                                     <td rowSpan={rowCount} className="p-1 text-center font-black align-middle border border-black text-[11px] ">{MN(recordTotalTax.toFixed(2))}</td>
                                                                     <td rowSpan={rowCount} className="p-1 text-[9px] align-middle border border-black whitespace-pre-wrap font-bold text-gray-700">{(r.remarksNotes || '-').replace(/फेरफार क्र:/g, 'फेरफार बुक क्र:') || '-'}</td>
                                                                 </>
@@ -346,7 +355,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                 </tbody>
                                 <tfoot>
                                     <tr className="text-white font-black text-[10px] bg-brand-gradient">
-                                        <td colSpan={6} className="p-3 text-right  uppercase tracking-widest opacity-80 text-white font-black whitespace-nowrap"></td>
+                                        <td colSpan={6} className="p-3 text-right uppercase tracking-widest opacity-80 text-white font-black whitespace-nowrap">पृष्ठ एकूण :</td>
                                         {/* <td className="p-1 text-center border-white/40 bg-brand-gradient">
                                             {MN(chunk.reduce((sum: number, r: any) => sum + (r.sections?.reduce((s2: number, s: any) => s2 + (Number(s.areaSqFt) || 0), 0) || 0), 0))}
                                         </td> */}
@@ -381,13 +390,16 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                             {MN(chunk.reduce((sum: number, r: any) => sum + (Number(r.streetLightTax) || 0), 0).toFixed(2))}
                                         </td>
                                         <td className="p-1 text-right border-white/40 bg-brand-gradient">
+                                            {MN(chunk.reduce((sum: number, r: any) => sum + (Number(r.healthTax) || 0), 0).toFixed(2))}
+                                        </td>
+                                        <td className="p-1 text-right border-white/40 bg-brand-gradient">
+                                            {MN(chunk.reduce((sum: number, r: any) => sum + (Number(r.wasteCollectionTax) || 0), 0).toFixed(2))}
+                                        </td>
+                                        <td className="p-1 text-right border-white/40 bg-brand-gradient">
                                             {MN(chunk.reduce((sum: number, r: any) => sum + (Number(r.generalWaterTax) || 0), 0).toFixed(2))}
                                         </td>
                                         <td className="p-1 text-right border-white/40 bg-brand-gradient">
                                             {MN(chunk.reduce((sum: number, r: any) => sum + (Number(r.specialWaterTax) || 0), 0).toFixed(2))}
-                                        </td>
-                                        <td className="p-1 text-right border-white/40 bg-brand-gradient">
-                                            {MN(chunk.reduce((sum: number, r: any) => sum + (Number(r.healthTax) || 0), 0).toFixed(2))}
                                         </td>
                                         <td className="p-2 text-right border border-white/40 text-[12px] bg-brand-gradient text-white ">
                                             {MN(chunk.reduce((sum: number, r: any) => {
@@ -404,7 +416,11 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                     const tO = Number(((valL * Number(s?.openSpaceTaxRate || 0)) / 1000).toFixed(2));
                                                     return sSum + tB + tO;
                                                 }, 0);
-                                                const other = (Number(r.streetLightTax) || 0) + (Number(r.generalWaterTax) || 0) + (Number(r.specialWaterTax) || 0) + (Number(r.healthTax) || 0);
+                                                const other = (Number(r.streetLightTax) || 0) +
+                                                    (Number(r.healthTax) || 0) +
+                                                    (Number(r.wasteCollectionTax) || 0) +
+                                                    (Number(r.generalWaterTax) || 0) +
+                                                    (Number(r.specialWaterTax) || 0);
                                                 return sum + rGhar + other;
                                             }, 0).toFixed(2))}
                                         </td>
@@ -565,6 +581,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                             ₹ {MN((
                                                 (Number(selectedRecordForFormula.streetLightTax) || 0) +
                                                 (Number(selectedRecordForFormula.healthTax) || 0) +
+                                                (Number(selectedRecordForFormula.wasteCollectionTax) || 0) +
                                                 (Number(selectedRecordForFormula.generalWaterTax) || 0) +
                                                 (Number(selectedRecordForFormula.specialWaterTax) || 0)
                                             ).toFixed(2))}

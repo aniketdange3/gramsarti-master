@@ -34,3 +34,10 @@ server/*.sqlite
 
 # Server logs
 server/*.log
+
+# Project specific archives and temps
+frontend.zip
+tmp_tax_master.txt
+*.zip
+*.rar
+*.7z

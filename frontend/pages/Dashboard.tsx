@@ -346,10 +346,12 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                     const lastIdx = 10 + (5 * 13);
                     return {
                         id: '', srNo: Number(row[EXCEL_HEADERS[0]]) || 0,
-                        wastiName: row[EXCEL_HEADERS[1]] || '', wardNo: row[EXCEL_HEADERS[2]] || '',
-                        khasraNo: row[EXCEL_HEADERS[3]] || '', layoutName: row[EXCEL_HEADERS[4]] || '',
-                        plotNo: row[EXCEL_HEADERS[5]] || '', occupantName: row[EXCEL_HEADERS[6]] || '',
-                        ownerName: row[EXCEL_HEADERS[7]] || '',
+                        wastiName: String(row[EXCEL_HEADERS[1]] ?? ''), wardNo: String(row[EXCEL_HEADERS[2]] ?? ''),
+                        khasraNo: String(row[EXCEL_HEADERS[3]] ?? row["खसरा नंबर"] ?? ''), layoutName: String(row[EXCEL_HEADERS[4]] ?? ''),
+                        plotNo: String(row[EXCEL_HEADERS[5]] ?? row["प्लॉट क्रमांक"] ?? row["प्लॉट क्र."] ?? ''),
+                        propertyId: String(row[EXCEL_HEADERS[5]] ?? row["मालमत्ता क्र."] ?? row["प्लॉट क्रमांक"] ?? ''),
+                        occupantName: String(row[EXCEL_HEADERS[6]] ?? ''),
+                        ownerName: String(row[EXCEL_HEADERS[7]] ?? ''),
                         hasConstruction: (row[EXCEL_HEADERS[8]] || '').toString().includes('हो'),
                         openSpace: Number(row[EXCEL_HEADERS[9]]) || 0, sections,
                         propertyTax: Number(row[EXCEL_HEADERS[lastIdx]]) || 0,
@@ -664,7 +666,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                                         {record.sections?.filter(s => s.propertyType && s.propertyType !== 'निवडा').map((s, si) => (
                                                             <div key={si} className="mb-0.5 last:mb-0 pb-0.5 border-b border-slate-100 last:border-0 leading-none">
                                                                 <span className="text-[9px] font-black text-slate-700 uppercase">{s.propertyType}</span>
-                                                                <span className="text-[9px] font-bold text-slate-400 ml-1.5">{MN(s.areaSqFt)} sq.ft</span>
+                                                                <span className="text-[9px] font-bold text-slate-400 ml-1.5">{MN(s.areaSqFt)} चौ.फु </span>
                                                             </div>
                                                         )) || (
                                                                 <div className="text-[9px] text-slate-400 italic">माहिती नाही</div>

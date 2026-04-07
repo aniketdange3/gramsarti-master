@@ -184,6 +184,36 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
 };
 
 export default function MaganiBillDocument({ record }: Props) {
+    const arrears = Number(record.arrearsAmount) || 0;
+    const current = Number(record.totalTaxAmount) || 0;
+    const paid = Number(record.paidAmount) || 0;
+    const discount = Number(record.discountAmount) || 0;
+    const balance = (arrears + current) - paid - discount;
+
+    if (balance <= 0) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-emerald-50 font-sans p-4">
+                <div className="bg-white rounded-[32px] p-10 text-center shadow-xl border border-emerald-100 max-w-md w-full animate-in fade-in zoom-in duration-500">
+                    <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-8 ring-emerald-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <h2 className="text-2xl font-black text-gray-800 mb-3 tracking-tight">एकूण बाकी निरंक!</h2>
+                    <p className="text-gray-500 text-[15px] font-bold leading-relaxed mb-8">
+                        या मालमत्तेसाठी <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">(मालमत्ता क्र. {MN(record.propertyId || record.plotNo || record.srNo)})</span> कोणतीही कर मागणी बाकी नाही. संपूर्ण कर भरणा झाला आहे.
+                    </p>
+                    <button 
+                        onClick={() => window.close()} 
+                        className="w-full py-4 bg-gray-900 text-white font-black rounded-2xl hover:bg-gray-800 transition-colors shadow-lg shadow-gray-900/20 active:scale-95"
+                    >
+                        विंडो बंद करा
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="bg-white text-black font-serif leading-tight print:p-0 min-h-screen" style={{ width: '290mm', margin: 'auto' }}>
             <style>{`

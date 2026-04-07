@@ -122,10 +122,10 @@ export default function NamunaTable9({
                 <div className="flex-1 text-center">
                     <h1 className="text-2xl font-black mb-1">नमुना नं. ९</h1>
                     <h2 className="text-lg font-bold mb-1 underline">ग्रामपंचायत</h2>
-                    <p className="text-[10px] font-normal italic">नियम ३२(१) पहा</p>
-                    <p className="text-[11px] font-bold mt-2">सन करांच्या मागणीचे नोंदणी पुस्तक</p>
+                    <p className="text-[15px] font-normal italic">नियम ३२(१) पहा</p>
+                    <p className="text-[15px] font-bold mt-2">सन करांच्या मागणीचे नोंदणी पुस्तक</p>
                 </div>
-                <div className="text-right text-[10px] flex flex-col gap-1 font-bold">
+                <div className="text-right text-[15px] flex flex-col gap-1 font-bold">
                     <p className="text-xs uppercase">ग्रामपंचायत लेखा महाराष्ट्र</p>
                     <p>तालुका : {PANCHAYAT_CONFIG.taluka}</p>
                     <p>जिल्हा : {PANCHAYAT_CONFIG.jilha}</p>
@@ -138,7 +138,7 @@ export default function NamunaTable9({
                     {selectedIds.size > 0 && (
                         <button
                             onClick={handlePrintSelected}
-                            className="flex items-center gap-2 text-[10px] font-black px-4 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-md animate-in slide-in-from-left-2 duration-300"
+                            className="flex items-center gap-2 text-[15px] font-black px-4 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-md animate-in slide-in-from-left-2 duration-300"
                         >
                             <Printer className="w-3" /> निवडलेले प्रिंट करा ({MN(selectedIds.size)})
                         </button>
@@ -146,7 +146,7 @@ export default function NamunaTable9({
                 </div>
                 <button
                     onClick={() => setShowAll(!showAll)}
-                    className={`text-[10px] font-black px-3 py-1 rounded-lg border transition-all ${showAll
+                    className={`text-[12px] font-black px-3 py-1 rounded-lg border transition-all ${showAll
                         ? 'bg-slate-800 text-white border-slate-800 shadow-sm'
                         : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                         }`}
@@ -162,7 +162,7 @@ export default function NamunaTable9({
                     style={{ backgroundImage: 'url("/images/logo.png")', backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: '500px' }}>
                 </div>
 
-                <table className="w-full border-collapse text-[10px] relative z-10">
+                <table className="w-full border-collapse text-[15px] relative z-10">
                     <thead>
                         <tr className="gp-table-header-row">
                             <th className="gp-table-header-cell text-center w-[40px]">
@@ -174,21 +174,20 @@ export default function NamunaTable9({
                                 />
                             </th>
                             <th className="gp-table-header-cell text-center w-[50px]">अ.क्र.</th>
-                            <th className="gp-table-header-cell text-left w-[100px]">वस्ती</th>
-                            <th className="gp-table-header-cell text-left w-[80px]">खसरा</th>
-                            <th className="gp-table-header-cell text-left w-[80px]">प्लॉट</th>
-                            <th className="gp-table-header-cell text-left min-w-[160px]">मालकाचे नाव</th>
-                            <th className="gp-table-header-cell text-left min-w-[120px]">प्रकार</th>
-                            <th className="gp-table-header-cell text-right min-w-[80px]">क्षेत्रफळ</th>
-                            <th className="gp-table-header-cell text-right min-w-[120px]">कराचा तपशील</th>
-                            <th className="gp-table-header-cell text-right min-w-[90px]">मागील थकबाकी</th>
-                            <th className="gp-table-header-cell text-right min-w-[90px]">चालू मागणी</th>
-                            <th className="gp-table-header-cell text-right min-w-[100px]">एकूण मागणी</th>
-                            <th className="gp-table-header-cell text-left min-w-[100px]">पावती तपशील</th>
-                            <th className="gp-table-header-cell text-right min-w-[90px]">वसुली</th>
-                            <th className="gp-table-header-cell text-right min-w-[90px]">एकूण बाकी</th>
+                            <th className="gp-table-header-cell text-center w-[100px]">वस्ती</th>
+                            <th className="gp-table-header-cell text-center w-[80px]">खसरा</th>
+                            <th className="gp-table-header-cell text-center w-[90px]">मालमत्ता / प्लॉट</th>
+                            <th className="gp-table-header-cell text-center min-w-[160px]">मालकाचे नाव</th>
+                            <th className="gp-table-header-cell text-center min-w-[130px]">प्रकार / क्षेत्रफळ</th>
+                            <th className="gp-table-header-cell text-center min-w-[120px]">कराचा तपशील</th>
+                            <th className="gp-table-header-cell text-center min-w-[120px]">मागील थकबाकी</th>
+                            <th className="gp-table-header-cell text-center min-w-[90px]">चालू मागणी</th>
+                            <th className="gp-table-header-cell text-center min-w-[100px]">एकूण मागणी</th>
+                            <th className="gp-table-header-cell text-center min-w-[100px]">पावती तपशील</th>
+                            <th className="gp-table-header-cell text-center min-w-[90px]">वसुली</th>
+                            <th className="gp-table-header-cell text-center min-w-[90px]">एकूण बाकी</th>
                             {showActions && (
-                                <th className="gp-table-header-cell text-center sticky right-0 z-20 bg-slate-50/90 border-l border-slate-200 w-[140px]">
+                                <th className="gp-table-header-cell text-center sticky right-0  bg-slate-50/90 border-l border-slate-200 w-[140px]">
                                     कृती
                                 </th>
                             )}
@@ -220,57 +219,60 @@ export default function NamunaTable9({
                                     </td>
                                     <td className="px-3 py-2 text-center font-black text-slate-400 text-xs">{MN(offset + rIdx + 1)}</td>
 
-                                    <td className="px-3 py-2">
+                                    <td className="px-3 py-2 text-center">
                                         <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-600 border border-slate-200 uppercase leading-none">
                                             {r.wastiName || '-'}
                                         </div>
                                     </td>
-                                    <td className="px-3 py-2">
-                                        <div className="text-[10px] text-indigo-700 font-black uppercase tracking-tight bg-indigo-50 px-1.5 py-0.5 rounded inline-block whitespace-nowrap">{MN(r.khasraNo) || '-'}</div>
+                                    <td className="px-3 py-2 text-center">
+                                        <div className="text-[12px] text-indigo-700 font-black uppercase tracking-tight bg-indigo-50 px-1.5 py-0.5 rounded inline-block whitespace-nowrap">{MN(r.khasraNo) || '-'}</div>
                                     </td>
-                                    <td className="px-3 py-2">
-                                        <div className="text-[11px] font-bold text-slate-700 tracking-tight">{MN(r.plotNo) || '-'}</div>
+                                    <td className="px-3 py-2 text-center">
+                                        {/* <div className="text-[12px] font-black text-emerald-800 tracking-tight mb-0.5">{r.propertyId ? MN(r.propertyId) : '-'}</div> */}
+                                        <div className="text-[11px] font-bold text-slate-500 tracking-tight">{r.plotNo ? MN(r.plotNo) : '-'}</div>
                                     </td>
-                                    <td className="px-3 py-2">
+                                    <td className="px-3 py-2 text-center">
                                         <div className="font-extrabold text-slate-900 text-[12px] tracking-tight leading-tight uppercase">{r.ownerName}</div>
                                         <div className="text-[9px] text-slate-500 font-semibold mt-0.5 opacity-60">({r.occupantName || 'स्वतः'})</div>
                                     </td>
-                                    <td className="px-3 py-2">
+                                    <td className="px-3 py-2 text-center">
                                         {r.sections?.filter(s => s.propertyType && s.propertyType !== 'निवडा').map((s, si) => (
-                                            <div key={si} className="text-[9px] font-black text-slate-700 mb-0.5 border-b border-slate-100 last:border-0 pb-0.5 leading-none">
-                                                {s.propertyType}
+                                            <div key={si} className="mb-1.5 border-b border-slate-100 last:border-0 pb-1.5 leading-tight">
+                                                <div className="text-[10px] font-black text-slate-700 uppercase">{s.propertyType}</div>
+                                                <div className="flex items-center justify-center gap-1 mt-0.5">
+                                                    <span className="font-bold text-slate-900 text-[12px]">{MN(s.areaSqFt)}</span>
+                                                    <span className="text-[8px] text-slate-400 font-bold uppercase">चौ.फु</span>
+                                                </div>
                                             </div>
                                         )) || '-'}
                                     </td>
-                                    <td className="px-3 py-2 text-right">
-                                        {r.sections?.filter(s => s.propertyType && s.propertyType !== 'निवडा').map((s, si) => (
-                                            <div key={si} className="mb-0.5 border-b border-slate-100 last:border-0 pb-0.5 leading-none">
-                                                <span className="font-bold text-slate-900 text-[10px]">{MN(s.areaSqFt)}</span> <span className="text-[8px] text-slate-400 font-bold uppercase">Sq.Ft</span>
-                                            </div>
-                                        )) || '-'}
-                                    </td>
-                                    <td className="px-3 py-2 text-right">
-                                        <div className="text-[9px] space-y-0.5 text-slate-500 font-bold uppercase tracking-tight leading-none">
-                                            {Number(r.propertyTax) > 0 && <div>🏠 कर: <span className="text-slate-900 font-black">₹{MN(Number(r.propertyTax).toFixed(2))}</span></div>}
-                                            {Number(r.streetLightTax) > 0 && <div>💡 दिवा: <span className="text-slate-900 font-black">₹{MN(Number(r.streetLightTax).toFixed(2))}</span></div>}
+                                    <td className="px-3 py-2 text-center">
+                                        <div className="text-[11px] space-y-0.5 text-slate-500 font-bold tracking-tight leading-none text-left inline-block">
+                                            {Number(r.propertyTax) > 0 && <div> घरपट्टी: <span className="text-slate-900 font-black">₹{MN(Number(r.propertyTax).toFixed(2))}</span></div>}
+                                            {Number(r.openSpaceTax) > 0 && <div> जागा: <span className="text-slate-900 font-black">₹{MN(Number(r.openSpaceTax).toFixed(2))}</span></div>}
+                                            {Number(r.streetLightTax) > 0 && <div> दिवाबत्ती: <span className="text-slate-900 font-black">₹{MN(Number(r.streetLightTax).toFixed(2))}</span></div>}
+                                            {Number(r.healthTax) > 0 && <div> आरोग्य: <span className="text-slate-900 font-black">₹{MN(Number(r.healthTax).toFixed(2))}</span></div>}
+                                            {Number(r.generalWaterTax) > 0 && <div> सामान्य पाणी: <span className="text-slate-900 font-black">₹{MN(Number(r.generalWaterTax).toFixed(2))}</span></div>}
+                                            {Number(r.specialWaterTax) > 0 && <div> विशेष पाणी: <span className="text-slate-900 font-black">₹{MN(Number(r.specialWaterTax).toFixed(2))}</span></div>}
+                                            {Number(r.wasteCollectionTax) > 0 && <div> कचरागाडी: <span className="text-slate-900 font-black">₹{MN(Number(r.wasteCollectionTax).toFixed(2))}</span></div>}
                                         </div>
                                     </td>
 
-                                    <td className="px-3 py-2 text-right">
-                                        <div className={`text-[11px] font-black ${arrears > 0 ? 'text-rose-600' : 'text-slate-400'}`}>₹{MN(arrears.toFixed(2))}</div>
+                                    <td className="px-3 py-2 text-center">
+                                        <div className={`text-[12px] font-black ${arrears > 0 ? 'text-rose-600' : 'text-slate-400'}`}>₹{MN(arrears.toFixed(2))}</div>
                                     </td>
-                                    <td className="px-3 py-2 text-right">
-                                        <div className="text-[11px] font-black text-slate-900">₹{MN(current.toFixed(2))}</div>
+                                    <td className="px-3 py-2 text-center">
+                                        <div className="text-[12px] font-black text-slate-900">₹{MN(current.toFixed(2))}</div>
                                     </td>
-                                    <td className="px-3 py-2 text-right bg-indigo-50/30">
+                                    <td className="px-3 py-2 text-center bg-indigo-50/30">
                                         <div className="text-[12px] font-black text-indigo-700">₹{MN(demand.toFixed(2))}</div>
                                     </td>
-                                    <td className="px-3 py-2 text-left">
+                                    <td className="px-3 py-2 text-center">
                                         <div className="text-[9px] text-slate-500 font-bold mb-0.5 whitespace-nowrap">
                                             {r.paymentDate ? (r.paymentDate.includes('-') ? r.paymentDate.split('-').reverse().join('/') : r.paymentDate) : '-'}
                                         </div>
                                         {r.receiptNo ? (
-                                            <div className="text-[10px] font-black text-emerald-600 flex items-center gap-1 leading-none">
+                                            <div className="text-[12px] font-black text-emerald-600 flex items-center gap-1 leading-none">
                                                 <CheckCircle2 className="w-3 h-3" /> {MN(r.receiptNo)}
                                             </div>
                                         ) : (
@@ -278,14 +280,14 @@ export default function NamunaTable9({
                                         )}
                                     </td>
 
-                                    <td className="px-3 py-2 text-right bg-emerald-50/30">
-                                        <div className="text-[12px] font-black text-emerald-600">₹{MN(paid.toFixed(2))}</div>
+                                    <td className="px-3 py-2 text-center bg-emerald-50/30">
+                                        <div className="text-[15px] font-black text-emerald-600">₹{MN(paid.toFixed(2))}</div>
                                     </td>
-                                    <td className="px-3 py-2 text-right bg-rose-50/30">
-                                        <div className="text-[12px] font-black text-rose-600">₹{MN(balance.toFixed(2))}</div>
+                                    <td className="px-3 py-2 text-center bg-rose-50/30">
+                                        <div className="text-[15px] font-black text-rose-600">₹{MN(balance.toFixed(2))}</div>
                                     </td>
                                     {showActions && (
-                                        <td className="no-print px-3 py-2 text-center sticky right-0 z-20 bg-white border-l border-slate-200 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.05)]">
+                                        <td className="no-print px-3 py-2 text-center sticky right-0 z-20 bg-white border-l border-slate-200 shadow-[-4px_0_15px_-4px_rgba(0,0,0,0.05)]">
                                             <div className="flex items-center justify-center gap-1">
                                                 {onPrint && (
                                                     <button onClick={() => onPrint(r.id)} className="w-7 h-7 flex items-center justify-center text-indigo-500 bg-indigo-50 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-indigo-100" title="नमुना ९ प्रिंट">
@@ -328,7 +330,7 @@ export default function NamunaTable9({
                             className="w-8 h-8 flex items-center justify-center text-xs font-black rounded-lg border border-border bg-surface text-text-muted hover:bg-surface-hover disabled:opacity-40 transition-all">«</button>
 
                         <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
-                            className="px-3 h-8 flex items-center justify-center gap-2 rounded-lg border border-border bg-surface text-text-muted hover:bg-surface-hover disabled:opacity-40 transition-all text-[10px] font-black uppercase tracking-wider">
+                            className="px-3 h-8 flex items-center justify-center gap-2 rounded-lg border border-border bg-surface text-text-muted hover:bg-surface-hover disabled:opacity-40 transition-all text-[15px] font-black uppercase tracking-wider">
                             ‹ मागील (Prev)
                         </button>
                         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -346,7 +348,7 @@ export default function NamunaTable9({
                             );
                         })}
                         <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
-                            className="px-3 h-8 flex items-center justify-center gap-2 rounded-lg border border-border bg-surface text-text-muted hover:bg-surface-hover disabled:opacity-40 transition-all text-[10px] font-black uppercase tracking-wider">
+                            className="px-3 h-8 flex items-center justify-center gap-2 rounded-lg border border-border bg-surface text-text-muted hover:bg-surface-hover disabled:opacity-40 transition-all text-[15px] font-black uppercase tracking-wider">
                             पुढील (Next) ›
                         </button>
 

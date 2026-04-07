@@ -220,13 +220,23 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                             return { ...s, finalBVal: valB, finalLVal: valL, sTaxB, sTaxO, rowGharpatti: sTaxB + sTaxO };
                                         });
 
-                                        const recordTotalGharpatti = recordTaxDetails.reduce((sum, d) => sum + d.rowGharpatti, 0);
-                                        const recordTotalTax = recordTotalGharpatti +
+                                        const calculatedGharpattiB = recordTaxDetails.reduce((sum, d) => sum + d.sTaxB, 0);
+                                        const calculatedGharpattiO = recordTaxDetails.reduce((sum, d) => sum + d.sTaxO, 0);
+                                        
+                                        const pTaxDb = r.propertyTax !== undefined && r.propertyTax !== null;
+                                        const oTaxDb = r.openSpaceTax !== undefined && r.openSpaceTax !== null;
+                                        const tTaxDb = r.totalTaxAmount !== undefined && r.totalTaxAmount !== null;
+
+                                        const finalPropertyTax = pTaxDb ? Number(r.propertyTax) : calculatedGharpattiB;
+                                        const finalOpenSpaceTax = oTaxDb ? Number(r.openSpaceTax) : calculatedGharpattiO;
+                                        
+                                        const recordTotalGharpatti = finalPropertyTax + finalOpenSpaceTax;
+                                        const recordTotalTax = tTaxDb ? Number(r.totalTaxAmount) : (recordTotalGharpatti +
                                             (Number(r.streetLightTax) || 0) +
                                             (Number(r.healthTax) || 0) +
                                             (Number(r.wasteCollectionTax) || 0) +
                                             (Number(r.generalWaterTax) || 0) +
-                                            (Number(r.specialWaterTax) || 0);
+                                            (Number(r.specialWaterTax) || 0));
 
                                         const totalArea = Number(r.totalAreaSqFt) > 0 ? Number(r.totalAreaSqFt) : activeSections.reduce((sum: number, s: any) => sum + (Number(s?.areaSqFt) || 0), 0);
                                         const srNo = chunkIdx * RECORDS_PER_PAGE + rIdx + 1;
@@ -320,22 +330,18 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                             <td className="p-1 text-center border border-black text-[10px] font-black" style={{ color: '#A80D40' }}>
                                                                 {s ? MN(s.buildingTaxRate || s.openSpaceTaxRate || 0) : '-'}
                                                             </td>
-                                                            <td className="p-0 text-right align-middle border border-black text-[10px] font-bold">
-                                                                {s ? (
-                                                                    <>
-                                                                        {sTaxB > 0 && sTaxO > 0 ? (
-                                                                            <>
-                                                                                <div className="p-1 border-b border-black">{MN(sTaxB.toFixed(2))}</div>
-                                                                                <div className="p-1">{MN(sTaxO.toFixed(2))}</div>
-                                                                            </>
-                                                                        ) : (
-                                                                            <div className="p-1">{MN((sTaxB + sTaxO).toFixed(2) || (sTaxB === 0 && sTaxO === 0 ? '-' : '०.००'))}</div>
-                                                                        )}
-                                                                    </>
-                                                                ) : '-'}
-                                                            </td>
                                                             {sIdx === 0 && (
                                                                 <>
+                                                                    <td rowSpan={rowCount} className="p-0 text-right align-middle border border-black text-[10px] font-bold">
+                                                                        {finalPropertyTax > 0 && finalOpenSpaceTax > 0 ? (
+                                                                            <>
+                                                                                <div className="p-1 border-b border-black">{MN(finalPropertyTax.toFixed(2))}</div>
+                                                                                <div className="p-1">{MN(finalOpenSpaceTax.toFixed(2))}</div>
+                                                                            </>
+                                                                        ) : (
+                                                                            <div className="p-1">{MN((finalPropertyTax + finalOpenSpaceTax).toFixed(2) || (finalPropertyTax === 0 && finalOpenSpaceTax === 0 ? '-' : '०.००'))}</div>
+                                                                        )}
+                                                                    </td>
                                                                     <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.streetLightTax) || 0).toFixed(2))}</td>
                                                                     <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.healthTax) || 0).toFixed(2))}</td>
                                                                     <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.generalWaterTax) || 0).toFixed(2))}</td>
@@ -369,8 +375,10 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                         <td className="p-0 text-right border-white/40 text-[9px] bg-brand-gradient">
                                             <div className="p-1 font-black bg-brand-gradient">
                                                 {MN(chunk.reduce((sum: number, r: any) => {
+                                                    if (r.propertyTax !== undefined || r.openSpaceTax !== undefined) {
+                                                        return sum + Number(r.propertyTax || 0) + Number(r.openSpaceTax || 0);
+                                                    }
                                                     const active = (r.sections || [])
-                                                        .map((s, idx) => ({ ...s, floorIndex: idx }))
                                                         .filter((s: any) => s.propertyType && s.propertyType !== 'निवडा');
                                                     const rGhar = active.reduce((sSum: number, s: any) => {
                                                         const area = Number(s?.areaSqMt || 0);
@@ -403,8 +411,10 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                         </td>
                                         <td className="p-2 text-right border border-white/40 text-[12px] bg-brand-gradient text-white ">
                                             {MN(chunk.reduce((sum: number, r: any) => {
+                                                if (r.totalTaxAmount !== undefined && r.totalTaxAmount !== null) {
+                                                    return sum + Number(r.totalTaxAmount);
+                                                }
                                                 const active = (r.sections || [])
-                                                    .map((s, idx) => ({ ...s, floorIndex: idx }))
                                                     .filter((s: any) => s.propertyType && s.propertyType !== 'निवडा');
                                                 const rGhar = active.reduce((sSum: number, s: any) => {
                                                     const area = Number(s?.areaSqMt || 0);

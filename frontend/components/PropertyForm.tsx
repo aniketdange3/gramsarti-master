@@ -274,18 +274,19 @@ const PropertyForm = ({
     }, [formData.propertyAge, depreciationRates]);
 
     // Auto-sync section taxes to main summary
-    useEffect(() => {
-        const totalPropTax = formData.sections.reduce((sum, s) => sum + (Number(s.buildingFinalValue) || 0), 0);
-        const totalOpenTax = formData.sections.reduce((sum, s) => sum + (Number(s.openSpaceFinalValue) || 0), 0);
+    // Removed to prevent overriding propertyTax and openSpaceTax on edit load
+    // useEffect(() => {
+    //     const totalPropTax = formData.sections.reduce((sum, s) => sum + (Number(s.buildingFinalValue) || 0), 0);
+    //     const totalOpenTax = formData.sections.reduce((sum, s) => sum + (Number(s.openSpaceFinalValue) || 0), 0);
 
-        if (totalPropTax !== formData.propertyTax || totalOpenTax !== formData.openSpaceTax) {
-            setFormData(prev => ({
-                ...prev,
-                propertyTax: Math.round(totalPropTax),
-                openSpaceTax: Math.round(totalOpenTax)
-            }));
-        }
-    }, [formData.sections]);
+    //     if (totalPropTax !== formData.propertyTax || totalOpenTax !== formData.openSpaceTax) {
+    //         setFormData(prev => ({
+    //             ...prev,
+    //             propertyTax: Math.round(totalPropTax),
+    //             openSpaceTax: Math.round(totalOpenTax)
+    //         }));
+    //     }
+    // }, [formData.sections]);
 
     useEffect(() => {
         const newTotal = calculateTotalTax(formData);
@@ -383,7 +384,15 @@ const PropertyForm = ({
         newSections[index].buildingFinalValue = Number(((newSections[index].buildingValue * Number(s.buildingTaxRate || 0)) / 1000).toFixed(2));
         newSections[index].openSpaceFinalValue = Number(((newSections[index].openSpaceValue * Number(s.openSpaceTaxRate || 0)) / 1000).toFixed(2));
 
-        setFormData({ ...formData, sections: newSections });
+        const totalPropTax = newSections.reduce((sum, section) => sum + (Number(section.buildingFinalValue) || 0), 0);
+        const totalOpenTax = newSections.reduce((sum, section) => sum + (Number(section.openSpaceFinalValue) || 0), 0);
+
+        setFormData({ 
+            ...formData, 
+            sections: newSections,
+            propertyTax: Math.round(totalPropTax),
+            openSpaceTax: Math.round(totalOpenTax)
+        });
     };
 
     const handleTotalAreaChange = (field: keyof PropertyRecord, value: number) => {
@@ -447,20 +456,31 @@ const PropertyForm = ({
                     );
 
                     if (matchedRate) {
-                        return {
+                        const newSection = {
                             ...section,
                             buildingTaxRate: Number(matchedRate.buildingTaxRate) || section.buildingTaxRate,
                             openSpaceTaxRate: Number(matchedRate.openSpaceTaxRate) || section.openSpaceTaxRate,
                             landRate: Number(matchedRate.landRate) || section.landRate,
                             buildingRate: Number(matchedRate.buildingRate) || section.buildingRate,
                         };
+                        
+                        // Recalculate Final Values
+                        newSection.buildingFinalValue = Number(((newSection.buildingValue * Number(newSection.buildingTaxRate || 0)) / 1000).toFixed(2));
+                        newSection.openSpaceFinalValue = Number(((newSection.openSpaceValue * Number(newSection.openSpaceTaxRate || 0)) / 1000).toFixed(2));
+                        
+                        return newSection;
                     }
                     return section;
                 });
 
+                const totalPropTax = updatedSections.reduce((sum, section) => sum + (Number(section.buildingFinalValue) || 0), 0);
+                const totalOpenTax = updatedSections.reduce((sum, section) => sum + (Number(section.openSpaceFinalValue) || 0), 0);
+
                 return {
                     ...prev,
                     sections: updatedSections,
+                    propertyTax: Math.round(totalPropTax),
+                    openSpaceTax: Math.round(totalOpenTax),
                     streetLightTax: Number(config.street_light_default) || prev.streetLightTax,
                     wasteCollectionTax: Number(config.waste_collection_default) || prev.wasteCollectionTax,
                     healthTax: Number(config.health_tax_default) || prev.healthTax,

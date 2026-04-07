@@ -185,7 +185,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 2 }: Namuna9Pri
                                         <th className="p-0.5" colSpan={3}>मागणी </th>
                                         <th className="p-0.5 w-[60px]" rowSpan={2}>पावती  बुक क्र. /<br />पावती क्र </th>
                                         <th className="p-0.5 w-[60px]" rowSpan={2}>दिनांक</th>
-                                        <th className="p-0.5 w-[120px]" rowSpan={2}>कराचे नांवे</th>
+                                        <th className="p-0.5 w-[120px]" rowSpan={2}>कराचे प्रकार</th>
                                         <th className="p-0.5" colSpan={3}>वसुली </th>
                                         <th className="p-0.5 w-[45px]" rowSpan={2}>बाकी</th>
                                     </tr>
@@ -268,7 +268,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 2 }: Namuna9Pri
                                                                 <>
                                                                     <td className="text-center font-bold text-[10px] bg-slate-50" rowSpan={11}>{MN(globalIdx)}</td>
                                                                     <td className={`p-1 px-2 align-center text-blue-950 font-black ${pageSize >= 3 ? 'leading-tight' : ''}`} rowSpan={11}>
-                                                                        <div className={pageSize >= 3 ? 'text-[9.5px]' : 'text-[12px]'}>{r.ownerName}</div>
+                                                                        <div className={pageSize >= 3 ? 'text-[9.5px]' : 'text-[10px]'}>{r.ownerName}</div>
                                                                         <div className={`text-[8px] text-gray-800 font-normal italic ${pageSize >= 3 ? 'mt-1' : 'mt-3'}`}>भोगवटाधारक:  <b>{r.occupantName || 'स्वतः'}</b></div>
                                                                         <div className={`text-[8px] font-bold text-slate-800 uppercase ${pageSize >= 3 ? 'mt-1' : 'mt-4'}`}> पत्ता :{r.wastiName} </div>
                                                                     </td>

@@ -146,7 +146,11 @@ export default function NamunaTable9({
                 </div>
                 <button
                     onClick={() => setShowAll(!showAll)}
+<<<<<<< HEAD
                     className={`text-[12px] font-black px-3 py-1 rounded-lg border transition-all ${showAll
+=======
+                    className={`text-[15px] font-black px-3 py-1 rounded-lg border transition-all ${showAll
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                         ? 'bg-slate-800 text-white border-slate-800 shadow-sm'
                         : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                         }`}
@@ -174,6 +178,7 @@ export default function NamunaTable9({
                                 />
                             </th>
                             <th className="gp-table-header-cell text-center w-[50px]">अ.क्र.</th>
+<<<<<<< HEAD
                             <th className="gp-table-header-cell text-center w-[100px]">वस्ती</th>
                             <th className="gp-table-header-cell text-center w-[80px]">खसरा</th>
                             <th className="gp-table-header-cell text-center w-[90px]">मालमत्ता / प्लॉट</th>
@@ -188,6 +193,23 @@ export default function NamunaTable9({
                             <th className="gp-table-header-cell text-center min-w-[90px]">एकूण बाकी</th>
                             {showActions && (
                                 <th className="gp-table-header-cell text-center sticky right-0  bg-slate-50/90 border-l border-slate-200 w-[140px]">
+=======
+                            <th className="gp-table-header-cell text-left w-[100px]">वस्ती</th>
+                            <th className="gp-table-header-cell text-left w-[80px]">खसरा</th>
+                            <th className="gp-table-header-cell text-left w-[90px]">मालमत्ता / प्लॉट</th>
+                            <th className="gp-table-header-cell text-left min-w-[160px]">मालकाचे नाव</th>
+                            <th className="gp-table-header-cell text-left min-w-[120px]">प्रकार</th>
+                            <th className="gp-table-header-cell text-right min-w-[80px]">क्षेत्रफळ</th>
+                            <th className="gp-table-header-cell text-right min-w-[120px]">कराचा तपशील</th>
+                            <th className="gp-table-header-cell text-right min-w-[90px]">मागील थकबाकी</th>
+                            <th className="gp-table-header-cell text-right min-w-[90px]">चालू मागणी</th>
+                            <th className="gp-table-header-cell text-right min-w-[100px]">एकूण मागणी</th>
+                            <th className="gp-table-header-cell text-left min-w-[100px]">पावती तपशील</th>
+                            <th className="gp-table-header-cell text-right min-w-[90px]">वसुली</th>
+                            <th className="gp-table-header-cell text-right min-w-[90px]">एकूण बाकी</th>
+                            {showActions && (
+                                <th className="gp-table-header-cell text-center sticky right-0 z-20 bg-slate-50/90 border-l border-slate-200 w-[140px]">
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                                     कृती
                                 </th>
                             )}
@@ -219,11 +241,16 @@ export default function NamunaTable9({
                                     </td>
                                     <td className="px-3 py-2 text-center font-black text-slate-400 text-xs">{MN(offset + rIdx + 1)}</td>
 
+<<<<<<< HEAD
                                     <td className="px-3 py-2 text-center">
+=======
+                                    <td className="px-3 py-2">
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                                         <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-600 border border-slate-200 uppercase leading-none">
                                             {r.wastiName || '-'}
                                         </div>
                                     </td>
+<<<<<<< HEAD
                                     <td className="px-3 py-2 text-center">
                                         <div className="text-[12px] text-indigo-700 font-black uppercase tracking-tight bg-indigo-50 px-1.5 py-0.5 rounded inline-block whitespace-nowrap">{MN(r.khasraNo) || '-'}</div>
                                     </td>
@@ -268,6 +295,55 @@ export default function NamunaTable9({
                                         <div className="text-[12px] font-black text-indigo-700">₹{MN(demand.toFixed(2))}</div>
                                     </td>
                                     <td className="px-3 py-2 text-center">
+=======
+                                    <td className="px-3 py-2">
+                                        <div className="text-[12px] text-indigo-700 font-black uppercase tracking-tight bg-indigo-50 px-1.5 py-0.5 rounded inline-block whitespace-nowrap">{MN(r.khasraNo) || '-'}</div>
+                                    </td>
+                                    <td className="px-3 py-2">
+                                        <div className="text-[12px] font-black text-emerald-800 tracking-tight mb-0.5">{r.propertyId ? MN(r.propertyId) : '-'}</div>
+                                        <div className="text-[11px] font-bold text-slate-500 tracking-tight">{r.plotNo ? MN(r.plotNo) : '-'}</div>
+                                    </td>
+                                    <td className="px-3 py-2">
+                                        <div className="font-extrabold text-slate-900 text-[12px] tracking-tight leading-tight uppercase">{r.ownerName}</div>
+                                        <div className="text-[9px] text-slate-500 font-semibold mt-0.5 opacity-60">({r.occupantName || 'स्वतः'})</div>
+                                    </td>
+                                    <td className="px-3 py-2">
+                                        {r.sections?.filter(s => s.propertyType && s.propertyType !== 'निवडा').map((s, si) => (
+                                            <div key={si} className="text-[9px] font-black text-slate-700 mb-0.5 border-b border-slate-100 last:border-0 pb-0.5 leading-none">
+                                                {s.propertyType}
+                                            </div>
+                                        )) || '-'}
+                                    </td>
+                                    <td className="px-3 py-2 text-right">
+                                        {r.sections?.filter(s => s.propertyType && s.propertyType !== 'निवडा').map((s, si) => (
+                                            <div key={si} className="mb-0.5 border-b border-slate-100 last:border-0 pb-0.5 leading-none">
+                                                <span className="font-bold text-slate-900 text-[12px]">{MN(s.areaSqFt)}</span> <span className="text-[8px] text-slate-400 font-bold uppercase">Sq.Ft</span>
+                                            </div>
+                                        )) || '-'}
+                                    </td>
+                                    <td className="px-3 py-2 text-right">
+                                        <div className="text-[10px] space-y-0.5 text-slate-500 font-bold tracking-tight leading-none text-left inline-block">
+                                            {Number(r.propertyTax) > 0 && <div>🏠 घरपट्टी: <span className="text-slate-900 font-black">₹{MN(Number(r.propertyTax).toFixed(2))}</span></div>}
+                                            {Number(r.openSpaceTax) > 0 && <div>🟩 जागा: <span className="text-slate-900 font-black">₹{MN(Number(r.openSpaceTax).toFixed(2))}</span></div>}
+                                            {Number(r.streetLightTax) > 0 && <div>💡 दिवाबत्ती: <span className="text-slate-900 font-black">₹{MN(Number(r.streetLightTax).toFixed(2))}</span></div>}
+                                            {Number(r.healthTax) > 0 && <div>🏥 आरोग्य: <span className="text-slate-900 font-black">₹{MN(Number(r.healthTax).toFixed(2))}</span></div>}
+                                            {Number(r.generalWaterTax) > 0 && <div>🚰 सामान्य पाणी: <span className="text-slate-900 font-black">₹{MN(Number(r.generalWaterTax).toFixed(2))}</span></div>}
+                                            {Number(r.specialWaterTax) > 0 && <div>💧 विशेष पाणी: <span className="text-slate-900 font-black">₹{MN(Number(r.specialWaterTax).toFixed(2))}</span></div>}
+                                            {Number(r.wasteCollectionTax) > 0 && <div>🗑️ कचरागाडी: <span className="text-slate-900 font-black">₹{MN(Number(r.wasteCollectionTax).toFixed(2))}</span></div>}
+                                        </div>
+                                    </td>
+
+                                    <td className="px-3 py-2 text-right">
+                                        <div className={`text-[12px] font-black ${arrears > 0 ? 'text-rose-600' : 'text-slate-400'}`}>₹{MN(arrears.toFixed(2))}</div>
+                                    </td>
+                                    <td className="px-3 py-2 text-right">
+                                        <div className="text-[12px] font-black text-slate-900">₹{MN(current.toFixed(2))}</div>
+                                    </td>
+                                    <td className="px-3 py-2 text-right bg-indigo-50/30">
+                                        <div className="text-[12px] font-black text-indigo-700">₹{MN(demand.toFixed(2))}</div>
+                                    </td>
+                                    <td className="px-3 py-2 text-left">
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                                         <div className="text-[9px] text-slate-500 font-bold mb-0.5 whitespace-nowrap">
                                             {r.paymentDate ? (r.paymentDate.includes('-') ? r.paymentDate.split('-').reverse().join('/') : r.paymentDate) : '-'}
                                         </div>
@@ -280,10 +356,17 @@ export default function NamunaTable9({
                                         )}
                                     </td>
 
+<<<<<<< HEAD
                                     <td className="px-3 py-2 text-center bg-emerald-50/30">
                                         <div className="text-[15px] font-black text-emerald-600">₹{MN(paid.toFixed(2))}</div>
                                     </td>
                                     <td className="px-3 py-2 text-center bg-rose-50/30">
+=======
+                                    <td className="px-3 py-2 text-right bg-emerald-50/30">
+                                        <div className="text-[15px] font-black text-emerald-600">₹{MN(paid.toFixed(2))}</div>
+                                    </td>
+                                    <td className="px-3 py-2 text-right bg-rose-50/30">
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                                         <div className="text-[15px] font-black text-rose-600">₹{MN(balance.toFixed(2))}</div>
                                     </td>
                                     {showActions && (

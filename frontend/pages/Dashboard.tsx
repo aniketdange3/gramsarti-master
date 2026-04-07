@@ -348,7 +348,11 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                         id: '', srNo: Number(row[EXCEL_HEADERS[0]]) || 0,
                         wastiName: String(row[EXCEL_HEADERS[1]] ?? ''), wardNo: String(row[EXCEL_HEADERS[2]] ?? ''),
                         khasraNo: String(row[EXCEL_HEADERS[3]] ?? row["खसरा नंबर"] ?? ''), layoutName: String(row[EXCEL_HEADERS[4]] ?? ''),
+<<<<<<< HEAD
                         plotNo: String(row[EXCEL_HEADERS[5]] ?? row["प्लॉट क्रमांक"] ?? row["प्लॉट क्र."] ?? ''),
+=======
+                        plotNo: String(row[EXCEL_HEADERS[5]] ?? row["प्लॉट क्रमांक"] ?? row["प्लॉट क्र."] ?? ''), 
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                         propertyId: String(row[EXCEL_HEADERS[5]] ?? row["मालमत्ता क्र."] ?? row["प्लॉट क्रमांक"] ?? ''),
                         occupantName: String(row[EXCEL_HEADERS[6]] ?? ''),
                         ownerName: String(row[EXCEL_HEADERS[7]] ?? ''),
@@ -666,7 +670,11 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                                         {record.sections?.filter(s => s.propertyType && s.propertyType !== 'निवडा').map((s, si) => (
                                                             <div key={si} className="mb-0.5 last:mb-0 pb-0.5 border-b border-slate-100 last:border-0 leading-none">
                                                                 <span className="text-[9px] font-black text-slate-700 uppercase">{s.propertyType}</span>
+<<<<<<< HEAD
                                                                 <span className="text-[9px] font-bold text-slate-400 ml-1.5">{MN(s.areaSqFt)} चौ.फु </span>
+=======
+                                                                <span className="text-[9px] font-bold text-slate-400 ml-1.5">{MN(s.areaSqFt)} sq.ft</span>
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                                                             </div>
                                                         )) || (
                                                                 <div className="text-[9px] text-slate-400 italic">माहिती नाही</div>

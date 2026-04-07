@@ -1,9 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useUI } from '../components/UIProvider';
 import { API_BASE_URL } from '@/config';
+<<<<<<< HEAD
 import {
     Search, History, BookOpen, UserCheck, AlertTriangle,
     FileSignature, CheckCircle2, XCircle, ChevronRight, X,
+=======
+import { 
+    Search, History, BookOpen, UserCheck, AlertTriangle, 
+    FileSignature, CheckCircle2, XCircle, ChevronRight, X, 
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
     Loader2, UserPlus, Activity, ArrowRight, UserMinus,
     Info, Calendar, Hash, User, ExternalLink, Filter, Shield
 } from 'lucide-react';
@@ -75,9 +81,15 @@ export default function Ferfar({ records, fetchRecords }: Props) {
     const historyRequests = requests.filter(r => r.status === 'APPROVED');
 
     // Find pending request for the selected property
+<<<<<<< HEAD
     const existingPending = useMemo(() =>
         requests.find(r => r.property_id === selectedProp?.id && r.status === 'PENDING'),
         [requests, selectedProp]);
+=======
+    const existingPending = useMemo(() => 
+        requests.find(r => r.property_id === selectedProp?.id && r.status === 'PENDING'),
+    [requests, selectedProp]);
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
 
     const pendingDues = selectedProp
         ? (Number(selectedProp.totalTaxAmount) || 0) + (Number(selectedProp.arrearsAmount) || 0) - (Number(selectedProp.paidAmount) || 0)
@@ -97,8 +109,13 @@ export default function Ferfar({ records, fetchRecords }: Props) {
 
         // Duplicate Check 2: Same Name Recently Approved (Today)
         const today = new Date().toISOString().split('T')[0];
+<<<<<<< HEAD
         const isDuplicateAction = historyRequests.find(r =>
             r.property_id === selectedProp.id &&
+=======
+        const isDuplicateAction = historyRequests.find(r => 
+            r.property_id === selectedProp.id && 
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
             r.new_owner_name === newOwnerName &&
             (r.approved_date || '').startsWith(today)
         );
@@ -229,7 +246,11 @@ export default function Ferfar({ records, fetchRecords }: Props) {
                 {activeTab === 'NEW' && (
                     <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-6">
+<<<<<<< HEAD
 
+=======
+                            
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block ml-1">मालमत्ता निवडा (Select Property)</label>
                                 <div className="relative group max-w-3xl">
@@ -253,10 +274,17 @@ export default function Ferfar({ records, fetchRecords }: Props) {
                                                     <div className="bg-slate-100 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all"><ChevronRight className="w-4 h-4 text-indigo-500" /></div>
                                                 </div>
                                                 <span className="text-[10px] text-slate-400 font-black uppercase mt-1 tracking-wider flex items-center gap-4">
+<<<<<<< HEAD
                                                     <span>अनु. क्र: {MN(r.srNo)}</span>
                                                     <span>वार्ड: {MN(r.wardNo || '१')}</span>
                                                     <span>प्लॉट: {MN(r.plotNo)}</span>
                                                     <span className="text-indigo-300 italic">{r.wastiName}</span>
+=======
+                                                   <span>अनु. क्र: {MN(r.srNo)}</span>
+                                                   <span>वार्ड: {MN(r.wardNo || '१')}</span>
+                                                   <span>प्लॉट: {MN(r.plotNo)}</span>
+                                                   <span className="text-indigo-300 italic">{r.wastiName}</span>
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                                                 </span>
                                             </button>
                                         ))}
@@ -267,7 +295,11 @@ export default function Ferfar({ records, fetchRecords }: Props) {
                             {selectedProp && (
                                 <div className="space-y-6 animate-in fade-in zoom-in-95 duration-400">
                                     <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm relative group/card">
+<<<<<<< HEAD
                                         <button
+=======
+                                        <button 
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                                             onClick={() => { setSelectedProp(null); setSearch(''); }}
                                             className="absolute -top-2 -right-2 bg-white border border-slate-200 p-1.5 rounded-full text-slate-400 hover:text-rose-600 shadow-sm transition-all hover:scale-110 active:scale-95 z-30"
                                             title="Clear Selection"
@@ -314,7 +346,11 @@ export default function Ferfar({ records, fetchRecords }: Props) {
                                             <div className="flex items-center gap-1.5"><span className="text-slate-300 font-black uppercase text-[8px]">वार्ड:</span> {MN(selectedProp.wardNo) || '-'}</div>
                                             <div className="flex items-center gap-1.5"><span className="text-slate-300 font-black uppercase text-[8px]">प्लॉट:</span> {MN(selectedProp.plotNo) || '-'}</div>
                                             <div className="flex items-center gap-1.5"><span className="text-slate-300 font-black uppercase text-[8px]">संपर्क:</span> {MN(selectedProp.contactNo) || '-'}</div>
+<<<<<<< HEAD
                                             <div className="flex items-center gap-1.5"><span className="text-slate-300 font-black uppercase text-[8px]">क्षेत्रफळ:</span> <span className="text-indigo-600 font-black">{MN(selectedProp.totalAreaSqFt)}चौ.फु </span></div>
+=======
+                                            <div className="flex items-center gap-1.5"><span className="text-slate-300 font-black uppercase text-[8px]">क्षेत्रफळ:</span> <span className="text-indigo-600 font-black">{MN(selectedProp.totalAreaSqFt)} sq.ft</span></div>
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                                         </div>
                                     </div>
 
@@ -363,8 +399,13 @@ export default function Ferfar({ records, fetchRecords }: Props) {
                                                     <div className="space-y-2">
                                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block ml-1">मोबाईल क्रमांक</label>
                                                         <div className="relative">
+<<<<<<< HEAD
                                                             <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 font-bold text-sm">+९१</span>
                                                             <input type="text" maxLength={10} value={applicantMobile} onChange={e => setApplicantMobile(e.target.value.replace(/\D/g, ''))} placeholder="९९९९९९९९९९" className="w-full pl-16 pr-6 py-3.5 border-2 border-slate-100 rounded-2xl text-sm font-bold bg-slate-50/20" />
+=======
+                                                           <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 font-bold text-sm">+९१</span>
+                                                           <input type="text" maxLength={10} value={applicantMobile} onChange={e => setApplicantMobile(e.target.value.replace(/\D/g, ''))} placeholder="९९९९९९९९९९" className="w-full pl-16 pr-6 py-3.5 border-2 border-slate-100 rounded-2xl text-sm font-bold bg-slate-50/20" />
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                                                         </div>
                                                     </div>
                                                 </div>
@@ -503,7 +544,11 @@ export default function Ferfar({ records, fetchRecords }: Props) {
                                                                         className="p-3 bg-white text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-[1.2rem] border-2 border-emerald-50 hover:border-emerald-600 shadow-md transition-all active:scale-95 translate-y-1 group-hover:translate-y-0 disabled:opacity-50" title="मंजूर करा">
                                                                         {processingId === r.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
                                                                     </button>
+<<<<<<< HEAD
                                                                     <button onClick={() => setRejectionModal({ id: r.id, open: true })}
+=======
+                                                                    <button onClick={() => setRejectionModal({ id: r.id, open: true })} 
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                                                                         className="p-3 bg-white text-rose-600 hover:bg-rose-600 hover:text-white rounded-[1.2rem] border-2 border-rose-50 hover:border-rose-600 shadow-md transition-all active:scale-95 translate-y-1 group-hover:translate-y-0" title="नामंजूर करा">
                                                                         <XCircle className="w-5 h-5" />
                                                                     </button>

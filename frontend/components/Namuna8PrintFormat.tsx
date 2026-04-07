@@ -222,14 +222,22 @@ export default function Namuna8PrintFormat({ records }: Props) {
 
                                         const calculatedGharpattiB = recordTaxDetails.reduce((sum, d) => sum + d.sTaxB, 0);
                                         const calculatedGharpattiO = recordTaxDetails.reduce((sum, d) => sum + d.sTaxO, 0);
+<<<<<<< HEAD
                                         
+=======
+
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                                         const pTaxDb = r.propertyTax !== undefined && r.propertyTax !== null;
                                         const oTaxDb = r.openSpaceTax !== undefined && r.openSpaceTax !== null;
                                         const tTaxDb = r.totalTaxAmount !== undefined && r.totalTaxAmount !== null;
 
                                         const finalPropertyTax = pTaxDb ? Number(r.propertyTax) : calculatedGharpattiB;
                                         const finalOpenSpaceTax = oTaxDb ? Number(r.openSpaceTax) : calculatedGharpattiO;
+<<<<<<< HEAD
                                         
+=======
+
+>>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                                         const recordTotalGharpatti = finalPropertyTax + finalOpenSpaceTax;
                                         const recordTotalTax = tTaxDb ? Number(r.totalTaxAmount) : (recordTotalGharpatti +
                                             (Number(r.streetLightTax) || 0) +

@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL } from '@/utils/config';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useUI } from '../components/UIProvider';
 import { Search, IndianRupee, CreditCard, Banknote, Smartphone, Building2, Receipt, Eye, Calendar, Filter, CheckCircle2, AlertTriangle } from 'lucide-react';

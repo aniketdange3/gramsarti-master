@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PropertyRecord } from '../types';
-import { PANCHAYAT_CONFIG } from '../panchayatConfig';
+import { PANCHAYAT_CONFIG } from '../utils/panchayatConfig';
 import { calculateBill } from './billCalculations';
 import { registerFonts } from './fonts';
 import logo from '../src/images/logo.png?base64';

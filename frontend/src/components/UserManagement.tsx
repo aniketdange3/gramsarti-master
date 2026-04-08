@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL } from '@/utils/config';
 import React, { useState, useCallback, useEffect } from 'react';
 import { Users, RotateCcw, CheckCircle2, X, Shield, Edit2, Trash2 } from 'lucide-react';
 import { ROLES } from '../pages/Login';

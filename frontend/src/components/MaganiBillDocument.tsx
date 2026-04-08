@@ -1,6 +1,6 @@
 import React from 'react';
 import { PropertyRecord } from '../types';
-import { PANCHAYAT_CONFIG } from '../panchayatConfig';
+import { PANCHAYAT_CONFIG } from '../utils/panchayatConfig';
 import { calculateBill } from '../utils/billCalculations';
 import { numberToMarathiWords } from '../utils/numberToMarathiWords';
 

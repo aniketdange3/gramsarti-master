@@ -1,35 +1,33 @@
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL } from '@/utils/config';
 import React, { useState, useMemo } from 'react';
-import { Search, Printer, ArrowLeft, Eye, Filter, Plus, Edit2, Trash2, RotateCcw, X } from 'lucide-react';
+import { Search, Printer, ArrowLeft, Eye, Filter, CheckCircle2, AlertTriangle, Clock, Plus, Edit2, RotateCcw, X } from 'lucide-react';
 import { PropertyRecord, WASTI_NAMES, DEFAULT_SECTION } from '../types';
-import { PANCHAYAT_CONFIG } from '../panchayatConfig';
-import NamunaTable8 from '../components/NamunaTable8';
+import { PANCHAYAT_CONFIG } from '../utils/panchayatConfig';
+import NamunaTable9 from '../components/NamunaTable9';
 
 import PropertyForm from '../components/PropertyForm';
 import { matchesSearch } from '../utils/transliterate';
 import { TransliterationInput } from '../components/TransliterationInput';
-import Namuna8PrintFormat from '../components/Namuna8PrintFormat';
+import Namuna9PrintFormat from '../components/Namuna9PrintFormat';
 import { hasModulePermission } from '../utils/permissions';
-import CalculationGuide from '../components/CalculationGuide';
 import { CustomDropdown } from '../components/CustomDropdown';
-import { Calculator, ClipboardList } from 'lucide-react';
+import { FileCheck } from 'lucide-react';
+import MaganiBillDocument from '../components/MaganiBillDocument';
 
 const MN = (v: number | string | undefined) =>
     String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
 
-
-interface Namuna8Props {
+interface Namuna9Props {
     records: PropertyRecord[];
     selectedId: string | null;
-    onClearSelected: () => void;
     fetchRecords: () => void;
     onUpdateLocalRecord: (r: any) => void;
     onRemoveLocalRecord: (id: string) => void;
     taxRates: any[];
-    onAuthError?: () => void;
+    onAuthError: () => void;
 }
 
-export default function Namuna8({ records, selectedId, onClearSelected, fetchRecords, onUpdateLocalRecord, onRemoveLocalRecord, taxRates, onAuthError }: Namuna8Props) {
+export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLocalRecord, onRemoveLocalRecord, taxRates, onAuthError }: Namuna9Props) {
     const [viewId, setViewId] = useState<string | null>(selectedId);
     const [filterWasti, setFilterWasti] = useState('');
     const [filterLayout, setFilterLayout] = useState('');
@@ -37,20 +35,23 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
     const [filterPlotNo, setFilterPlotNo] = useState('');
     const [filterPropertyType, setFilterPropertyType] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
-    const [editingRecord, setEditingRecord] = useState<PropertyRecord | null>(null);
+    const [showRegister, setShowRegister] = useState(false);
     const [showForm, setShowForm] = useState(false);
+    const [editingRecord, setEditingRecord] = useState<PropertyRecord | null>(null);
     const [visibleFloorCount, setVisibleFloorCount] = useState(1);
+    const [saving, setSaving] = useState(false);
     const [dynamicWastis, setDynamicWastis] = useState<string[]>([]);
     const [dynamicPropertyTypes, setDynamicPropertyTypes] = useState<string[]>([]);
-    const [printRecord, setPrintRecord] = useState<PropertyRecord | null>(null);
-    const [calculationProperty, setCalculationProperty] = useState<PropertyRecord | null>(null);
+    const [printRecords, setPrintRecords] = useState<PropertyRecord[] | null>(null);
+    const [activeBillRecord, setActiveBillRecord] = useState<PropertyRecord | null>(null);
+    const [printPageSize, setPrintPageSize] = useState<number>(2);
 
     const currentUser = useMemo(() => JSON.parse(localStorage.getItem('gp_user') || '{}'), []);
     const isAdmin = currentUser.role === 'super_admin' || currentUser.role === 'gram_sachiv' || currentUser.role === 'gram_sevak';
-    const canAdd = hasModulePermission(currentUser, 'namuna8', 'add');
-    const canEdit = hasModulePermission(currentUser, 'namuna8', 'edit');
-    const canDelete = hasModulePermission(currentUser, 'namuna8', 'delete');
-    const canFilter = hasModulePermission(currentUser, 'namuna8', 'filter');
+    const canAdd = hasModulePermission(currentUser, 'namuna9', 'add');
+    const canEdit = hasModulePermission(currentUser, 'namuna9', 'edit');
+    const canDelete = hasModulePermission(currentUser, 'namuna9', 'delete');
+    const canFilter = hasModulePermission(currentUser, 'namuna9', 'filter');
 
     React.useEffect(() => {
         const loadMasters = async () => {
@@ -78,7 +79,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
     const uniqueWastis = useMemo(() => Array.from(new Set(records.map(r => r.wastiName).filter(Boolean))).sort(), [records]);
     const uniqueLayouts = useMemo(() => Array.from(new Set(wastiFiltered.map(r => r.layoutName).filter(Boolean))).sort(), [wastiFiltered]);
 
-    // Sort Khasra Logic (reused helper)
+    // Sort Khasra Logic
     const sortKhasra = (a: string, b: string) => {
         const aStr = String(a || '');
         const bStr = String(b || '');
@@ -111,164 +112,192 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
 
     const selectedRecord = useMemo(() => records.find(r => r.id === viewId), [records, viewId]);
 
-    const handleSave = async (updatedRecord: PropertyRecord) => {
-        // Optimistic UI Update (लगेच UI मध्ये बदल)
+
+
+    const handleSave = async (record: PropertyRecord) => {
+        setSaving(true);
+        const isNew = !editingRecord;
+        const maxSrNo = records.reduce((max, r) => Math.max(max, Number(r.srNo) || 0), 0);
+        const finalRecord = isNew ? { ...record, srNo: maxSrNo + 1, id: `temp-${Date.now()}` } : record;
+
+        // Optimistic UI Update: लगेच UI मध्ये बदल करा (Update UI instantly)
         if (typeof onUpdateLocalRecord === 'function') {
-            onUpdateLocalRecord(updatedRecord);
+            onUpdateLocalRecord(finalRecord);
         }
         setShowForm(false);
         setEditingRecord(null);
 
         try {
-            const res = await fetch(API_URL, {
+            const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedRecord)
+                body: JSON.stringify(finalRecord)
             });
-            if (!res.ok) {
-                fetchRecords(); // Rollback on error
+            if (!response.ok) {
+                // त्रुटी असल्यास डेटाबेसवरून पुन्हा फेच करा (Rollback on error)
+                console.error('Save failed, rolling back UI');
+                fetchRecords();
             } else {
-                fetchRecords(); // Get reliable ID
+                // यशस्विरीत्या सेव्ह झाल्यावर अचूक आयडी मिळवण्यासाठी फेच करा
+                fetchRecords();
             }
-        } catch (err) {
-            console.error(err);
+        } catch (error) {
+            console.error('Error saving record:', error);
             fetchRecords(); // Rollback
+        } finally {
+            setSaving(false);
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('ही नोंद कायमची हटवायची आहे का?')) return;
+        if (!window.confirm('आपली खात्री आहे का की आपण ही नोंद हटवू इच्छिता?')) return;
 
-        // Optimistic UI Delete (लगेच UI मधून हटवा)
+        // Optimistic UI Delete: लगेच UI मधून हटवा (Remove from UI instantly)
         if (typeof onRemoveLocalRecord === 'function') {
             onRemoveLocalRecord(id);
         }
 
         try {
-            const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            if (res.ok) {
+            const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            if (!response.ok) {
+                // त्रुटी असल्यास रोलबॅक करा (Rollback on error)
                 fetchRecords();
-                if (viewId === id) {
-                    setViewId(null);
-                    onClearSelected();
-                }
-            } else {
-                fetchRecords(); // Rollback
             }
-        } catch (err) {
-            console.error(err);
+        } catch (error) {
+            console.error('Error deleting record:', error);
             fetchRecords(); // Rollback
         }
     };
 
-
-
     const handleEdit = (record: PropertyRecord) => {
-        const count = record.sections?.filter(s => s.propertyType && s.propertyType !== 'निवडा').length || 1;
-        setVisibleFloorCount(count);
+        const count = record.sections.filter(s => s.propertyType && s.propertyType !== 'निवडा').length;
+        setVisibleFloorCount(count > 0 ? count : 1);
         setEditingRecord(record);
         setShowForm(true);
     };
 
+    const existingLayouts = useMemo(() => {
+        return Array.from(new Set(records.map(r => r.layoutName).filter(Boolean)));
+    }, [records]);
 
-    const handlePrint = (id: string) => {
-        const record = records.find(r => r.id === id);
-        if (record) setPrintRecord(record);
-    };
+    const existingKhasras = useMemo(() => {
+        return Array.from(new Set(records.map(r => r.khasraNo).filter(Boolean)));
+    }, [records]);
 
-
-    const existingLayouts = useMemo(() => Array.from(new Set(records.map(r => r.layoutName).filter(Boolean))), [records]);
-    const existingKhasras = useMemo(() => Array.from(new Set(records.map(r => r.khasraNo).filter(Boolean))), [records]);
-
-    if (printRecord) {
+    // ─── PRINT SELECTED RECORDS VIEW ──────────────────────────────────────────
+    if (printRecords && printRecords.length > 0) {
         return (
             <div className="flex flex-col h-full bg-gray-100 no-print-bg">
+                <style>{`
+                    @media print {
+                        body, html {
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            background: white !important;
+                        }
+                        * {
+                            box-shadow: none !important;
+                            overflow: visible !important;
+                        }
+                        .no-print { display: none !important; }
+                    }
+                `}</style>
                 <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center gap-3 no-print shadow-sm sticky top-0 z-50">
-                    <button onClick={() => setPrintRecord(null)}
+                    <button onClick={() => setPrintRecords(null)}
                         className="flex items-center gap-2 text-sm font-bold text-gray-600 px-4 py-2 rounded-xl hover:bg-gray-100 border border-gray-200 transition-all">
                         <ArrowLeft className="w-4 h-4" /> विंडो बंद करा
                     </button>
-                    <div className="flex-1" />
+
+                    <div className="flex-1 flex justify-center">
+                        <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                            <button
+                                onClick={() => setPrintPageSize(2)}
+                                className={`px-4 py-1.5 text-[10px] font-black rounded-lg transition-all ${printPageSize === 2 ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}
+                            >
+                                २ प्रति / पेज (पूर्ण)
+                            </button>
+                            <button
+                                onClick={() => setPrintPageSize(3)}
+                                className={`px-4 py-1.5 text-[10px] font-black rounded-lg transition-all ${printPageSize === 3 ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}
+                            >
+                                ३ प्रति / पेज (संक्षिप्त)
+                            </button>
+                        </div>
+                    </div>
+
                     <button onClick={() => window.print()}
-                        className="flex items-center gap-2 text-sm font-bold text-white bg-primary px-5 py-2 rounded-xl hover:bg-primary-dark transition-all">
+                        className="flex items-center gap-2 text-sm font-bold text-white bg-indigo-600 px-6 py-2 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20">
                         <Printer className="w-4 h-4" /> प्रिंट करा
                     </button>
                 </div>
-                <div className="flex-1 overflow-auto p-4 flex justify-center no-print-bg">
+                <div className="flex-1 overflow-auto p-4 flex justify-center no-print-bg print-parent">
                     <div className="w-full">
-                        <Namuna8PrintFormat records={[printRecord]} />
+                        <Namuna9PrintFormat records={printRecords} pageSize={printPageSize} />
                     </div>
                 </div>
             </div>
         );
     }
 
-    // if (viewId && selectedRecord) {
-    //     return (
-    //         <div className="flex flex-col h-full bg-gray-100 overflow-hidden">
-    //             <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center gap-3 no-print shadow-sm shrink-0">
-    //                 <button onClick={() => { setViewId(null); onClearSelected(); }}
-    //                     className="flex items-center gap-2 text-sm font-bold text-gray-600 px-4 py-2 rounded-xl hover:bg-gray-100 border border-gray-200 transition-all">
-    //                     <ArrowLeft className="w-4 h-4" /> यादीकडे परत
-    //                 </button>
-    //                 <div className="h-6 w-px bg-gray-200 mx-2" />
-    //                 <h2 className="text-sm font-black text-gray-800 hidden md:block">
-    //                     {selectedRecord.ownerName} • अ.क्र. {selectedRecord.srNo}
-    //                 </h2>
-    //                 <div className="flex-1" />
-    //                 {canEdit && (
-    //                     <button onClick={() => handleEdit(selectedRecord)}
-    //                         className="flex items-center gap-2 text-sm font-bold text-amber-600 border border-amber-200 bg-amber-50 px-4 py-2 rounded-xl hover:bg-amber-100 transition-all">
-    //                         <Edit2 className="w-4 h-4" /> सुधारा
-    //                     </button>
-    //                 )}
-    //                 <button onClick={() => window.print()}
-    //                     className="flex items-center gap-2 text-sm font-bold text-white bg-primary px-5 py-2 rounded-xl hover:bg-primary-dark transition-all">
-    //                     <Printer className="w-4 h-4" /> पीडीएफ प्रिंट काढा
-    //                 </button>
-    //             </div>
+    if (viewId && selectedRecord) {
+        // ... (existing detail view logic, though the user might prefer the bill view now)
+    }
 
-    //             <style>{`
-    //                 @media print {
-    //                     .no-print { display: none !important; }
-    //                     body, html { 
-    //                         background: white !important; 
-    //                         margin: 0 !important; 
-    //                         padding: 0 !important;
-    //                         -webkit-print-color-adjust: exact !important;
-    //                         print-color-adjust: exact !important;
-    //                     }
-    //                     .print-only { display: block !important; }
-    //                     table { border-collapse: collapse !important; width: 100% !important; }
-    //                     th, td { border: 1px solid black !important; color: black !important; }
-    //                     th { background: #f0f0f0 !important; font-weight: bold !important; }
-    //                 }
-    //                 @page { 
-    //                     size: A4 landscape; 
-    //                     margin: 8mm 5mm 8mm 5mm; 
-    //                 }
-    //             `}</style>
+    if (activeBillRecord) {
+        return (
+            <div className="flex flex-col h-full bg-slate-100 no-print-bg">
+                <style>{`
+                    @media print {
+                        body, html { margin: 0 !important; padding: 0 !important; background: white !important; }
+                        .no-print { display: none !important; }
+                    }
+                `}</style>
+                <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center gap-3 no-print shadow-sm sticky top-0 z-50">
+                    <button onClick={() => setActiveBillRecord(null)}
+                        className="flex items-center gap-2 text-sm font-bold text-slate-600 px-4 py-2 rounded-xl hover:bg-slate-100 border border-slate-200 transition-all">
+                        <ArrowLeft className="w-4 h-4" /> विंडो बंद करा
+                    </button>
+                    <div className="flex-1" />
+                    <button onClick={() => window.print()}
+                        className="flex items-center gap-2 text-sm font-black text-white bg-indigo-600 px-6 py-2.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20">
+                        <Printer className="w-4 h-4" /> प्रिंट (लँडस्केप)
+                    </button>
+                </div>
+                <div className="flex-1 overflow-auto p-8 pt-4 flex justify-center no-print-bg">
+                    <MaganiBillDocument record={activeBillRecord} onClose={() => setActiveBillRecord(null)} />
+                </div>
+            </div>
+        );
+    }
 
-    //             <div className="overflow-auto flex-1 p-4 bg-gray-100 no-print-bg">
-    //                 <div className="w-full flex justify-center">
-    //                     <Namuna8PrintFormat records={[selectedRecord]} />
-    //                 </div>
-    //             </div>
-    //         </div>
-    //     );
-    // }
+    if (viewId && !selectedRecord) {
+        return (
+            <div className="p-10 text-center text-gray-400">
+                <p>नोंद सापडली नाही.</p>
+                <button onClick={() => setViewId(null)} className="mt-3 text-primary font-bold hover:underline flex items-center gap-1 mx-auto transition-all">
+                    <ArrowLeft className="w-4 h-4" /> यादीकडे परत
+                </button>
+            </div>
+        );
+    }
 
-    // if (viewId && !selectedRecord) {
-    //     return (
-    //         <div className="p-10 text-center text-gray-400">
-    //             <p>नोंद सापडली नाही.</p>
-    //             <button onClick={() => setViewId(null)} className="mt-3 text-primary font-bold hover:underline flex items-center gap-1 mx-auto transition-all">
-    //                 <ArrowLeft className="w-4 h-4" /> यादीकडे परत
-    //             </button>
-    //         </div>
-    //     );
-    // }
+    const handlePrint = (id: string) => {
+        const record = records.find(r => r.id === id);
+        if (record) setPrintRecords([record]);
+    };
 
+    const handlePrintMultiple = (selectedRecords: PropertyRecord[]) => {
+        if (selectedRecords.length > 0) {
+            setPrintRecords(selectedRecords);
+        }
+    };
+
+    const handlePrintBill = (id: string) => {
+        const record = records.find(r => r.id === id);
+        if (record) setActiveBillRecord(record);
+    };
+
+    // ─── LIST VIEW (High-Fidelity Overhaul) ──────────────────────────────────
     return (
         <div className="flex flex-col h-full bg-slate-50/50 overflow-hidden">
             {/* Top Action Bar */}
@@ -276,11 +305,11 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
                 <div className="gp-action-bar">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
-                            <ClipboardList className="w-4 h-4 text-indigo-600" />
+                            <FileCheck className="w-4 h-4 text-indigo-600" />
                         </div>
                         <div>
-                            <h2 className="gp-section-title">नमुना ८</h2>
-                            <p className="gp-section-subtitle">मालमत्ता आकारणी नोंदवही</p>
+                            <h2 className="gp-section-title">नमुना ९</h2>
+                            <p className="gp-section-subtitle">कर मागणी व वसुली नोंदवही</p>
                         </div>
                     </div>
 
@@ -373,26 +402,20 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
 
                 {/* Table Area */}
                 <div className="flex-1 overflow-auto bg-white rounded-2xl shadow-sm border border-gray-100">
-                    <NamunaTable8
+                    <NamunaTable9
                         records={filteredRecords}
                         filterWasti={filterWasti}
                         onEdit={canEdit ? handleEdit : undefined}
                         onDelete={canDelete ? handleDelete : undefined}
                         onPrint={handlePrint}
-                        onCalculate={(r) => setCalculationProperty(r)}
+                        onPrintBill={handlePrintBill}
+                        onPrintMultiple={handlePrintMultiple}
                         showActions={true}
                     />
                 </div>
             </div>
 
-            {/* Modals */}
-            {calculationProperty && (
-                <CalculationGuide
-                    property={calculationProperty}
-                    onClose={() => setCalculationProperty(null)}
-                />
-            )}
-
+            {/* Property Form Modal */}
             {showForm && (
                 <PropertyForm
                     initialData={editingRecord || undefined}

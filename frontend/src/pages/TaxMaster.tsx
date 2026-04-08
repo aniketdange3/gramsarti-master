@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL } from '@/utils/config';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
     Settings, FileText, TrendingDown, Briefcase,

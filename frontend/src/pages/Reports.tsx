@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL } from '@/utils/config';
 
 import React, { useState, useMemo } from 'react';
 import { FileText, Printer, IndianRupee, Users, TrendingUp, BarChart3, PieChart, Download, Calendar, FileDown } from 'lucide-react';

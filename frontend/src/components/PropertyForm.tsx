@@ -1,12 +1,12 @@
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL } from '@/utils/config';
 
 import React, { useState, useEffect } from 'react';
 import { Plus, X, Building2, Info, Save, ChevronDown, ChevronUp, Calculator, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { PropertyRecord, PropertySection, DEFAULT_SECTION, FLOOR_NAMES, PROPERTY_TYPES, WASTI_NAMES, LABELS } from '../types';
-import { PLACEHOLDERS } from '../constants';
+import { PLACEHOLDERS } from '../utils/constants';
 import { TransliterationInput } from './TransliterationInput';
 import { ComboTransliterationInput } from './ComboTransliterationInput';
-import { calculateTax, TaxRateMaster, DepreciationMaster, BuildingUsageMaster } from '../taxUtils';
+import { calculateTax, TaxRateMaster, DepreciationMaster, BuildingUsageMaster } from '../utils/taxUtils';
 
 interface PropertyFormProps {
     initialData?: PropertyRecord;

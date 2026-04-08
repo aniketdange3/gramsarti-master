@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Eye, Edit2, Trash2, Printer, Calculator, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PropertyRecord } from '../types';
 import OwnerNameDisplay from './OwnerNameDisplay';
-import { PANCHAYAT_CONFIG } from '../panchayatConfig';
+import { PANCHAYAT_CONFIG } from '../utils/panchayatConfig';
 
 interface Props {
     records: PropertyRecord[];

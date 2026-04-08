@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { FileUp, FileSpreadsheet, CheckCircle2, Download } from 'lucide-react';
 import { PropertyRecord, DEFAULT_SECTION } from '../types';
-import { EXCEL_HEADERS } from '../constants';
-import { API_BASE_URL } from '../config';
+import { EXCEL_HEADERS } from '../utils/constants';
+import { API_BASE_URL } from '../utils/config';
 
 const MN = (v: number | string | undefined) =>
     String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);

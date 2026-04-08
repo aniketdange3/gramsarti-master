@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { PropertyRecord, FLOOR_NAMES } from '../types';
-import { calculateTax } from '../taxUtils';
-import { PANCHAYAT_CONFIG } from '../panchayatConfig';
+import { calculateTax } from '../utils/taxUtils';
+import { PANCHAYAT_CONFIG } from '../utils/panchayatConfig';
 import OwnerNameDisplay from './OwnerNameDisplay';
 
 interface Props {

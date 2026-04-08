@@ -11,13 +11,13 @@
  * 4. Marathi Numerals (MN): सिस्टिममधील सर्व संख्यात्मक डेटा 'MN' हेल्पर फंक्शन द्वारे मराठी आकड्यांमध्ये रूपांतरित केला जातो.
  */
 
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL } from '@/utils/config';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useUI } from '../components/UIProvider';
 import { Plus, FileSpreadsheet, Search, Edit2, Trash2, X, ChevronRight, ChevronLeft, FileDown, Printer, FileUp, FileText, Receipt, Eye, TrendingUp, Users, IndianRupee, AlertTriangle, CheckCircle2, Filter, RotateCcw, Shield } from 'lucide-react';
 import { PropertyRecord, PropertySection, DEFAULT_SECTION, FLOOR_NAMES, PROPERTY_TYPES, WASTI_NAMES } from '../types';
 import { ROLES } from './Login';
-import { EXCEL_HEADERS, PLACEHOLDERS } from '../constants';
+import { EXCEL_HEADERS, PLACEHOLDERS } from '../utils/constants';
 import { LABELS } from "../types";
 import * as XLSX from 'xlsx';
 import { matchesSearch } from '../utils/transliterate';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LogIn, Eye, EyeOff, Building2, Receipt, UserPlus, AlertCircle, KeyRound, HelpCircle, User, Shield } from 'lucide-react';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL } from '../utils/config';
 
 interface LoginProps {
     onLogin: (token: string, user: any) => void;

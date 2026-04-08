@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useUI } from '../components/UIProvider';
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL } from '@/utils/config';
 import {
     Search, History, BookOpen, UserCheck, AlertTriangle,
     FileSignature, CheckCircle2, XCircle, ChevronRight, X,

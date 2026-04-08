@@ -13,7 +13,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LayoutDashboard, FileText, Receipt, Settings, Menu, X, Home, Activity, ChevronRight, LogOut, User, Shield, IndianRupee, FileWarning, BarChart3, List, ChevronDown, Edit2, Save, Phone, Mail, BadgeCheck, MapPin, PanelLeftClose } from 'lucide-react';
 import { PropertyRecord, DEFAULT_SECTION } from './types';
-import { API_BASE_URL as BASE } from './config';
+import { API_BASE_URL as BASE } from './utils/config';
 
 import Dashboard from './pages/Dashboard';
 import Namuna8 from './pages/Namuna8';

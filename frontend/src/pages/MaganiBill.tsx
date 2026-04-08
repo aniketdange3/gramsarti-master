@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL } from '@/utils/config';
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, FileWarning, Send, ChevronRight, CheckCircle2, ArrowRightCircle, Filter, Eye, Printer, FileDown, X, ArrowLeft } from 'lucide-react';
 import MaganiBillDocument from '../components/MaganiBillDocument';

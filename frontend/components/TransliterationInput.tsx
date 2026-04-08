@@ -74,8 +74,14 @@ export const TransliterationInput: React.FC<TransliterationInputProps> = ({
     }, [value, cursorPos, currentEnglishWord, onChangeText]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const newValue = e.target.value;
+        let newValue = e.target.value;
         const newCursor = e.target.selectionStart || 0;
+
+        // Convert English digits to Marathi digits automatically if enabled
+        if (isEnabled) {
+            newValue = newValue.replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
+        }
+
         onChangeText(newValue);
         setCursorPos(newCursor);
 

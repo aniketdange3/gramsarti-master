@@ -17,6 +17,8 @@ export interface PropertySection {
   openSpaceFinalValue: number;
   propertyType: string;
   floorIndex: number;
+  constructionYear?: string;
+  propertyAge?: number;
 }
 
 export const FLOOR_NAMES = [
@@ -132,7 +134,9 @@ export const DEFAULT_SECTION: PropertySection = {
   buildingFinalValue: 0,
   openSpaceFinalValue: 0,
   propertyType: '',
-  floorIndex: 0
+  floorIndex: 0,
+  constructionYear: '',
+  propertyAge: 0
 }; export const LABELS = {
   appTitle: "मालमत्ता कर व्यवस्थापन",
   srNo: "अनुक्रमांक",

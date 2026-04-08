@@ -52,10 +52,10 @@ export default function Login({ onLogin }: LoginProps) {
         try {
             const endpoint = isSignUp ? '/register' : '/login';
             const body = isSignUp
-                ? { 
-                    name: name.trim(), 
-                    username: username.trim(), 
-                    password, 
+                ? {
+                    name: name.trim(),
+                    username: username.trim(),
+                    password,
                     role,
                     mobile: mobile.trim(),
                     age: parseInt(age),
@@ -358,9 +358,9 @@ export default function Login({ onLogin }: LoginProps) {
                             </button>
                         </form>
 
-                        <p className="mt-10 mb-8 text-center text-[10px] font-black text-slate-300 uppercase tracking-widest leading-relaxed">
-                            Powered by Clumatrix <br /> Developed by Aniket Dange 2026
-                        </p>
+                        {/* <p className="mt-10 mb-8 text-center text-[10px] font-black text-slate-300 uppercase tracking-widest leading-relaxed">
+                            Powered by Clumatrix <br />
+                        </p> */}
                     </div>
                 </div>
             </div>

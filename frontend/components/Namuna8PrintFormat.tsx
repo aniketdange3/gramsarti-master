@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PropertyRecord, FLOOR_NAMES } from '../types';
+import { calculateTax } from '../taxUtils';
 import { PANCHAYAT_CONFIG } from '../panchayatConfig';
 import OwnerNameDisplay from './OwnerNameDisplay';
 
@@ -211,33 +212,47 @@ export default function Namuna8PrintFormat({ records }: Props) {
 
                                         const recordTaxDetails = activeSections.map(s => {
                                             const area = Number(s?.areaSqMt || 0);
-                                            const bRate = Number(s?.buildingRate || 0);
-                                            const lRate = Number(s?.landRate || 0);
-                                            const valB = Number((area * bRate).toFixed(2));
-                                            const valL = Number((area * lRate).toFixed(2));
-                                            const sTaxB = Number(((valB * Number(s?.buildingTaxRate || 0)) / 1000).toFixed(2));
-                                            const sTaxO = Number(((valL * Number(s?.openSpaceTaxRate || 0)) / 1000).toFixed(2));
-                                            return { ...s, finalBVal: valB, finalLVal: valL, sTaxB, sTaxO, rowGharpatti: sTaxB + sTaxO };
+
+                                            // Building Tax (RCC)
+                                            const bRes = calculateTax({
+                                                areaSqMt: area,
+                                                rate: Number(s?.buildingRate || 0),
+                                                taxRate: Number(s?.buildingTaxRate || 0),
+                                                weightage: Number(s?.weightage || 1),
+                                                valueMultiplier: Number(s?.depreciationRate || 1)
+                                            });
+
+                                            // Open Space Tax (Khalia)
+                                            const lRes = calculateTax({
+                                                areaSqMt: area,
+                                                rate: Number(s?.landRate || 0),
+                                                taxRate: Number(s?.openSpaceTaxRate || 0),
+                                                weightage: 1.0,
+                                                valueMultiplier: 1.0
+                                            });
+
+                                            return {
+                                                ...s,
+                                                finalBVal: bRes.valuation,
+                                                finalLVal: lRes.valuation,
+                                                sTaxB: bRes.finalTax,
+                                                sTaxO: lRes.finalTax,
+                                                rowGharpatti: bRes.finalTax + lRes.finalTax,
+                                                weightage: s?.weightage || 1.0,
+                                                depreciationRate: s?.depreciationRate || 0
+                                            };
                                         });
 
                                         const calculatedGharpattiB = recordTaxDetails.reduce((sum, d) => sum + d.sTaxB, 0);
                                         const calculatedGharpattiO = recordTaxDetails.reduce((sum, d) => sum + d.sTaxO, 0);
-<<<<<<< HEAD
-                                        
-=======
 
->>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                                         const pTaxDb = r.propertyTax !== undefined && r.propertyTax !== null;
                                         const oTaxDb = r.openSpaceTax !== undefined && r.openSpaceTax !== null;
                                         const tTaxDb = r.totalTaxAmount !== undefined && r.totalTaxAmount !== null;
 
                                         const finalPropertyTax = pTaxDb ? Number(r.propertyTax) : calculatedGharpattiB;
                                         const finalOpenSpaceTax = oTaxDb ? Number(r.openSpaceTax) : calculatedGharpattiO;
-<<<<<<< HEAD
-                                        
-=======
 
->>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
                                         const recordTotalGharpatti = finalPropertyTax + finalOpenSpaceTax;
                                         const recordTotalTax = tTaxDb ? Number(r.totalTaxAmount) : (recordTotalGharpatti +
                                             (Number(r.streetLightTax) || 0) +
@@ -293,11 +308,11 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                                                 </span>
                                                                             )}
                                                                             <span className="text-[#952B32] font-black whitespace-nowrap">
-                                                                                {MN(r.totalAreaSqFt || totalArea)} <span className="text-[8px] font-bold text-gray-500">SqFt</span>
+                                                                                {MN(r.totalAreaSqFt || totalArea)} <span className="text-[8px] font-bold text-gray-500">चौ.फूट</span>
                                                                             </span>
                                                                             {Number(r.totalAreaSqMt || 0) > 0 && (
                                                                                 <span title="चौरस मीटर" className="text-[9px] text-gray-600 italic border-t border-black">
-                                                                                    ({MN(r.totalAreaSqMt || 0)} <span className="text-[7.5px]">SqMt</span>)
+                                                                                    ({MN(r.totalAreaSqMt || 0)} <span className="text-[7.5px]">चौ.मी</span>)
                                                                                 </span>
                                                                             )}
                                                                         </div>
@@ -316,10 +331,10 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                             </td>
                                                             <td className="p-0 text-center border border-black text-[9px]">
                                                                 <div className="p-1 font-black border-b border-black text-gray-800">
-                                                                    {s?.propertyType === 'खाली जागा' ? '-' : (r.constructionYear ? MN(r.constructionYear) : '-')}
+                                                                    {s?.propertyType === 'आर.सी.सी' ? (s?.constructionYear || r.constructionYear ? MN(s?.constructionYear || r.constructionYear) : '-') : '-'}
                                                                 </div>
                                                                 <div className="p-1 font-bold text-[#A80D40]">
-                                                                    {s?.propertyType === 'खाली जागा' ? '' : `(${MN(r.propertyAge || 0)} वर्ष)`}
+                                                                    {s?.propertyType === 'आर.सी.सी' ? `(${MN(s?.propertyAge || r.propertyAge || 0)} वर्ष)` : ''}
                                                                 </div>
                                                             </td>
                                                             <td className="p-1 text-right border border-black text-[10px] font-bold">
@@ -338,18 +353,33 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                             <td className="p-1 text-center border border-black text-[10px] font-black" style={{ color: '#A80D40' }}>
                                                                 {s ? MN(s.buildingTaxRate || s.openSpaceTaxRate || 0) : '-'}
                                                             </td>
+                                                            {/* Column 15: Property Tax per section with breakdown */}
+                                                            <td className="p-0 text-right align-middle border border-black text-[10px] font-bold">
+                                                                <div className="p-1 flex flex-col gap-1">
+                                                                    {(details?.sTaxB || 0) > 0 && (details?.sTaxO || 0) > 0 ? (
+                                                                        <div className="flex flex-col gap-0.5">
+                                                                            <div className="flex justify-between items-center text-[#A80D40]">
+                                                                                <span className="text-[7px] italic">इमारत:</span>
+                                                                                <span>{MN(details.sTaxB.toFixed(2))}</span>
+                                                                            </div>
+                                                                            <div className="flex justify-between items-center text-blue-700">
+                                                                                <span className="text-[7px] italic">जागा:</span>
+                                                                                <span>{MN(details.sTaxO.toFixed(2))}</span>
+                                                                            </div>
+                                                                            <div className="mt-1 pt-1 border-t border-black/10 text-center font-black text-[#A80D40]">
+                                                                                {MN((details.sTaxB + details.sTaxO).toFixed(2))}
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className={`text-center ${(details?.sTaxB || 0) > 0}`}>
+                                                                            {MN(((details?.sTaxB || 0) + (details?.sTaxO || 0)).toFixed(2))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+
                                                             {sIdx === 0 && (
                                                                 <>
-                                                                    <td rowSpan={rowCount} className="p-0 text-right align-middle border border-black text-[10px] font-bold">
-                                                                        {finalPropertyTax > 0 && finalOpenSpaceTax > 0 ? (
-                                                                            <>
-                                                                                <div className="p-1 border-b border-black">{MN(finalPropertyTax.toFixed(2))}</div>
-                                                                                <div className="p-1">{MN(finalOpenSpaceTax.toFixed(2))}</div>
-                                                                            </>
-                                                                        ) : (
-                                                                            <div className="p-1">{MN((finalPropertyTax + finalOpenSpaceTax).toFixed(2) || (finalPropertyTax === 0 && finalOpenSpaceTax === 0 ? '-' : '०.००'))}</div>
-                                                                        )}
-                                                                    </td>
                                                                     <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.streetLightTax) || 0).toFixed(2))}</td>
                                                                     <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.healthTax) || 0).toFixed(2))}</td>
                                                                     <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.generalWaterTax) || 0).toFixed(2))}</td>
@@ -369,10 +399,11 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                 </tbody>
                                 <tfoot>
                                     <tr className="text-white font-black text-[10px] bg-brand-gradient">
-                                        <td colSpan={6} className="p-3 text-right uppercase tracking-widest opacity-80 text-white font-black whitespace-nowrap">पृष्ठ एकूण :</td>
-                                        {/* <td className="p-1 text-center border-white/40 bg-brand-gradient">
-                                            {MN(chunk.reduce((sum: number, r: any) => sum + (r.sections?.reduce((s2: number, s: any) => s2 + (Number(s.areaSqFt) || 0), 0) || 0), 0))}
-                                        </td> */}
+                                        <td colSpan={4} className="p-2 text-right uppercase tracking-widest opacity-80 text-white font-black whitespace-nowrap"></td>
+                                        <td className="">
+
+                                        </td>
+                                        <td className="bg-brand-gradient border-white/20"></td>
                                         <td className="bg-brand-gradient border-white/20"></td>
 
                                         <td colSpan={4} className="bg-brand-gradient "></td>
@@ -383,20 +414,25 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                         <td className="p-0 text-right border-white/40 text-[9px] bg-brand-gradient">
                                             <div className="p-1 font-black bg-brand-gradient">
                                                 {MN(chunk.reduce((sum: number, r: any) => {
-                                                    if (r.propertyTax !== undefined || r.openSpaceTax !== undefined) {
-                                                        return sum + Number(r.propertyTax || 0) + Number(r.openSpaceTax || 0);
-                                                    }
                                                     const active = (r.sections || [])
                                                         .filter((s: any) => s.propertyType && s.propertyType !== 'निवडा');
                                                     const rGhar = active.reduce((sSum: number, s: any) => {
                                                         const area = Number(s?.areaSqMt || 0);
-                                                        const bRate = Number(s?.buildingRate || 0);
-                                                        const lRate = Number(s?.landRate || 0);
-                                                        const valB = Number((area * bRate).toFixed(2));
-                                                        const valL = Number((area * lRate).toFixed(2));
-                                                        const tB = Number(((valB * Number(s?.buildingTaxRate || 0)) / 1000).toFixed(2));
-                                                        const tO = Number(((valL * Number(s?.openSpaceTaxRate || 0)) / 1000).toFixed(2));
-                                                        return sSum + tB + tO;
+                                                        const bRes = calculateTax({
+                                                            areaSqMt: area,
+                                                            rate: Number(s?.buildingRate || 0),
+                                                            taxRate: Number(s?.buildingTaxRate || 0),
+                                                            weightage: Number(s?.weightage || 1),
+                                                            valueMultiplier: Number(s?.depreciationRate || 1)
+                                                        });
+                                                        const lRes = calculateTax({
+                                                            areaSqMt: area,
+                                                            rate: Number(s?.landRate || 0),
+                                                            taxRate: Number(s?.openSpaceTaxRate || 0),
+                                                            weightage: 1.0,
+                                                            valueMultiplier: 1.0
+                                                        });
+                                                        return sSum + bRes.finalTax + lRes.finalTax;
                                                     }, 0);
                                                     return sum + rGhar;
                                                 }, 0).toFixed(2))}
@@ -419,20 +455,25 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                         </td>
                                         <td className="p-2 text-right border border-white/40 text-[12px] bg-brand-gradient text-white ">
                                             {MN(chunk.reduce((sum: number, r: any) => {
-                                                if (r.totalTaxAmount !== undefined && r.totalTaxAmount !== null) {
-                                                    return sum + Number(r.totalTaxAmount);
-                                                }
                                                 const active = (r.sections || [])
                                                     .filter((s: any) => s.propertyType && s.propertyType !== 'निवडा');
                                                 const rGhar = active.reduce((sSum: number, s: any) => {
                                                     const area = Number(s?.areaSqMt || 0);
-                                                    const bRate = Number(s?.buildingRate || 0);
-                                                    const lRate = Number(s?.landRate || 0);
-                                                    const valB = Number((area * bRate).toFixed(2));
-                                                    const valL = Number((area * lRate).toFixed(2));
-                                                    const tB = Number(((valB * Number(s?.buildingTaxRate || 0)) / 1000).toFixed(2));
-                                                    const tO = Number(((valL * Number(s?.openSpaceTaxRate || 0)) / 1000).toFixed(2));
-                                                    return sSum + tB + tO;
+                                                    const bRes = calculateTax({
+                                                        areaSqMt: area,
+                                                        rate: Number(s?.buildingRate || 0),
+                                                        taxRate: Number(s?.buildingTaxRate || 0),
+                                                        weightage: Number(s?.weightage || 1),
+                                                        valueMultiplier: Number(s?.depreciationRate || 1)
+                                                    });
+                                                    const lRes = calculateTax({
+                                                        areaSqMt: area,
+                                                        rate: Number(s?.landRate || 0),
+                                                        taxRate: Number(s?.openSpaceTaxRate || 0),
+                                                        weightage: 1.0,
+                                                        valueMultiplier: 1.0
+                                                    });
+                                                    return sSum + bRes.finalTax + lRes.finalTax;
                                                 }, 0);
                                                 const other = (Number(r.streetLightTax) || 0) +
                                                     (Number(r.healthTax) || 0) +
@@ -519,8 +560,13 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                         const bRate = Number(s.buildingRate) || 0;
                                         const lRate = Number(s.landRate) || 0;
                                         const tr = Number(s.buildingTaxRate || s.openSpaceTaxRate || 0);
-                                        const capVal = areaSqMt * (bRate || lRate);
-                                        const tax = (capVal * tr) / 1000;
+                                        const results = calculateTax({
+                                            areaSqMt: areaSqMt,
+                                            rate: bRate || lRate,
+                                            taxRate: tr,
+                                            weightage: Number(s.weightage || 1),
+                                            valueMultiplier: 1 - Number(s.depreciationRate || 0)
+                                        });
 
                                         return (
                                             <div key={idx} className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-premium group hover:shadow-2xl transition-all duration-500 relative overflow-hidden">
@@ -548,23 +594,43 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                     </div>
 
                                                     <div className="flex flex-col gap-2">
-                                                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">२. भांडवली मूल्य</span>
-                                                        <div className="flex justify-between items-center bg-gray-50 p-4 rounded-2xl border border-gray-100 group-hover:border-[#A80D40]/10 transition-colors">
-                                                            <span className="text-[13px] font-black text-gray-700">{MN(areaSqMt.toFixed(2))} <span className="text-[10px] text-gray-400">क्षेत्र</span> × {MN(bRate || lRate)} <span className="text-[10px] text-gray-400">दर</span></span>
-                                                            <div className="flex items-center gap-2 bg-brand-gradient px-4 py-2 rounded-xl shadow-xl">
-                                                                <span className="text-white font-black text-sm">₹ {MN(capVal.toFixed(2))}</span>
+                                                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">२. भांडवली मूल्य (Valuation)</span>
+                                                        <div className="flex flex-col gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100 group-hover:border-[#A80D40]/10 transition-colors">
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-[13px] font-black text-gray-700">मूलभूत मूल्य: {MN(areaSqMt.toFixed(2))} × {MN(bRate || lRate)}</span>
+                                                                <span className="font-black text-gray-500">₹ {MN((areaSqMt * (bRate || lRate)).toFixed(2))}</span>
+                                                            </div>
+                                                            {Number(s.weightage || 1) !== 1 && (
+                                                                <div className="flex justify-between items-center text-[#A80D40]">
+                                                                    <span className="text-[11px] font-black italic">× भारांक (Weightage):</span>
+                                                                    <span className="font-black">× {MN(s.weightage)}</span>
+                                                                </div>
+                                                            )}
+                                                            <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                                                                <span className="text-[11px] font-black text-gray-400">अंतिम भांडवली मूल्य:</span>
+                                                                <div className="bg-brand-gradient px-4 py-1.5 rounded-xl shadow-xl text-white font-black text-sm">
+                                                                    ₹ {MN(results.valuation.toFixed(2))}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
 
                                                     <div className="flex flex-col gap-2">
                                                         <span className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2" style={{ color: '#A80D40' }}>
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-[#A80D40] animate-pulse"></div> ३. मालमत्ता कर
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-[#A80D40] animate-pulse"></div> ३. वार्षिक मालमत्ता कर
                                                         </span>
-                                                        <div className="flex justify-between items-center bg-[#A80D40]/5 p-5 rounded-2xl border-2 border-[#A80D40]/10 group-hover:border-[#A80D40]/30 transition-all duration-500">
-                                                            <span className="text-[13px] font-black text-gray-800 tracking-tight">({MN(capVal.toFixed(2))} × {MN(tr)}) ÷ १०००</span>
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="font-black text-xl" style={{ color: '#A80D40' }}>₹ {MN(tax.toFixed(2))}</span>
+                                                        <div className="flex flex-col gap-3 bg-[#A80D40]/5 p-5 rounded-2xl border-2 border-[#A80D40]/10 group-hover:border-[#A80D40]/30 transition-all duration-500">
+                                                            {Number(s.depreciationRate || 0) > 0 && (
+                                                                <div className="flex justify-between items-center text-gray-500 text-[11px] font-bold border-b border-[#A80D40]/10 pb-2 mb-1">
+                                                                    <span>घसारा (Depreciation {MN(Number(s.depreciationRate) * 100)}%):</span>
+                                                                    <span>- ₹ {MN((results.valuation - results.depreciatedValue).toFixed(2))}</span>
+                                                                </div>
+                                                            )}
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-[13px] font-black text-gray-800 tracking-tight">({MN(results.depreciatedValue.toFixed(2))} × {MN(tr)}) ÷ १०००</span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="font-black text-xl" style={{ color: '#A80D40' }}>₹ {MN(results.finalTax.toFixed(2))}</span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>

@@ -31,7 +31,9 @@ const getFloorHeaders = (name: string) => [
   `${name} - घसारा दर`,
   `${name} - भारांक`,
   `${name} - इमारत मूल्य (रुपये)`,
-  `${name} - जमीन  मूल्य (रुपये)`
+  `${name} - जमीन  मूल्य (रुपये)`,
+  `${name} - बांधकाम वर्ष`,
+  `${name} - वय`
 ];
 
 export const EXCEL_HEADERS = [

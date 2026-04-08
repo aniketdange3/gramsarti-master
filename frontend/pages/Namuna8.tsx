@@ -12,9 +12,7 @@ import Namuna8PrintFormat from '../components/Namuna8PrintFormat';
 import { hasModulePermission } from '../utils/permissions';
 import CalculationGuide from '../components/CalculationGuide';
 import { CustomDropdown } from '../components/CustomDropdown';
-import * as XLSX from 'xlsx';
-import { EXCEL_HEADERS } from '../constants';
-import { FileUp, FileSpreadsheet, Calculator } from 'lucide-react';
+import { Calculator, ClipboardList } from 'lucide-react';
 
 const MN = (v: number | string | undefined) =>
     String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
@@ -163,98 +161,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
         }
     };
 
-    const exportToExcel = () => {
-        const wsData = records.map((r) => {
-            const row: any[] = [
-                r.srNo, r.wastiName || '', r.wardNo, r.khasraNo, r.layoutName,
-                r.plotNo, r.occupantName, r.ownerName,
-                r.hasConstruction ? 'हो' : 'नाही', r.openSpace
-            ];
-            for (let i = 0; i < 5; i++) {
-                const s = r.sections[i] || { ...DEFAULT_SECTION };
-                row.push(
-                    s.propertyType || '', s.lengthFt || 0, s.widthFt || 0,
-                    s.areaSqFt || 0, s.areaSqMt || 0, s.buildingTaxRate || 0,
-                    s.openSpaceTaxRate || 0, s.landRate || 0, s.buildingRate || 0,
-                    s.depreciationRate || 0, s.weightage || 0, s.buildingValue || 0,
-                    s.openSpaceValue || 0
-                );
-            }
-            row.push(r.propertyTax, r.openSpaceTax, r.streetLightTax, r.healthTax,
-                r.generalWaterTax, r.specialWaterTax, r.receiptNo || '', r.receiptBook || '', r.paymentDate || '',
-                r.totalTaxAmount, r.arrearsAmount || 0, r.paidAmount || 0);
-            return row;
-        });
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet([EXCEL_HEADERS, ...wsData]);
-        XLSX.utils.book_append_sheet(wb, ws, "Namuna 8 Records");
-        XLSX.writeFile(wb, `Namuna_8_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
-    };
 
-    const importFromExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async (evt) => {
-            try {
-                const bstr = evt.target?.result;
-                const wb = XLSX.read(bstr, { type: 'binary' });
-                const ws = wb.Sheets[wb.SheetNames[0]];
-                const data = XLSX.utils.sheet_to_json(ws);
-                const mappedRecords: PropertyRecord[] = data.map((row: any) => {
-                    const sections: any[] = [];
-                    for (let i = 0; i < 5; i++) {
-                        const baseIdx = 10 + (i * 13);
-                        sections.push({
-                            ...DEFAULT_SECTION,
-                            propertyType: row[EXCEL_HEADERS[baseIdx]] || '',
-                            lengthFt: Number(row[EXCEL_HEADERS[baseIdx + 1]]) || 0,
-                            widthFt: Number(row[EXCEL_HEADERS[baseIdx + 2]]) || 0,
-                            areaSqFt: Number(row[EXCEL_HEADERS[baseIdx + 3]]) || 0,
-                            areaSqMt: Number(row[EXCEL_HEADERS[baseIdx + 4]]) || 0,
-                            buildingTaxRate: Number(row[EXCEL_HEADERS[baseIdx + 5]]) || 0,
-                            openSpaceTaxRate: Number(row[EXCEL_HEADERS[baseIdx + 6]]) || 0,
-                            landRate: Number(row[EXCEL_HEADERS[baseIdx + 7]]) || 0,
-                            buildingRate: Number(row[EXCEL_HEADERS[baseIdx + 8]]) || 0,
-                            depreciationRate: Number(row[EXCEL_HEADERS[baseIdx + 9]]) || 0,
-                            weightage: Number(row[EXCEL_HEADERS[baseIdx + 10]]) || 0,
-                            buildingValue: Number(row[EXCEL_HEADERS[baseIdx + 11]]) || 0,
-                            openSpaceValue: Number(row[EXCEL_HEADERS[baseIdx + 12]]) || 0,
-                        });
-                    }
-                    const lastIdx = 10 + (5 * 13);
-                    return {
-                        id: '', srNo: Number(row[EXCEL_HEADERS[0]]) || 0,
-                        wastiName: row[EXCEL_HEADERS[1]] || '', wardNo: row[EXCEL_HEADERS[2]] || '',
-                        khasraNo: row[EXCEL_HEADERS[3]] || '', layoutName: row[EXCEL_HEADERS[4]] || '',
-                        plotNo: row[EXCEL_HEADERS[5]] || '', occupantName: row[EXCEL_HEADERS[6]] || '',
-                        ownerName: row[EXCEL_HEADERS[7]] || '',
-                        hasConstruction: (row[EXCEL_HEADERS[8]] || '').toString().includes('हो'),
-                        openSpace: Number(row[EXCEL_HEADERS[9]]) || 0, sections,
-                        propertyTax: Number(row[EXCEL_HEADERS[lastIdx]]) || 0,
-                        openSpaceTax: Number(row[EXCEL_HEADERS[lastIdx + 1]]) || 0,
-                        streetLightTax: Number(row[EXCEL_HEADERS[lastIdx + 2]]) || 0,
-                        healthTax: Number(row[EXCEL_HEADERS[lastIdx + 3]]) || 0,
-                        generalWaterTax: Number(row[EXCEL_HEADERS[lastIdx + 4]]) || 0,
-                        specialWaterTax: Number(row[EXCEL_HEADERS[lastIdx + 5]]) || 0,
-                        receiptNo: row[EXCEL_HEADERS[lastIdx + 6]] || '',
-                        receiptBook: row[EXCEL_HEADERS[lastIdx + 7]] || '',
-                        paymentDate: row[EXCEL_HEADERS[lastIdx + 8]] || '',
-                        totalTaxAmount: Number(row[EXCEL_HEADERS[lastIdx + 9]]) || 0,
-                        arrearsAmount: Number(row[EXCEL_HEADERS[lastIdx + 10]]) || 0,
-                        paidAmount: Number(row[EXCEL_HEADERS[lastIdx + 11]]) || 0,
-                        createdAt: new Date().toISOString()
-                    };
-                });
-                const response = await fetch(`${API_URL}/import`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(mappedRecords)
-                });
-                if (response.ok) { fetchRecords(); }
-            } catch (error) { console.error(error); }
-        };
-        reader.readAsBinaryString(file);
-    };
 
     const handleEdit = (record: PropertyRecord) => {
         const count = record.sections?.filter(s => s.propertyType && s.propertyType !== 'निवडा').length || 1;
@@ -279,7 +186,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
                 <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center gap-3 no-print shadow-sm sticky top-0 z-50">
                     <button onClick={() => setPrintRecord(null)}
                         className="flex items-center gap-2 text-sm font-bold text-gray-600 px-4 py-2 rounded-xl hover:bg-gray-100 border border-gray-200 transition-all">
-                        <ArrowLeft className="w-4 h-4" /> यादीकडे परत
+                        <ArrowLeft className="w-4 h-4" /> विंडो बंद करा
                     </button>
                     <div className="flex-1" />
                     <button onClick={() => window.print()}
@@ -369,7 +276,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
                 <div className="gp-action-bar">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
-                            <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
+                            <ClipboardList className="w-4 h-4 text-indigo-600" />
                         </div>
                         <div>
                             <h2 className="gp-section-title">नमुना ८</h2>
@@ -380,13 +287,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
                     <div className="flex items-center gap-2">
                         {canAdd && (
                             <>
-                                <label className="gp-btn-secondary cursor-pointer">
-                                    <FileUp className="w-3.5 h-3.5" /> आयात
-                                    <input type="file" className="hidden" accept=".xlsx, .xls" onChange={importFromExcel} />
-                                </label>
-                                <button onClick={exportToExcel} className="gp-btn-secondary">
-                                    <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-600" /> एक्सपोर्ट
-                                </button>
+
                                 <button
                                     onClick={() => { setEditingRecord(null); setVisibleFloorCount(1); setShowForm(true); }}
                                     className="gp-btn-primary"

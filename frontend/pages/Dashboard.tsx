@@ -289,7 +289,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                     s.areaSqFt || 0, s.areaSqMt || 0, s.buildingTaxRate || 0,
                     s.openSpaceTaxRate || 0, s.landRate || 0, s.buildingRate || 0,
                     s.depreciationRate || 0, s.weightage || 0, s.buildingValue || 0,
-                    s.openSpaceValue || 0
+                    s.openSpaceValue || 0, s.constructionYear || '', s.propertyAge || 0
                 );
             }
             row.push(r.propertyTax, r.openSpaceTax, r.streetLightTax, r.healthTax,
@@ -325,7 +325,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                 const mappedRecords: PropertyRecord[] = data.map((row: any) => {
                     const sections: PropertySection[] = [];
                     for (let i = 0; i < 5; i++) {
-                        const baseIdx = 10 + (i * 13);
+                        const baseIdx = 10 + (i * 15);
                         sections.push({
                             ...DEFAULT_SECTION,
                             propertyType: row[EXCEL_HEADERS[baseIdx]] || '',
@@ -341,19 +341,17 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                             weightage: Number(row[EXCEL_HEADERS[baseIdx + 10]]) || 0,
                             buildingValue: Number(row[EXCEL_HEADERS[baseIdx + 11]]) || 0,
                             openSpaceValue: Number(row[EXCEL_HEADERS[baseIdx + 12]]) || 0,
+                            constructionYear: String(row[EXCEL_HEADERS[baseIdx + 13]] || ''),
+                            propertyAge: Number(row[EXCEL_HEADERS[baseIdx + 14]]) || 0,
                         });
                     }
-                    const lastIdx = 10 + (5 * 13);
+                    const lastIdx = 10 + (5 * 15);
                     return {
                         id: '', srNo: Number(row[EXCEL_HEADERS[0]]) || 0,
                         wastiName: String(row[EXCEL_HEADERS[1]] ?? ''), wardNo: String(row[EXCEL_HEADERS[2]] ?? ''),
                         khasraNo: String(row[EXCEL_HEADERS[3]] ?? row["खसरा नंबर"] ?? ''), layoutName: String(row[EXCEL_HEADERS[4]] ?? ''),
-<<<<<<< HEAD
-                        plotNo: String(row[EXCEL_HEADERS[5]] ?? row["प्लॉट क्रमांक"] ?? row["प्लॉट क्र."] ?? ''),
-=======
-                        plotNo: String(row[EXCEL_HEADERS[5]] ?? row["प्लॉट क्रमांक"] ?? row["प्लॉट क्र."] ?? ''), 
->>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
-                        propertyId: String(row[EXCEL_HEADERS[5]] ?? row["मालमत्ता क्र."] ?? row["प्लॉट क्रमांक"] ?? ''),
+                        plotNo: String(row[EXCEL_HEADERS[5]] ?? row["प्लॉट क्रमांक"] ?? row["प्लॉट क्र."] ?? row["प्लॉट नं."] ?? row["प्लॉट नं"] ?? row["Plot No"] ?? row["Plot No."] ?? ''),
+                        propertyId: String(row[EXCEL_HEADERS[5]] ?? row["मालमत्ता क्र."] ?? row["मालमत्ता क्रमांक"] ?? row["मालमत्ता नं."] ?? row["Property No"] ?? row["Property ID"] ?? row["प्लॉट क्रमांक"] ?? ''),
                         occupantName: String(row[EXCEL_HEADERS[6]] ?? ''),
                         ownerName: String(row[EXCEL_HEADERS[7]] ?? ''),
                         hasConstruction: (row[EXCEL_HEADERS[8]] || '').toString().includes('हो'),
@@ -612,17 +610,17 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                 <table className="w-full text-left border-collapse min-w-[900px]">
                                     <thead className="sticky top-0 z-20">
                                         <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 backdrop-blur-sm bg-white/90">
-                                            <th className="px-2 py-2 text-[9px] font-black uppercase tracking-widest w-[40px] text-center">अ.क्र.</th>
-                                            <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest w-[100px]">वस्ती</th>
-                                            <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest w-[70px] text-center">खसरा</th>
-                                            <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest w-[80px]">मालमत्ता/प्लॉट</th>
-                                            <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest min-w-[160px]">मालकाचे नाव</th>
-                                            <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest w-[120px]">प्रकार/क्षेत्रफळ</th>
-                                            <th className="px-3 py-2 text-right text-[9px] font-black uppercase tracking-widest w-[80px]">मागील थकबाकी</th>
-                                            <th className="px-3 py-2 text-right text-[9px] font-black uppercase tracking-widest w-[80px]">चालू मागणी</th>
-                                            <th className="px-3 py-2 text-right text-[9px] font-black uppercase tracking-widest w-[80px]">वसूल रक्कम</th>
-                                            <th className="px-3 py-2 text-right text-[10px] font-black uppercase tracking-widest w-[90px]">एकुण बाकी</th>
-                                            <th className="px-2 py-2 text-[10px] font-black uppercase tracking-widest text-center w-[110px]">कृती</th>
+                                            <th className="px-2 py-2 text-[13px] font-black uppercase tracking-widest w-[40px] text-center">अ.क्र.</th>
+                                            <th className="px-2 py-2 text-[13px] font-black uppercase tracking-widest w-[100px] text-center">वस्ती</th>
+                                            <th className="px-2 py-2 text-[13px] font-black uppercase tracking-widest w-[70px] text-center">खसरा</th>
+                                            <th className="px-2 py-2 text-[13px] font-black uppercase tracking-widest w-[80px] text-center">मालमत्ता/प्लॉट</th>
+                                            <th className="px-3 py-2 text-[13px] font-black uppercase tracking-widest min-w-[160px] text-center">मालकाचे नाव</th>
+                                            <th className="px-2 py-2 text-[13px] font-black uppercase tracking-widest w-[120px] text-center">प्रकार/क्षेत्रफळ</th>
+                                            <th className="px-3 py-2 text-center text-[13px] font-black uppercase tracking-widest w-[80px]">मागील थकबाकी</th>
+                                            <th className="px-3 py-2 text-center text-[13px] font-black uppercase tracking-widest w-[80px]">चालू मागणी</th>
+                                            <th className="px-3 py-2 text-center text-[13px] font-black uppercase tracking-widest w-[80px]">वसूल रक्कम</th>
+                                            <th className="px-3 py-2 text-center text-[13px] font-black uppercase tracking-widest w-[90px]">एकुण बाकी</th>
+                                            <th className="px-2 py-2 text-[13px] font-black uppercase tracking-widest text-center w-[110px]">कृती</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
@@ -657,37 +655,38 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                                         </div>
                                                     </td>
                                                     <td className="px-2 py-1.5 text-center">
-                                                        <div className="text-[10px] text-indigo-700 font-black uppercase tracking-tight bg-indigo-50 px-1.5 py-0.5 rounded inline-block whitespace-nowrap">{MN(record.khasraNo) || '-'}</div>
+                                                        <div className="text-[12px] text-indigo-700 font-black uppercase tracking-tight bg-indigo-50 px-1.5 py-0.5 rounded inline-block whitespace-nowrap">{MN(record.khasraNo) || '-'}</div>
                                                     </td>
-                                                    <td className="px-2 py-1.5">
-                                                        <div className="text-[11px] font-bold text-slate-700 tracking-tight">{MN(record.plotNo) || '-'}</div>
+                                                    <td className="px-2 py-1.5 text-center">
+                                                        <div className="text-[12px] font-bold text-slate-700 tracking-tight">{MN(record.plotNo) || '-'}</div>
+
                                                     </td>
-                                                    <td className="px-2 py-1.5">
+                                                    <td className="px-2 py-1.5 text-center">
                                                         <div className="font-extrabold text-slate-900 text-[12px] tracking-tight leading-tight uppercase">{record.ownerName}</div>
-                                                        <div className="text-[9px] text-slate-500 font-semibold mt-0.5 opacity-60">({record.occupantName || 'स्वतः'})</div>
+                                                        <div className="text-[10px] text-slate-500 font-semibold mt-0.5 opacity-60">({record.occupantName || 'स्वतः'})</div>
+                                                        <div className="text-[10px] text-indigo-600 font-black mt-1 leading-none">{record.contactNo ? MN(record.contactNo) : '-'}</div>
                                                     </td>
-                                                    <td className="px-2 py-1.5">
+                                                    <td className="px-2 py-1.5 text-center">
                                                         {record.sections?.filter(s => s.propertyType && s.propertyType !== 'निवडा').map((s, si) => (
                                                             <div key={si} className="mb-0.5 last:mb-0 pb-0.5 border-b border-slate-100 last:border-0 leading-none">
-                                                                <span className="text-[9px] font-black text-slate-700 uppercase">{s.propertyType}</span>
-<<<<<<< HEAD
-                                                                <span className="text-[9px] font-bold text-slate-400 ml-1.5">{MN(s.areaSqFt)} चौ.फु </span>
-=======
-                                                                <span className="text-[9px] font-bold text-slate-400 ml-1.5">{MN(s.areaSqFt)} sq.ft</span>
->>>>>>> 781cd8420829a6dbe29f6131c321462c38483fe3
+                                                                <span className="text-[11px] font-black text-slate-700 uppercase">{s.propertyType}</span> <br />
+                                                                <span className="text-[11px] font-bold text-slate-400 ml-1.5">{MN(s.areaSqFt)} चौ.फु</span>
+                                                                {s.propertyAge ? (
+                                                                    <span className="text-[9px] font-bold text-amber-600 ml-1.5">({MN(s.propertyAge)} वर्ष)</span>
+                                                                ) : null}
                                                             </div>
                                                         )) || (
-                                                                <div className="text-[9px] text-slate-400 italic">माहिती नाही</div>
+                                                                <div className="text-[11px] text-slate-400 italic">माहिती नाही</div>
                                                             )}
                                                     </td>
-                                                    <td className="px-3 py-1.5 text-right">
-                                                        <div className="font-bold text-rose-500 text-[11px] leading-none">₹{MN(Number(record.arrearsAmount || 0))}</div>
+                                                    <td className="px-3 py-1.5 text-center">
+                                                        <div className="font-bold text-rose-500 text-[12px] leading-none">₹{MN(Number(record.arrearsAmount || 0))}</div>
                                                     </td>
-                                                    <td className="px-3 py-1.5 text-right">
-                                                        <div className="font-bold text-indigo-700 text-[11px] leading-none">₹{MN(Number(record.totalTaxAmount || 0))}</div>
+                                                    <td className="px-3 py-1.5 text-center">
+                                                        <div className="font-bold text-indigo-700 text-[12px] leading-none">₹{MN(Number(record.totalTaxAmount || 0))}</div>
                                                     </td>
-                                                    <td className="px-3 py-1.5 text-right">
-                                                        <div className="font-bold text-emerald-600 text-[11px] leading-none">₹{MN(Number(record.paidAmount || 0))}</div>
+                                                    <td className="px-3 py-1.5 text-center">
+                                                        <div className="font-bold text-emerald-600 text-[12px] leading-none">₹{MN(Number(record.paidAmount || 0))}</div>
                                                     </td>
                                                     <td className="px-3 py-1.5 text-right bg-slate-50/50">
                                                         <div className="font-black text-slate-900 text-[12px] leading-none">

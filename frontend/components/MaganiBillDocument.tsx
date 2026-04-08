@@ -6,6 +6,7 @@ import { numberToMarathiWords } from '../utils/numberToMarathiWords';
 
 interface Props {
     record: PropertyRecord;
+    onClose?: () => void;
 }
 
 const MN = (v: number | string | undefined) => {
@@ -183,7 +184,7 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
     );
 };
 
-export default function MaganiBillDocument({ record }: Props) {
+export default function MaganiBillDocument({ record, onClose }: Props) {
     const arrears = Number(record.arrearsAmount) || 0;
     const current = Number(record.totalTaxAmount) || 0;
     const paid = Number(record.paidAmount) || 0;
@@ -204,7 +205,7 @@ export default function MaganiBillDocument({ record }: Props) {
                         या मालमत्तेसाठी <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">(मालमत्ता क्र. {MN(record.propertyId || record.plotNo || record.srNo)})</span> कोणतीही कर मागणी बाकी नाही. संपूर्ण कर भरणा झाला आहे.
                     </p>
                     <button 
-                        onClick={() => window.close()} 
+                        onClick={() => onClose ? onClose() : window.history.back()} 
                         className="w-full py-4 bg-gray-900 text-white font-black rounded-2xl hover:bg-gray-800 transition-colors shadow-lg shadow-gray-900/20 active:scale-95"
                     >
                         विंडो बंद करा

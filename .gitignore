@@ -1,3 +1,25 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+server/node_modules/
+package-lock.json.tmp
+
+# Build and Production
+dist/
+frontend/dist/
+build/
+*.pyc
+
+# Environment Files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+frontend/.env
+server/.env
+*.env.example
+
 # Logs
 logs
 *.log
@@ -5,39 +27,37 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
+server/*.log
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
+# IDE and Editor files
+.vscode/
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.bak
 
-# Environment files
-.env
-.env.local
-server/.env
-
-# Databases
-*.sqlite
-server/*.sqlite
-
-# Server logs
-server/*.log
-
-# Project specific archives and temps
-frontend.zip
-tmp_tax_master.txt
+# Uploads and Assets
+uploads/
+server/uploads/
 *.zip
 *.rar
 *.7z
+frontend.zip
+
+# Database
+*.sqlite
+server/*.sqlite
+docker-compose.override.yml
+
+# Temporary Files
+tmp/
+tmp_tax_master.txt
+.cache/
+.eslintcache
+
+

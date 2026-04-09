@@ -4,7 +4,7 @@ import { PropertyRecord } from '../types';
 import { PANCHAYAT_CONFIG } from '../utils/panchayatConfig';
 import { calculateBill } from './billCalculations';
 import { registerFonts } from './fonts';
-import logo from '../src/images/logo.png?base64';
+import logo from '../assets/images/logo.png?base64';
 
 // ─── Constants (Legal Landscape) ─────────────────────────────────────────────
 const PW = 355.6; // Legal width (landscape) mm

@@ -236,7 +236,7 @@ export default function ExcelActions({ records, onImportSuccess, type }: ExcelAc
                         {/* Table Content */}
                         <div className="flex-1 overflow-auto p-6">
                             <table className="w-full border-collapse text-[10px]">
-                                <thead className="sticky top-0 z-10">
+                                <thead className="sticky top-0 z-20">
                                     <tr className="bg-slate-100">
                                         <th className="px-3 py-2 border border-slate-200 text-center font-black text-slate-500">अ.क्र.</th>
                                         <th className="px-3 py-2 border border-slate-200 text-left font-black text-slate-500">वस्ती</th>

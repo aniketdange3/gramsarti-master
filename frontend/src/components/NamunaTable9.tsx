@@ -65,20 +65,30 @@ export default function NamunaTable9({
 
     const toggleSelection = (id: string) => {
         const next = new Set(selectedIds);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
+        if (next.has(id)) {
+            next.delete(id);
+        } else {
+            if (next.size >= 3) {
+                alert('एकावेळी जास्तीत जास्त ३ नोंदी निवडता येतील. (Maximum 3 records can be selected at a time)');
+                return;
+            }
+            next.add(id);
+        }
         setSelectedIds(next);
     };
 
     const toggleAllPage = () => {
-        const allOnPageSelected = pageRecords.length > 0 && pageRecords.every(r => r.id && selectedIds.has(r.id));
         const next = new Set(selectedIds);
-        pageRecords.forEach(r => {
-            if (r.id) {
-                if (allOnPageSelected) next.delete(r.id);
-                else next.add(r.id);
+        if (next.size > 0) {
+            next.clear();
+        } else {
+            for (const r of pageRecords) {
+                if (r.id && !next.has(r.id)) {
+                    if (next.size >= 3) break;
+                    next.add(r.id);
+                }
             }
-        });
+        }
         setSelectedIds(next);
     };
 
@@ -112,7 +122,7 @@ export default function NamunaTable9({
             {/* ── Official Header (Visible only in Print) ── */}
             <div className="hidden print:flex items-start justify-between px-6 py-4 bg-emerald-50 border-b-2 border-black text-black mb-4">
                 <div className="flex items-center gap-4">
-                    <img src="/images/logo.png" alt="Logo" className="w-16 h-16 object-contain" />
+                    <img src="/images/logo.jpeg" alt="Logo" className="w-16 h-16 object-contain" />
                     <div className="flex flex-col text-xs uppercase font-black">
                         <p>ग्रामपंचायत: {PANCHAYAT_CONFIG.gpName}</p>
                         <p>तालुका: {PANCHAYAT_CONFIG.taluka}</p>
@@ -138,56 +148,54 @@ export default function NamunaTable9({
                     {selectedIds.size > 0 && (
                         <button
                             onClick={handlePrintSelected}
-                            className="flex items-center gap-2 text-[15px] font-black px-4 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-md animate-in slide-in-from-left-2 duration-300"
+                            className="flex items-center gap-2 text-[10px] font-black px-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-md animate-in slide-in-from-left-2 duration-300"
                         >
                             <Printer className="w-3" /> निवडलेले प्रिंट करा ({MN(selectedIds.size)})
                         </button>
                     )}
                 </div>
-                <button
-                    onClick={() => setShowAll(!showAll)}
-                    className={`text-[15px] font-black px-3 py-1 rounded-lg border transition-all ${showAll
-                        ? 'bg-slate-800 text-white border-slate-800 shadow-sm'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                        }`}
-                >
-                    {showAll ? 'पृष्ठानुसार पहा' : 'सर्व नोंदी पहा'}
-                </button>
+
             </div>
 
             {/* ── Table Container with Watermark ── */}
             <div className="w-full flex-1 overflow-auto relative print:mt-4 print:overflow-visible">
                 {/* Print Watermark */}
                 <div className="hidden print:block absolute inset-0 pointer-events-none z-0 opacity-[0.08]"
-                    style={{ backgroundImage: 'url("/images/logo.png")', backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: '500px' }}>
+                    style={{ backgroundImage: 'url("/images/logo.jpeg")', backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: '500px' }}>
                 </div>
 
                 <table className="w-full border-collapse text-[15px] relative z-10">
-                    <thead>
-                        <tr className="gp-table-header-row">
-                            <th className="gp-table-header-cell text-center w-[40px]">
+                    <thead className="sticky top-0 z-20 bg-white">
+                        {/* Simplified UI Header (Screen Only) - CLEAN & MINIMALIST */}
+                        <tr className="bg-slate-50/80 border-b border-slate-200 no-print">
+                            <th className="px-2 py-2 text-center w-[30px]">
                                 <input
                                     type="checkbox"
                                     className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                    checked={pageRecords.length > 0 && pageRecords.every(r => r.id && selectedIds.has(r.id))}
+                                    checked={selectedIds.size > 0}
+                                    ref={(input) => {
+                                        if (input) {
+                                            input.indeterminate = selectedIds.size > 0 && selectedIds.size < 3 && selectedIds.size < pageRecords.length;
+                                        }
+                                    }}
                                     onChange={toggleAllPage}
                                 />
                             </th>
-                            <th className="gp-table-header-cell text-center w-[50px]">अ.क्र.</th>
-                            <th className="gp-table-header-cell text-center w-[100px]">वस्ती</th>
-                            <th className="gp-table-header-cell text-center w-[80px]">खसरा</th>
-                            <th className="gp-table-header-cell text-center w-[90px]">मालमत्ता / प्लॉट</th>
-                            <th className="gp-table-header-cell text-center min-w-[160px]">मालकाचे नाव</th>
-                            <th className="gp-table-header-cell text-center min-w-[130px]">प्रकार / क्षेत्रफळ</th>
-                            <th className="gp-table-header-cell text-center min-w-[150px]">कराचा तपशील</th>
-                            <th className="gp-table-header-cell text-center min-w-[120px]">मागील थकबाकी</th>
-                            <th className="gp-table-header-cell text-center min-w-[90px]">चालू मागणी</th>
-                            <th className="gp-table-header-cell text-center min-w-[100px]">एकूण मागणी</th>
-                            <th className="gp-table-header-cell text-center min-w-[100px]">पावती तपशील</th>
-                            <th className="gp-table-header-cell text-center min-w-[90px]">वसुली</th>
-                            <th className="gp-table-header-cell text-center min-w-[90px]">एकूण बाकी</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center w-[40px]">अ.क्र.</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center w-[90px]">वस्ती</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center w-[70px]">खसरा</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center w-[80px]">प्लॉट</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-left min-w-[180px]">मालकाचे नाव</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[120px]">प्रकार / क्षेत्रफळ</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-start min-w-[130px]">कराचा तपशील</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[110px]">मागील थकबाकी</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[80px]">चालू मागणी</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[90px]">एकूण मागणी</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[90px]">पावती तपशील</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[80px]">वसुली</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[80px]">एकूण बाकी</th>
                             {showActions && (
-                                <th className="gp-table-header-cell text-center sticky right-0 z-20 bg-white border-l border-slate-200 shadow-[-4px_0_15px_-4px_rgba(0,0,0,0.05)] w-[140px]">
+                                <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center sticky right-0 z-20 bg-slate-50/80 backdrop-blur-md border-l border-slate-200 w-[120px]">
                                     कृती
                                 </th>
                             )}
@@ -208,8 +216,8 @@ export default function NamunaTable9({
                             const cWScreen = Math.min(remPScr, current);
 
                             return (
-                                <tr key={r.id ?? rIdx} className={`hover:bg-indigo-50/30 transition-colors group ${rIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'} ${r.id && selectedIds.has(r.id) ? 'bg-indigo-100/50' : ''}`}>
-                                    <td className="px-3 py-2 text-center">
+                                <tr key={r.id ?? rIdx} className={`hover:bg-slate-50/80 transition-colors group border-b border-slate-100 last:border-0 ${rIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'} ${r.id && selectedIds.has(r.id) ? 'bg-indigo-50/50' : ''}`}>
+                                    <td className="px-2 py-1.5 text-center">
                                         <input
                                             type="checkbox"
                                             className="w-3 h-3 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
@@ -217,7 +225,7 @@ export default function NamunaTable9({
                                             onChange={() => r.id && toggleSelection(r.id)}
                                         />
                                     </td>
-                                    <td className="px-3 py-2 text-center font-black text-slate-400 text-xs">{MN(offset + rIdx + 1)}</td>
+                                    <td className="px-2 py-1.5 text-center font-black text-slate-400 text-xs">{MN(offset + rIdx + 1)}</td>
 
                                     <td className="px-3 py-2 text-center">
                                         <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-600 border border-slate-200 uppercase leading-none">

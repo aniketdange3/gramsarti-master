@@ -188,27 +188,25 @@ export default function Ferfar({ records, fetchRecords }: Props) {
         <div className="flex flex-col h-full bg-bg overflow-hidden relative transition-colors duration-300">
 
             {/* Header Area */}
-            <div className="bg-surface border-b border-border px-6 py-3 flex flex-col gap-3 shrink-0">
-                <div className="flex items-center justify-between">
+            <header className="no-print shrink-0 bg-white border-b border-slate-100 px-6 pt-4 pb-0">
+                <div className="flex items-center justify-between max-w-[1600px] mx-auto mb-4">
                     <div className="flex items-center gap-4">
-                        <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 p-2 rounded-xl text-white shadow-md shadow-indigo-100">
-                            <BookOpen className="w-5 h-5" />
+                        <div className="w-10 h-10 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100">
+                            <BookOpen className="w-5 h-5 text-indigo-600" />
                         </div>
                         <div>
-                            <h2 className="text-base font-black text-slate-800 uppercase tracking-tight">फेरफार नोंदवही (Mutation Register)</h2>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] leading-none mt-1 flex items-center gap-2">
-                                <Activity className="w-3 h-3 text-emerald-500" /> Administrative Hub
-                            </p>
+                            <h2 className="text-lg font-black text-slate-900 tracking-tight leading-none uppercase">फेरफार नोंदवही</h2>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1.5">Mutation Register & Administrative Hub</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-10 overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-10 overflow-x-auto no-scrollbar max-w-[1600px] mx-auto">
                     {(['NEW', 'MONITOR', 'HISTORY'] as const).map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`pb-3 px-1 text-xs font-black uppercase tracking-widest transition-all relative flex items-center gap-2.5
+                            className={`pb-3 px-1 text-[11px] font-black uppercase tracking-widest transition-all relative flex items-center gap-2.5
                                 ${activeTab === tab ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-700'}`}
                         >
                             {tab === 'NEW' && <UserPlus className="w-4 h-4" />}
@@ -219,7 +217,7 @@ export default function Ferfar({ records, fetchRecords }: Props) {
                         </button>
                     ))}
                 </div>
-            </div>
+            </header>
 
             <div className="flex-1 overflow-hidden">
                 {activeTab === 'NEW' && (
@@ -463,8 +461,8 @@ export default function Ferfar({ records, fetchRecords }: Props) {
 
                                 <div className="flex-1 overflow-auto no-scrollbar">
                                     <table className="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr className="bg-slate-50/80 border-b border-slate-100 sticky top-0 z-10">
+                                        <thead className="sticky top-0 z-20">
+                                            <tr className="bg-slate-50/80 border-b border-slate-100 shadow-sm">
                                                 <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">मालमत्ता आणि मूळ मालक</th>
                                                 <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">नवीन वारस / मालकाचे नाव</th>
                                                 <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">व्यवहार प्रकार</th>

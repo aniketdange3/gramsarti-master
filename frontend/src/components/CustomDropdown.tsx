@@ -38,12 +38,12 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
     const filteredOptions = useMemo(() => {
         if (!searchTerm) return options;
         const variations = getSearchVariations(searchTerm).map(v => v.toLowerCase());
-        
+
         return options.filter(opt => {
             const labelLower = opt.label.toLowerCase();
             const valueLower = opt.value.toLowerCase();
-            return variations.some(variant => 
-                labelLower.includes(variant) || 
+            return variations.some(variant =>
+                labelLower.includes(variant) ||
                 valueLower.includes(variant)
             );
         });
@@ -79,8 +79,8 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
                 </span>
                 <div className="flex items-center gap-1">
                     {showX && value && onClear && (
-                        <X 
-                            className="w-3 h-3 text-gray-400 hover:text-rose-500 transition-colors" 
+                        <X
+                            className="w-3 h-3 text-gray-400 hover:text-rose-500 transition-colors"
                             onClick={(e) => { e.stopPropagation(); onClear(); }}
                         />
                     )}

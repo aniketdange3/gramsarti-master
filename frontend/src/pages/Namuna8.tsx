@@ -203,176 +203,105 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
         );
     }
 
-    // if (viewId && selectedRecord) {
-    //     return (
-    //         <div className="flex flex-col h-full bg-gray-100 overflow-hidden">
-    //             <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center gap-3 no-print shadow-sm shrink-0">
-    //                 <button onClick={() => { setViewId(null); onClearSelected(); }}
-    //                     className="flex items-center gap-2 text-sm font-bold text-gray-600 px-4 py-2 rounded-xl hover:bg-gray-100 border border-gray-200 transition-all">
-    //                     <ArrowLeft className="w-4 h-4" /> यादीकडे परत
-    //                 </button>
-    //                 <div className="h-6 w-px bg-gray-200 mx-2" />
-    //                 <h2 className="text-sm font-black text-gray-800 hidden md:block">
-    //                     {selectedRecord.ownerName} • अ.क्र. {selectedRecord.srNo}
-    //                 </h2>
-    //                 <div className="flex-1" />
-    //                 {canEdit && (
-    //                     <button onClick={() => handleEdit(selectedRecord)}
-    //                         className="flex items-center gap-2 text-sm font-bold text-amber-600 border border-amber-200 bg-amber-50 px-4 py-2 rounded-xl hover:bg-amber-100 transition-all">
-    //                         <Edit2 className="w-4 h-4" /> सुधारा
-    //                     </button>
-    //                 )}
-    //                 <button onClick={() => window.print()}
-    //                     className="flex items-center gap-2 text-sm font-bold text-white bg-primary px-5 py-2 rounded-xl hover:bg-primary-dark transition-all">
-    //                     <Printer className="w-4 h-4" /> पीडीएफ प्रिंट काढा
-    //                 </button>
-    //             </div>
-
-    //             <style>{`
-    //                 @media print {
-    //                     .no-print { display: none !important; }
-    //                     body, html { 
-    //                         background: white !important; 
-    //                         margin: 0 !important; 
-    //                         padding: 0 !important;
-    //                         -webkit-print-color-adjust: exact !important;
-    //                         print-color-adjust: exact !important;
-    //                     }
-    //                     .print-only { display: block !important; }
-    //                     table { border-collapse: collapse !important; width: 100% !important; }
-    //                     th, td { border: 1px solid black !important; color: black !important; }
-    //                     th { background: #f0f0f0 !important; font-weight: bold !important; }
-    //                 }
-    //                 @page { 
-    //                     size: A4 landscape; 
-    //                     margin: 8mm 5mm 8mm 5mm; 
-    //                 }
-    //             `}</style>
-
-    //             <div className="overflow-auto flex-1 p-4 bg-gray-100 no-print-bg">
-    //                 <div className="w-full flex justify-center">
-    //                     <Namuna8PrintFormat records={[selectedRecord]} />
-    //                 </div>
-    //             </div>
-    //         </div>
-    //     );
-    // }
-
-    // if (viewId && !selectedRecord) {
-    //     return (
-    //         <div className="p-10 text-center text-gray-400">
-    //             <p>नोंद सापडली नाही.</p>
-    //             <button onClick={() => setViewId(null)} className="mt-3 text-primary font-bold hover:underline flex items-center gap-1 mx-auto transition-all">
-    //                 <ArrowLeft className="w-4 h-4" /> यादीकडे परत
-    //             </button>
-    //         </div>
-    //     );
-    // }
 
     return (
         <div className="flex flex-col h-full bg-slate-50/50 overflow-hidden">
-            {/* Top Action Bar */}
-            <header className="no-print shrink-0">
-                <div className="gp-action-bar">
+            <header className="no-print shrink-0 bg-white border-b border-slate-100 px-4 py-2">
+                <div className="flex items-center justify-between max-w-[1600px] mx-auto">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
                             <ClipboardList className="w-4 h-4 text-indigo-600" />
                         </div>
                         <div>
-                            <h2 className="gp-section-title">नमुना ८</h2>
-                            <p className="gp-section-subtitle">मालमत्ता आकारणी नोंदवही</p>
+                            <h2 className="text-xs font-black text-slate-900 tracking-tight leading-none uppercase">नमुना ८</h2>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">मालमत्ता आकारणी नोंदवही</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-2">
                         {canAdd && (
-                            <>
-
-                                <button
-                                    onClick={() => { setEditingRecord(null); setVisibleFloorCount(1); setShowForm(true); }}
-                                    className="gp-btn-primary"
-                                >
-                                    <Plus className="w-3.5 h-3.5" /> नवीन नोंद
-                                </button>
-                            </>
+                            <button
+                                onClick={() => { setEditingRecord(null); setVisibleFloorCount(1); setShowForm(true); }}
+                                className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-600 text-white rounded-lg font-black uppercase tracking-wider hover:bg-indigo-700 shadow-lg shadow-indigo-600/10 transition-all text-[9px] active:scale-95"
+                            >
+                                <Plus size={12} /> नवीन नोंद
+                            </button>
                         )}
+                        <button onClick={fetchRecords} className="p-2 hover:bg-slate-50 rounded-lg border border-slate-200 transition-all active:scale-95">
+                            <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                        </button>
                     </div>
                 </div>
             </header>
 
             {/* Main Content Area */}
-            <div className="flex-1 overflow-hidden flex flex-col px-3 py-3 gap-3">
+            <div className="flex-1 overflow-hidden flex flex-col px-2 py-2 gap-2">
                 {/* Unified Search & Filter Bar */}
-                <div className="flex items-center gap-2 p-2 bg-white border border-slate-100 rounded-xl no-print flex-wrap lg:flex-nowrap shrink-0">
+                <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-xl no-print flex-wrap lg:flex-nowrap shrink-0 shadow-sm">
                     {/* Search Component */}
-                    <div className="relative flex-1 min-w-[220px] max-w-sm">
+                    <div className="relative flex-1 min-w-[200px]">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10" />
                         <TransliterationInput
-                            placeholder="नाव, प्लॉट शोधा..."
-                            className="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-100 rounded-lg text-[11px] font-bold focus:ring-4 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400"
+                            placeholder="शोधा..."
+                            className="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400"
                             value={searchTerm}
                             onChangeText={setSearchTerm}
                         />
                         {searchTerm && (
-                            <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
-                                <X className="w-3.5 h-3.5 text-slate-400 hover:text-rose-500" />
+                            <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-1 hover:bg-rose-50 rounded-lg transition-colors">
+                                <X className="w-4 h-4 text-slate-400 hover:text-rose-500" />
                             </button>
                         )}
                     </div>
 
                     {/* Filters Group */}
-                    <div className="flex items-center gap-1.5 flex-wrap flex-1">
+                    <div className="flex items-center gap-2 flex-wrap flex-1 justify-end">
                         <CustomDropdown
                             value={filterWasti}
                             onChange={handleWastiChange}
-                            placeholder="वस्ती - सर्व"
+                            placeholder="वस्ती निवडा"
                             options={uniqueWastis.map(w => ({ value: w, label: w }))}
                         />
                         <CustomDropdown
                             value={filterLayout}
                             onChange={handleLayoutChange}
-                            placeholder="लेआउट - सर्व"
+                            placeholder="लेआउट निवडा"
                             options={uniqueLayouts.map(l => ({ value: l, label: l }))}
                         />
                         <CustomDropdown
                             value={filterKhasra}
                             onChange={handleKhasraChange}
-                            placeholder="खसरा - सर्व"
+                            placeholder="खसरा निवडा"
                             options={uniqueKhasras.map(k => ({ value: k, label: k }))}
                         />
                         <CustomDropdown
                             value={filterPlotNo}
                             onChange={setFilterPlotNo}
-                            placeholder="प्लॉट - सर्व"
+                            placeholder="प्लॉट निवडा"
                             options={uniquePlots.map(p => ({ value: p, label: p }))}
                         />
-                        <CustomDropdown
-                            value={filterPropertyType}
-                            onChange={setFilterPropertyType}
-                            placeholder="प्रकार - सर्व"
-                            options={dynamicPropertyTypes.map(p => ({ value: p, label: p }))}
-                        />
-                        {(filterWasti || filterLayout || filterKhasra || filterPlotNo || filterPropertyType) && (
+
+                        {(filterWasti || filterLayout || filterKhasra || filterPlotNo || filterPropertyType || searchTerm) && (
                             <button
-                                onClick={() => { setFilterWasti(''); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); setFilterPropertyType(''); }}
-                                className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 rounded-xl hover:bg-rose-100 transition-all flex-shrink-0"
+                                onClick={() => { setFilterWasti(''); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); setFilterPropertyType(''); setSearchTerm(''); }}
+                                className="flex items-center gap-1.5 px-3 py-2 text-[9px] font-black text-rose-600 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100 transition-all flex-shrink-0"
                             >
                                 <RotateCcw className="w-3 h-3" /> रीसेट
                             </button>
                         )}
-                    </div>
 
-                    {/* Stats Counter */}
-                    <div className="hidden lg:flex items-center gap-1.5 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 shrink-0">
-                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tight whitespace-nowrap">
-                            नोंदी: <span className="text-indigo-600 font-black">{MN(filteredRecords.length)}</span>
-                        </span>
+                        {/* Stats Counter */}
+                        <div className="hidden lg:flex items-center gap-1.5 bg-indigo-50/50 px-3 py-2 rounded-lg border border-indigo-100 shrink-0">
+                            <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+                            <span className="text-[9px] text-slate-600 font-black uppercase tracking-tight whitespace-nowrap">
+                                नोंदी: <span className="text-indigo-600 font-black ml-1">{MN(filteredRecords.length)}</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
 
                 {/* Table Area */}
-                <div className="flex-1 overflow-auto bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div className="flex-1 overflow-auto bg-white rounded-xl shadow-sm border border-gray-100">
                     <NamunaTable8
                         records={filteredRecords}
                         filterWasti={filterWasti}

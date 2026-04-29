@@ -109,7 +109,7 @@ export default function MaganiBill({ onAuthError }: MaganiBillProps) {
     // ─── Render High Fidelity Bill View ───
     if (viewingBill) {
         return (
-            <div className="flex flex-col h-full bg-slate-100 overflow-hidden">
+            <div className="flex flex-col h-full bg-white overflow-hidden">
                 <style>{`
                     @media print {
                         .no-print { display: none !important; }
@@ -125,17 +125,17 @@ export default function MaganiBill({ onAuthError }: MaganiBillProps) {
                     <div className="flex-1" />
                     <button onClick={async () => await generateMaganiBillPDF(viewingBill as PropertyRecord)}
                         className="flex items-center gap-2 text-sm font-black text-white bg-slate-800 px-6 py-2.5 rounded-xl hover:bg-black transition-all shadow-md">
-                        <FileDown className="w-4 h-4" /> PDF डाउनलोड
+                        <FileDown className="w-3 h-3" /> PDF डाउनलोड
                     </button>
                     <button onClick={() => window.print()}
                         className="flex items-center gap-2 text-sm font-black text-white bg-primary px-6 py-2.5 rounded-xl hover:bg-primary-dark transition-all shadow-lg shadow-primary/20">
-                        <Printer className="w-4 h-4" /> प्रिंट
+                        <Printer className="w-3 h-3" /> प्रिंट
                     </button>
                 </div>
 
                 {/* Bill Content */}
                 <div className="flex-1 overflow-auto p-8 pt-4">
-                    <div className="bg-white shadow-2xl mx-auto rounded-none print:shadow-none print:m-0 border border-gray-100 print:border-0 overflow-visible" style={{ width: '210mm' }}>
+                    <div className="bg-white  rounded-none print:shadow-none print:m-0 border border-gray-100 print:border-0 overflow-visible" style={{ width: '210mm' }}>
                         <MaganiBillDocument record={viewingBill as PropertyRecord} />
                     </div>
                 </div>
@@ -197,7 +197,7 @@ export default function MaganiBill({ onAuthError }: MaganiBillProps) {
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
-                                <thead className="bg-slate-50 text-xs font-bold text-gray-500 uppercase">
+                                <thead className="sticky top-0 z-20 bg-slate-50 text-xs font-bold text-gray-500 uppercase">
                                     <tr>
                                         {canAdd && <th className="py-3 px-4"><input type="checkbox" checked={selected.size === defaulters.length && defaulters.length > 0} onChange={selectAll} /></th>}
                                         <th className="py-3 px-4 text-left">अ.क्र.</th>
@@ -237,7 +237,7 @@ export default function MaganiBill({ onAuthError }: MaganiBillProps) {
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
-                                <thead className="bg-slate-50 text-xs font-bold text-gray-500 uppercase">
+                                <thead className="sticky top-0 z-20 bg-slate-50 text-xs font-bold text-gray-500 uppercase">
                                     <tr>
                                         <th className="py-3 px-4 text-left">अ.क्र.</th>
                                         <th className="py-3 px-4 text-left">मालक</th>

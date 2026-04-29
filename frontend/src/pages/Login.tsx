@@ -111,7 +111,7 @@ export default function Login({ onLogin }: LoginProps) {
                     <div className="relative z-10 flex flex-col h-full justify-between">
                         <div className="flex items-center gap-4">
                             <div className="bg-white/10 backdrop-blur-xl p-3 rounded-2xl border border-white/20">
-                                <img src="/images/logo.png" alt="Logo" className="w-12 h-12 object-contain" />
+                                <img src="/images/logo.jpeg" alt="Logo" className="w-12 h-12 object-contain" />
                             </div>
                             <div>
                                 <h1 className="text-4xl font-black tracking-tight leading-none">GramSarthi</h1>

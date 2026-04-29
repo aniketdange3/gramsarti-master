@@ -211,14 +211,14 @@ export default function TaxMaster() {
     return (
         <div className="flex flex-col h-full bg-slate-50/30 overflow-hidden">
             {/* Header Action Bar */}
-            <header className="no-print shrink-0">
-                <div className="flex items-center justify-between px-6 py-3 border-b border-slate-100 bg-white shadow-sm">
+            <header className="no-print shrink-0 bg-white border-b border-slate-100 px-6 py-4">
+                <div className="flex items-center justify-between max-w-[1600px] mx-auto">
                     <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100 shadow-sm">
+                        <div className="w-10 h-10 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100">
                             <Settings className="w-5 h-5 text-indigo-600" />
                         </div>
                         <div>
-                            <h2 className="text-base font-black text-slate-900 tracking-tight leading-none uppercase">प्रणाली संचलन केंद्र</h2>
+                            <h2 className="text-lg font-black text-slate-900 tracking-tight leading-none uppercase">प्रणाली संचलन</h2>
                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1.5">System Administration Master</p>
                         </div>
                     </div>
@@ -311,7 +311,7 @@ export default function TaxMaster() {
                                                 </div>
                                                 <div className="overflow-x-auto">
                                                     <table className="w-full text-sm text-left">
-                                                        <thead className="bg-slate-100/30 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">
+                                                        <thead className="sticky top-0 z-20 bg-slate-100/90 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-200 shadow-sm">
                                                             <tr>
                                                                 <th className="px-6 py-4">क्षेत्र / वर्णन</th>
                                                                 <th className="px-6 py-4 text-center">मूल्यांकन (₹)</th>
@@ -375,7 +375,7 @@ export default function TaxMaster() {
                                         </div>
                                         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
                                             <table className="w-full text-sm text-left">
-                                                <thead className="bg-slate-100/30 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">
+                                                <thead className="sticky top-0 z-20 bg-slate-100/90 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-200 shadow-sm">
                                                     <tr>
                                                         <th className="px-6 py-4">प्रकार</th>
                                                         <th className="px-6 py-4">वस्ती / वॉर्ड</th>
@@ -441,7 +441,7 @@ export default function TaxMaster() {
                                         )}
                                         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden max-w-2xl mx-auto">
                                             <table className="w-full text-sm text-left">
-                                                <thead className="bg-slate-100/30 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">
+                                                <thead className="sticky top-0 z-20 bg-slate-100/90 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-200 shadow-sm">
                                                     <tr>
                                                         <th className="px-8 py-4">इमारतीचे वय (वर्षे)</th>
                                                         <th className="px-8 py-4 text-center">उर्वरित मूल्य टक्केवारी (%)</th>
@@ -504,7 +504,7 @@ export default function TaxMaster() {
                                         )}
                                         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden max-w-3xl mx-auto">
                                             <table className="w-full text-sm text-left">
-                                                <thead className="bg-slate-100/30 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">
+                                                <thead className="sticky top-0 z-20 bg-slate-100/90 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-200 shadow-sm">
                                                     <tr>
                                                         <th className="px-8 py-4">वापर प्रकार (मराठी / English)</th>
                                                         <th className="px-8 py-4 text-center">गुणक (Weightage)</th>
@@ -579,8 +579,8 @@ export default function TaxMaster() {
                                         )}
                                         <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden min-h-[400px]">
                                             <table className="w-full text-left border-collapse">
-                                                <thead>
-                                                    <tr className="bg-slate-50/50 text-slate-500 border-b border-slate-100">
+                                                <thead className="sticky top-0 z-20">
+                                                    <tr className="bg-slate-50/90 backdrop-blur-md text-slate-500 border-b border-slate-200 shadow-sm">
                                                         <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">
                                                             {selectedCategory.code === 'WASTI' ? 'वस्तीचे नाव' : 'आयटम नाव (मराठी / English)'}
                                                         </th>

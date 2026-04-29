@@ -91,7 +91,7 @@ export default function NamunaTable8({
             {/* ── Official Header (Visible only in Print) ── */}
             <div className="hidden print:flex items-start justify-between px-6 py-4 bg-[#ecfccb] border-b-2 border-black text-black mb-4">
                 <div className="flex items-center gap-4">
-                    <img src="/images/logo.png" alt="Logo" className="w-20 h-20 object-contain" />
+                    <img src="/images/logo.jpeg" alt="Logo" className="w-20 h-20 object-contain" />
                     <div className="flex flex-col text-[12px] uppercase font-bold">
                         <p>ग्रामपंचायत: {PANCHAYAT_CONFIG.gpName}</p>
                         <p>तालुका: {PANCHAYAT_CONFIG.taluka}</p>
@@ -111,7 +111,7 @@ export default function NamunaTable8({
                 </div>
             </div>
 
-            {/* ── Screen-Only Table Controls ── */}
+            {/* ── Screen-Only Table Controls ──
             <div className="no-print bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-end gap-3 flex-none">
                 <button
                     onClick={() => setShowAll(!showAll)}
@@ -122,17 +122,17 @@ export default function NamunaTable8({
                 >
                     {showAll ? 'पृष्ठानुसार पहा' : 'सर्व नोंदी पहा'}
                 </button>
-            </div>
+            </div> */}
 
             {/* ── Table Container with Watermark ── */}
             <div className="w-full flex-1 overflow-auto relative print:mt-4 print:overflow-visible">
                 {/* Print Watermark */}
                 <div className="hidden print:block absolute inset-0 pointer-events-none z-0 opacity-[0.08]"
-                    style={{ backgroundImage: 'url("/images/logo.png")', backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: '500px' }}>
+                    style={{ backgroundImage: 'url("/images/logo.jpeg")', backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: '500px' }}>
                 </div>
 
                 <table className="w-full border-collapse text-[12px] relative z-10">
-                    <thead>
+                    <thead className="sticky top-0 z-20 bg-white">
                         {/* Official Complex Header (Print Only) */}
                         <tr className="hidden print:table-row bg-[#ecfccb] text-black text-center text-[8px] font-black">
                             <th rowSpan={2} className="border border-black p-1">अ.क्र.</th>
@@ -173,20 +173,20 @@ export default function NamunaTable8({
                             ))}
                         </tr>
 
-                        {/* Simplified UI Header (Screen Only) - MODERNIZED */}
-                        <tr className="gp-table-header-row">
-                            <th className="gp-table-header-cell text-center w-[50px]">अ.क्र.</th>
-                            <th className="gp-table-header-cell text-center w-[100px]">वस्ती</th>
-                            <th className="gp-table-header-cell text-center w-[80px]">खसरा</th>
-                            <th className="gp-table-header-cell text-center w-[90px]">मालमत्ता / प्लॉट</th>
-                            <th className="gp-table-header-cell text-center min-w-[160px]">मालकाचे नाव</th>
-                            <th className="gp-table-header-cell text-center min-w-[130px]">प्रकार / क्षेत्रफळ</th>
-                            <th className="gp-table-header-cell text-center  min-w-[140px]">कराचा तपशील</th>
-                            <th className="gp-table-header-cell text-center  min-w-[100px]">भांडवली मूल्य</th>
-                            <th className="gp-table-header-cell text-center  min-w-[100px]">एकूण कर</th>
-                            <th className="gp-table-header-cell text-center min-w-[120px]">शेरा</th>
+                        {/* Simplified UI Header (Screen Only) - CLEAN & MINIMALIST */}
+                        <tr className="bg-slate-50/80 border-b border-slate-200 no-print">
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center w-[40px]">अ.क्र.</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center w-[90px]">वस्ती</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center w-[70px]">खसरा</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center w-[80px]">प्लॉट</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-left min-w-[180px]">मालकाचे नाव</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[120px]">प्रकार / क्षेत्रफळ</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[130px]">कराचा तपशील</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[90px]">भांडवली मूल्य</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[90px]">एकूण कर</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[110px]">शेरा</th>
                             {showActions && (
-                                <th className="gp-table-header-cell text-center sticky right-0 z-20 bg-white border-l border-slate-200 shadow-[-4px_0_12px_-4px_rgba(0,0,0,0.05)] w-[140px]">
+                                <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center sticky right-0 z-20 bg-slate-50/80 backdrop-blur-md border-l border-slate-200 w-[120px]">
                                     कृती
                                 </th>
                             )}
@@ -218,7 +218,7 @@ export default function NamunaTable8({
                             const isPaid = (Number(r.paidAmount) || 0) > 0;
                             const even = idx % 2 === 0;
                             return (
-                                <tr key={r.id ?? idx} className={`hover:bg-blue-50/30 text-l transition-colors group ${even ? 'bg-white' : 'bg-slate-50/60'}`}>
+                                <tr key={r.id ?? idx} className={`hover:bg-slate-50/80 transition-colors group border-b border-slate-100 last:border-0 ${even ? 'bg-white' : 'bg-slate-50/30'}`}>
                                     <td className="hidden print:table-cell border border-black p-1 text-center font-bold text-[12px]">{MN(offset + idx + 1)}</td>
                                     <td className="hidden print:table-cell border border-black p-1 text-[12px]">
                                         <p>{r.wastiName || '-'}</p>
@@ -276,8 +276,8 @@ export default function NamunaTable8({
                                     <td className="hidden print:table-cell border border-black p-1 text-[8px] whitespace-pre-wrap">{r.remarksNotes || '-'}</td>
 
                                     {/* Simplified UI Row (Screen Only) - MODERNIZED */}
-                                    <td className="no-print px-3 py-2 text-center font-black text-slate-400 text-xs">{MN(offset + idx + 1)}</td>
-                                    <td className="no-print px-3 py-2 text-center">
+                                    <td className="no-print px-2 py-1.5 text-center font-black text-slate-400 text-xs">{MN(offset + idx + 1)}</td>
+                                    <td className="no-print px-2 py-1.5 text-center">
                                         <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-600 border border-slate-200 uppercase leading-none">
                                             {r.wastiName || '-'}
                                         </div>

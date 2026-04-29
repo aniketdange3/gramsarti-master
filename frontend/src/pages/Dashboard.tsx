@@ -14,7 +14,7 @@
 import { API_BASE_URL } from '@/utils/config';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useUI } from '../components/UIProvider';
-import { Plus, FileSpreadsheet, Search, Edit2, Trash2, X, ChevronRight, ChevronLeft, FileDown, Printer, FileUp, FileText, Receipt, Eye, TrendingUp, Users, IndianRupee, AlertTriangle, CheckCircle2, Filter, RotateCcw, Shield } from 'lucide-react';
+import { Plus, FileSpreadsheet, Search, Edit2, Trash2, X, ChevronRight, ChevronLeft, FileDown, Printer, FileUp, FileText, Receipt, Eye, TrendingUp, Users, IndianRupee, AlertTriangle, CheckCircle2, Filter, RotateCcw, Shield, ChevronDown, LayoutDashboard } from 'lucide-react';
 import { PropertyRecord, PropertySection, DEFAULT_SECTION, FLOOR_NAMES, PROPERTY_TYPES, WASTI_NAMES } from '../types';
 import { ROLES } from './Login';
 import { EXCEL_HEADERS, PLACEHOLDERS } from '../utils/constants';
@@ -78,13 +78,15 @@ const StatCard = ({ title, value, icon, gradient, textColor }: {
     title: string; value: string | number;
     icon: React.ReactNode; gradient: string; textColor: string;
 }) => (
-    <div className="bg-surface rounded-xl px-4 py-3 border border-border hover:border-primary/30 transition-all duration-300 group flex items-center gap-4 shadow-sm hover:shadow-md">
-        <div className={`w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-            {React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5' })}
+    <div className="bg-white rounded-[2rem] px-8 py-7 border border-slate-100 hover:border-indigo-200 transition-all duration-500 group flex flex-col gap-5 shadow-sm hover:shadow-xl hover:-translate-y-1">
+        <div className={`w-14 h-14 shrink-0 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500 shadow-inner`}>
+            {React.cloneElement(icon as React.ReactElement, { size: 24 })}
         </div>
-        <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <p className="text-[10px] font-black text-text-muted uppercase tracking-widest leading-none mb-1 truncate">{title}</p>
-            <p className={`text-base font-black ${textColor} leading-none tracking-tight`}>{MN(value)}</p>
+        <div className="flex-1 min-w-0 flex flex-col justify-end">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-3 truncate">{title}</p>
+            <div className="flex items-baseline gap-1">
+                <p className={`text-2xl font-black text-slate-900 leading-none tracking-tighter`}>{MN(value)}</p>
+            </div>
         </div>
     </div>
 );
@@ -401,7 +403,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                         .no-print { display: none !important; }
                     }
                 `}</style>
-                <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center gap-3 no-print shadow-sm sticky top-0 z-50">
+                <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center  no-print shadow-sm sticky top-0 z-50">
                     <button onClick={() => setActiveBillRecord(null)}
                         className="flex items-center gap-2 text-sm font-bold text-slate-600 px-4 py-2 rounded-xl hover:bg-slate-100 border border-slate-200 transition-all">
                         <ArrowLeft className="w-4 h-4" /> डॅशबोर्डकडे परत
@@ -421,16 +423,11 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
 
     return (
         <>
-            {/* Top Action Bar */}
-            <header className=" no-print">
-                <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100 bg-white shadow-sm">
-                    <div className="flex items-center gap-3">
+            <header className="no-print shrink-0 bg-white border-b border-slate-100 px-4 py-2">
+                <div className="flex items-center justify-between max-w-[1600px] mx-auto">
+                    <div className="flex items-center">
                         <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
-                            <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
-                        </div>
-                        <div>
-                            <h2 className="text-sm font-black text-slate-900 tracking-tight leading-none uppercase">मालमत्ता व्यवस्थापन</h2>
-                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Control Panel</p>
+                            <LayoutDashboard className="w-4 h-4 text-indigo-600" />
                         </div>
                     </div>
 
@@ -438,28 +435,25 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                         {isAdmin && (
                             <button
                                 onClick={() => setActiveTab(activeTab === 'dashboard' ? 'user_requests' : 'dashboard')}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[10px] font-black uppercase tracking-wider shadow-sm border ${activeTab === 'user_requests'
-                                    ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
-                                    : 'bg-white border-indigo-200 text-indigo-600 hover:bg-indigo-50'
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[9px] font-black uppercase tracking-wider border ${activeTab === 'user_requests'
+                                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-600/10'
+                                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                                     }`}
                             >
-                                <Shield className="w-3.5 h-3.5" /> रोल अ‍ॅक्सेस
+                                <Shield size={12} /> रोल अ‍ॅक्सेस
                             </button>
                         )}
                         {(canEdit || isAdmin) && (
                             <>
-                                <label className="flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-all cursor-pointer text-[10px] font-black uppercase tracking-wider shadow-sm">
-                                    <FileUp className="w-3.5 h-3.5" /> आयात
+                                <label className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-all cursor-pointer text-[9px] font-black uppercase tracking-wider shadow-sm active:scale-95">
+                                    <FileUp size={12} /> आयात
                                     <input type="file" className="hidden" accept=".xlsx, .xls" onChange={importFromExcel} />
                                 </label>
-                                <button onClick={exportToExcel} className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-all text-[10px] font-black uppercase tracking-wider shadow-sm">
-                                    <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-600" /> एक्सपोर्ट
-                                </button>
                                 <button
                                     onClick={() => { setEditingRecord(null); setVisibleFloorCount(1); setShowForm(true); }}
-                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-600 text-white rounded-lg font-black uppercase tracking-wider hover:bg-indigo-700 shadow-md shadow-indigo-600/10 transition-all text-[10px] active:scale-95"
+                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-600 text-white rounded-lg font-black uppercase tracking-wider hover:bg-indigo-700 shadow-lg shadow-indigo-600/10 transition-all text-[9px] active:scale-95"
                                 >
-                                    <Plus className="w-3.5 h-3.5" /> नवीन नोंद
+                                    <Plus size={12} /> नवीन नोंद
                                 </button>
                             </>
                         )}
@@ -467,77 +461,29 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                 </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto space-y-2 bg-white flex flex-col px-3 py-3">
+            <div className="flex-1 overflow-hidden space-y-2 bg-white flex flex-col px-2 py-2">
                 {activeTab === 'user_requests' ? (
                     <UserManagement onAuthError={onAuthError} addToast={addToast} />
                 ) : (
                     <>
-                        {/* Highlights Row */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 shrink-0 no-print">
-                            <StatCard
-                                title="एकूण मालमत्ता"
-                                value={MN(animCount)}
-                                icon={<Users />}
-                                gradient="from-blue-500 to-indigo-600"
-                                textColor="text-indigo-900"
-                            />
-                            <StatCard
-                                title="मागील थकबाकी (₹)"
-                                value={`₹${MN(animMagil)}`}
-                                icon={<AlertTriangle />}
-                                gradient="from-rose-500 to-red-600"
-                                textColor="text-red-900"
-                            />
-                            <StatCard
-                                title="चालू मागणी (₹)"
-                                value={`₹${MN(animChalu)}`}
-                                icon={<IndianRupee />}
-                                gradient="from-amber-500 to-orange-600"
-                                textColor="text-orange-900"
-                            />
-                            <StatCard
-                                title="वसूल रक्कम (₹)"
-                                value={`₹${MN(animWasuli)}`}
-                                icon={<CheckCircle2 />}
-                                gradient="from-emerald-500 to-teal-600"
-                                textColor="text-emerald-900"
-                            />
-                            <StatCard
-                                title="एकुण बाकी (₹)"
-                                value={`₹${MN(animBaki)}`}
-                                icon={<IndianRupee />}
-                                gradient="from-indigo-500 to-blue-600"
-                                textColor="text-indigo-900"
-                            />
-                            <StatCard
-                                title="वसुली दर (%)"
-                                value={`${MN(animRecovery / 10)}%`}
-                                icon={<TrendingUp />}
-                                gradient="from-violet-500 to-purple-600"
-                                textColor="text-purple-900"
-                            />
-                        </div>
-
                         {/* Unified Single-Row Search & Filter Bar */}
-                        <div className="flex items-center gap-2 p-2 bg-white border border-slate-100 rounded-xl no-print flex-wrap lg:flex-nowrap">
-                            {/* Search Component */}
-                            <div className="relative flex-1 min-w-[220px] max-w-sm">
+                        <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-xl no-print flex-wrap lg:flex-nowrap shadow-sm text-Marathi">
+                            <div className="relative flex-1 min-w-[200px]">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10" />
                                 <TransliterationInput
-                                    placeholder="नाव, प्रभाग, वस्ती शोधा..."
-                                    className="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-100 rounded-lg text-[11px] font-bold focus:ring-4 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 placeholder:font-normal"
+                                    placeholder="शोधा..."
+                                    className="w-full pl-9 pr-10 py-2 bg-slate-50 border border-transparent rounded-lg text-xs font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all"
                                     value={searchTerm}
                                     onChangeText={setSearchTerm}
                                 />
                                 {searchTerm && (
-                                    <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 z-10 text-slate-400 hover:text-rose-500 transition-colors">
-                                        <X className="w-3.5 h-3.5" />
+                                    <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500">
+                                        <X size={14} />
                                     </button>
                                 )}
                             </div>
 
-                            {/* Filters Group */}
-                            <div className="flex items-center gap-1.5 flex-wrap flex-1">
+                            <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 scrollbar-thin">
                                 <CustomDropdown
                                     value={filterWasti}
                                     onChange={handleWastiChange}
@@ -569,8 +515,8 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                     options={dynamicPropertyTypes.map(p => ({ value: p, label: p }))}
                                 />
                                 {hasActiveFilters && (
-                                    <button onClick={() => { setFilterWasti(''); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); setFilterPropertyType(''); }}
-                                        className="flex items-center gap-1.5 text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-3 py-2 rounded-xl hover:bg-rose-100 transition-all active:scale-95 whitespace-nowrap">
+                                    <button onClick={() => { setFilterWasti(''); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); setFilterPropertyType(''); setSearchTerm(''); }}
+                                        className="flex items-center gap-1 text-[9px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-3 py-2 rounded-lg hover:bg-rose-100 transition-all active:scale-95 whitespace-nowrap">
                                         <RotateCcw className="w-3 h-3" /> रीसेट
                                     </button>
                                 )}
@@ -585,42 +531,40 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                             </div>
                         </div>
 
-
-
                         {/* Records Table */}
-                        <div className="bg-white rounded-t-xl border border-slate-200 border-b-0 overflow-hidden flex-1 flex flex-col min-h-0">
-                            <div className="px-3 py-1.5 border-b border-slate-200 flex flex-wrap gap-2 items-center justify-between bg-white shrink-0 relative z-10">
-                                <h3 className="text-[15px] font-black text-slate-800 tracking-tight">मालमत्ता नोंदींची सूची</h3>
+                        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex-1 flex flex-col min-h-0 shadow-sm text-Marathi">
+                            <div className="px-4 py-2 border-b border-slate-200 flex flex-wrap gap-2 items-center justify-between bg-white shrink-0 relative z-10">
+                                <h3 className="text-xs font-bold text-slate-900 tracking-tight">मालमत्ता सूची</h3>
                                 <div className="flex items-center gap-4">
                                     <button
                                         onClick={() => setShowAll(!showAll)}
-                                        className={`text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all ${showAll
-                                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-200'
-                                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                                        className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border transition-all ${showAll
+                                            ? 'bg-indigo-600 text-white border-indigo-600'
+                                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                                             }`}
                                     >
-                                        {showAll ? 'पृष्ठानुसार पहा' : 'सर्व नोंदी पहा'}
+                                        {showAll ? 'पृष्ठानुसार' : 'सर्व पहा'}
                                     </button>
-                                    <p className="text-[11px] font-bold tracking-wide text-slate-500 bg-slate-100 px-3 py-1.5 rounded-md">
+                                    <p className="text-xs font-bold text-slate-400">
                                         {searchTerm ? `"${searchTerm}" : ${filteredRecords.length} परिणाम सापडले` : `एकूण ${filteredRecords.length} नोंदणीकृत मालमत्ता`}
                                     </p>
                                 </div>
                             </div>
                             <div className="flex-1 overflow-auto">
                                 <table className="w-full text-left border-collapse min-w-[900px]">
-                                    <thead className="sticky top-0 z-20">
-                                        <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 backdrop-blur-sm bg-white/90">
-                                            <th className="px-2 py-2 text-[13px] font-black uppercase tracking-widest w-[40px] text-center">अ.क्र.</th>
-                                            <th className="px-2 py-2 text-[13px] font-black uppercase tracking-widest w-[100px] text-center">वस्ती</th>
-                                            <th className="px-2 py-2 text-[13px] font-black uppercase tracking-widest w-[70px] text-center">खसरा</th>
-                                            <th className="px-2 py-2 text-[13px] font-black uppercase tracking-widest w-[80px] text-center">मालमत्ता/प्लॉट</th>
-                                            <th className="px-3 py-2 text-[13px] font-black uppercase tracking-widest min-w-[160px] text-center">मालकाचे नाव</th>
-                                            <th className="px-2 py-2 text-[13px] font-black uppercase tracking-widest w-[120px] text-center">प्रकार/क्षेत्रफळ</th>
-                                            <th className="px-3 py-2 text-center text-[13px] font-black uppercase tracking-widest w-[80px]">मागील थकबाकी</th>
-                                            <th className="px-3 py-2 text-center text-[13px] font-black uppercase tracking-widest w-[80px]">चालू मागणी</th>
-                                            <th className="px-3 py-2 text-center text-[13px] font-black uppercase tracking-widest w-[80px]">वसूल रक्कम</th>
-                                            <th className="px-3 py-2 text-center text-[13px] font-black uppercase tracking-widest w-[90px]">एकुण बाकी</th>
-                                            <th className="px-2 py-2 text-[13px] font-black uppercase tracking-widest text-center w-[110px]">कृती</th>
+                                    <thead className="sticky top-0 z-20 text-Marathi">
+                                        <tr className="bg-slate-50/80 backdrop-blur-md border-b border-slate-200">
+                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[60px] text-center">अ.क्र.</th>
+                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[120px]">वस्ती</th>
+                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[80px] text-center">खसरा</th>
+                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[80px] text-center">मालमत्ता/प्लॉट</th>
+                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[180px]">मालकाचे नाव</th>
+                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[140px] text-center">प्रकार/क्षेत्रफळ</th>
+                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[100px] text-right">थकबाकी</th>
+                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[100px] text-right">मागणी</th>
+                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[100px] text-right">वसूल</th>
+                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[100px] text-right">बाकी</th>
+                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[120px] text-center">कृती</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
@@ -629,76 +573,57 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                             const isDuplicate = (duplicateMap.get(dKey) || 0) > 1;
 
                                             return (
-                                                <tr key={record.id} className={`hover:bg-blue-50/50 transition-colors group ${isDuplicate
-                                                    ? 'bg-red-50 hover:bg-red-100/80 transition-all border-l-4 border-l-red-500'
-                                                    : (idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60')
-                                                    }`}>
-                                                    <td className="px-2 py-1.5 text-center relative">
-                                                        {isDuplicate && (
-                                                            <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center group/alert">
-                                                                <AlertTriangle className="w-3 h-3 text-red-500 animate-pulse cursor-help" />
-                                                                <div className="absolute left-6 bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded hidden group-hover/alert:block whitespace-nowrap z-50">
-                                                                    ड्युप्लिकेट
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                        <span className={`text-[11px] font-bold ${isDuplicate ? 'text-red-700' : 'text-slate-400'}`}>
+                                                <tr key={record.id} className={`hover:bg-slate-50 transition-colors group ${isDuplicate ? 'bg-red-50/50' : ''}`}>
+                                                    <td className="px-4 py-3 text-center">
+                                                        <span className="text-xs font-medium text-slate-400">
                                                             {MN((showAll ? 0 : (currentPage - 1) * ITEMS_PER_PAGE) + idx + 1)}
                                                         </span>
                                                     </td>
-                                                    <td className="px-2 py-1.5">
-                                                        <div className="inline-flex flex-col">
-                                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-600 border border-slate-200 uppercase leading-none">
-                                                                {record.wastiName || '-'}
-                                                            </span>
-                                                            <span className="text-[9px] text-slate-400 font-bold italic mt-0.5">W{MN(record.wardNo)}</span>
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[11px] font-bold text-slate-900">{record.wastiName || '-'}</span>
+                                                            <span className="text-[10px] text-slate-400 font-medium">Ward {MN(record.wardNo)}</span>
                                                         </div>
                                                     </td>
-                                                    <td className="px-2 py-1.5 text-center">
-                                                        <div className="text-[12px] text-indigo-700 font-black uppercase tracking-tight bg-indigo-50 px-1.5 py-0.5 rounded inline-block whitespace-nowrap">{MN(record.khasraNo) || '-'}</div>
+                                                    <td className="px-4 py-3 text-center">
+                                                        <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">{MN(record.khasraNo) || '-'}</span>
                                                     </td>
-                                                    <td className="px-2 py-1.5 text-center">
-                                                        <div className="text-[12px] font-bold text-slate-700 tracking-tight">{MN(record.plotNo) || '-'}</div>
-
+                                                    <td className="px-4 py-3 text-center">
+                                                        <span className="text-xs font-medium text-slate-600">{MN(record.plotNo) || '-'}</span>
                                                     </td>
-                                                    <td className="px-2 py-1.5 text-center">
-                                                        <div className="font-extrabold text-slate-900 text-[12px] tracking-tight leading-tight uppercase">{record.ownerName}</div>
-                                                        <div className="text-[10px] text-slate-500 font-semibold mt-0.5 opacity-60">({record.occupantName || 'स्वतः'})</div>
-                                                        <div className="text-[10px] text-indigo-600 font-black mt-1 leading-none">{record.contactNo ? MN(record.contactNo) : '-'}</div>
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs font-bold text-slate-900 uppercase">{record.ownerName}</span>
+                                                            <span className="text-[10px] text-slate-400 font-medium">{record.occupantName || 'Self'}</span>
+                                                        </div>
                                                     </td>
-                                                    <td className="px-2 py-1.5 text-center">
+                                                    <td className="px-4 py-3 text-center">
                                                         {record.sections?.filter(s => s.propertyType && s.propertyType !== 'निवडा').map((s, si) => (
-                                                            <div key={si} className="mb-0.5 last:mb-0 pb-0.5 border-b border-slate-100 last:border-0 leading-none">
-                                                                <span className="text-[11px] font-black text-slate-700 uppercase">{s.propertyType}</span> <br />
-                                                                <span className="text-[11px] font-bold text-slate-400 ml-1.5">{MN(s.areaSqFt)} चौ.फु</span>
-                                                                {s.propertyAge ? (
-                                                                    <span className="text-[9px] font-bold text-amber-600 ml-1.5">({MN(s.propertyAge)} वर्ष)</span>
-                                                                ) : null}
+                                                            <div key={si} className="text-[10px] text-slate-500 font-medium">
+                                                                {s.propertyType} • {MN(s.areaSqFt)} ft²
                                                             </div>
-                                                        )) || (
-                                                                <div className="text-[11px] text-slate-400 italic">माहिती नाही</div>
-                                                            )}
+                                                        ))}
                                                     </td>
-                                                    <td className="px-3 py-1.5 text-center">
-                                                        <div className="font-bold text-rose-500 text-[12px] leading-none">₹{MN(Number(record.arrearsAmount || 0))}</div>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <span className="text-xs font-bold text-slate-600">{MN(Number(record.arrearsAmount || 0))}</span>
                                                     </td>
-                                                    <td className="px-3 py-1.5 text-center">
-                                                        <div className="font-bold text-indigo-700 text-[12px] leading-none">₹{MN(Number(record.totalTaxAmount || 0))}</div>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <span className="text-xs font-bold text-indigo-600">{MN(Number(record.totalTaxAmount || 0))}</span>
                                                     </td>
-                                                    <td className="px-3 py-1.5 text-center">
-                                                        <div className="font-bold text-emerald-600 text-[12px] leading-none">₹{MN(Number(record.paidAmount || 0))}</div>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <span className="text-xs font-bold text-emerald-600">{MN(Number(record.paidAmount || 0))}</span>
                                                     </td>
-                                                    <td className="px-3 py-1.5 text-right bg-slate-50/50">
-                                                        <div className="font-black text-slate-900 text-[12px] leading-none">
-                                                            ₹{MN(Number(record.totalTaxAmount || 0) + Number(record.arrearsAmount || 0) + (Number(record.penaltyAmount) || 0) - Number(record.paidAmount || 0) - (Number(record.discountAmount) || 0))}
-                                                        </div>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <span className="text-xs font-bold text-slate-900">
+                                                            {MN(Number(record.totalTaxAmount || 0) + Number(record.arrearsAmount || 0) + (Number(record.penaltyAmount) || 0) - Number(record.paidAmount || 0) - (Number(record.discountAmount) || 0))}
+                                                        </span>
                                                     </td>
-                                                    <td className="px-2 py-1.5 text-center">
-                                                        <div className="flex justify-center gap-1">
-                                                            <button onClick={() => setViewingRecord(record)} className={`w-7 h-7 flex items-center justify-center text-indigo-500 bg-indigo-50 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-indigo-100 ${!canView ? 'hidden' : ''}`} title="तपशील">
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex justify-center gap-2">
+                                                            <button onClick={() => setViewingRecord(record)} className="w-7 h-7 flex items-center justify-center text-slate-400 bg-slate-50 rounded-lg hover:bg-slate-600 hover:text-white transition-all shadow-sm border border-slate-100" title="तपशील">
                                                                 <Eye className="w-3.5 h-3.5" />
                                                             </button>
-                                                            {canEdit && !record.remarksNotes && (
+                                                            {canEdit && (
                                                                 <button onClick={() => {
                                                                     const count = record.sections.filter(s => s.propertyType && s.propertyType !== 'निवडा').length;
                                                                     setVisibleFloorCount(count > 0 ? count : 1);
@@ -721,81 +646,66 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                             );
                                         }) : (
                                             <tr>
-                                                <td colSpan={9} className="py-20 text-center">
+                                                <td colSpan={11} className="py-20 text-center text-Marathi">
                                                     <div className="flex flex-col items-center gap-4">
-                                                        <div className="w-16 h-16 bg-indigo-50/50 rounded-2xl flex items-center justify-center border border-indigo-100/50">
-                                                            <Search className="w-6 h-6 text-indigo-200" />
+                                                        <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100">
+                                                            <Search className="w-6 h-6 text-slate-200" />
                                                         </div>
-                                                        <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">
-                                                            {searchTerm ? `"${searchTerm}" - कोणतीही नोंद सापडली नाही` : 'अद्याप कोणतीही नोंद नाही'}
-                                                        </p>
+                                                        <div className="flex flex-col items-center">
+                                                            <p className="text-slate-900 font-bold text-sm">कोणतीही नोंद सापडली नाही</p>
+                                                            <p className="text-slate-400 font-medium text-xs mt-1">
+                                                                {searchTerm ? `तुमचा शोध "${searchTerm}" साठी तपासा` : 'नवीन मालमत्ता नोंद जोडून सुरुवात करा'}
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                 </td>
                                             </tr>
                                         )}
                                     </tbody>
-
                                 </table>
                             </div>
 
                             {/* Pagination Controls */}
                             {totalPages > 1 && !showAll && (
-                                <div className="px-4 xl:px-6 py-3 border-t border-slate-200 bg-slate-50/80 backdrop-blur-[2px] flex items-center justify-between shrink-0 relative z-10 w-full">
-                                    <div className="text-[12px] font-bold text-slate-500 tracking-wide hidden sm:block">
-                                        पृष्ठ <span className="text-slate-800 font-black">{MN(currentPage)}</span> पैकी <span className="text-slate-800">{MN(totalPages)}</span>
+                                <div className="px-6 py-4 border-t border-slate-200 bg-white flex items-center justify-between shrink-0 relative z-10 w-full text-Marathi">
+                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                        पृष्ठ <span className="text-slate-900">{MN(currentPage)}</span> पैकी <span className="text-slate-900">{MN(totalPages)}</span>
                                     </div>
-                                    <div className="flex items-center gap-1 sm:ml-auto w-full sm:w-auto justify-center">
-                                        <button
-                                            onClick={() => setCurrentPage(1)}
-                                            disabled={currentPage === 1}
-                                            className="px-2 h-8 flex items-center justify-center text-[11px] font-black rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-40 shadow-sm transition-all"
-                                        >
-                                            «
-                                        </button>
+                                    <div className="flex items-center gap-2">
                                         <button
                                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                             disabled={currentPage === 1}
-                                            className="px-3 h-8 flex items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 disabled:bg-slate-50 disabled:cursor-not-allowed transition-all shadow-sm text-[10px] font-black uppercase"
+                                            className="px-4 py-2 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-xs font-bold shadow-sm"
                                         >
-                                            ‹ मागील
+                                            <ChevronDown className="rotate-90 w-3.5 h-3.5" /> मागील
                                         </button>
-                                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                            let pageNum: number;
-                                            if (totalPages <= 5) {
-                                                pageNum = i + 1;
-                                            } else if (currentPage <= 3) {
-                                                pageNum = i + 1;
-                                            } else if (currentPage >= totalPages - 2) {
-                                                pageNum = totalPages - 4 + i;
-                                            } else {
-                                                pageNum = currentPage - 2 + i;
-                                            }
-                                            return (
-                                                <button
-                                                    key={pageNum}
-                                                    onClick={() => setCurrentPage(pageNum)}
-                                                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-black transition-all shadow-sm border ${pageNum === currentPage
-                                                        ? 'bg-slate-800 text-white border-slate-800'
-                                                        : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-800'
-                                                        }`}
-                                                >
-                                                    {MN(pageNum)}
-                                                </button>
-                                            );
-                                        })}
+                                        <div className="flex items-center gap-1">
+                                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                                let pageNum: number;
+                                                if (totalPages <= 5) pageNum = i + 1;
+                                                else if (currentPage <= 3) pageNum = i + 1;
+                                                else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                                                else pageNum = currentPage - 2 + i;
+                                                return (
+                                                    <button
+                                                        key={pageNum}
+                                                        onClick={() => setCurrentPage(pageNum)}
+                                                        className={`w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold transition-all ${currentPage === pageNum
+                                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
+                                                            : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-500 hover:text-indigo-600'
+                                                            }`}
+                                                    >
+                                                        {MN(pageNum)}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
                                         <button
                                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                             disabled={currentPage === totalPages}
-                                            className="px-3 h-8 flex items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 disabled:bg-slate-50 disabled:cursor-not-allowed transition-all shadow-sm text-[10px] font-black uppercase"
+                                            className="px-4 py-2 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-xs font-bold shadow-sm"
                                         >
-                                            पुढील ›
-                                        </button>
-                                        <button
-                                            onClick={() => setCurrentPage(totalPages)}
-                                            disabled={currentPage === totalPages}
-                                            className="px-2 h-8 flex items-center justify-center text-[11px] font-black rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-40 shadow-sm transition-all"
-                                        >
-                                            »
+                                            पुढील <ChevronDown className="-rotate-90 w-3.5 h-3.5" />
                                         </button>
                                     </div>
                                 </div>
@@ -831,7 +741,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                 <h2 className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-2 leading-none">मालमत्ता तपशील कार्ड</h2>
                                 <h3 className="text-2xl font-black text-white tracking-tight leading-tight">{viewingRecord.ownerName}</h3>
                                 <p className="text-indigo-200 text-xs font-bold mt-1.5 opacity-80 flex items-center gap-2">
-                                    <span className="bg-indigo-400/20 px-2 py-0.5 rounded-md">ID: {viewingRecord.srNo}</span>
+                                    <span className="bg-indigo-400/20 px-2 py-0.5 rounded-md">ID: {MN(viewingRecord.srNo)}</span>
                                     <span>•</span>
                                     <span>{viewingRecord.wastiName}</span>
                                 </p>
@@ -846,24 +756,24 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-100/50">
                                     <p className="text-[9px] text-indigo-400 font-black uppercase tracking-widest mb-1.5 leading-none text-center">चालू कर</p>
-                                    <p className="font-black text-indigo-700 text-lg leading-none text-center">₹{Number(viewingRecord.totalTaxAmount).toLocaleString()}</p>
+                                    <p className="font-black text-indigo-700 text-lg leading-none text-center">₹{MN(Math.round(viewingRecord.totalTaxAmount))}</p>
                                 </div>
                                 <div className="bg-rose-50/50 rounded-2xl p-4 border border-rose-100/50">
                                     <p className="text-[9px] text-rose-400 font-black uppercase tracking-widest mb-1.5 leading-none text-center">थकबाकी</p>
-                                    <p className="font-black text-rose-700 text-lg leading-none text-center">₹{Number(viewingRecord.arrearsAmount || 0).toLocaleString()}</p>
+                                    <p className="font-black text-rose-700 text-lg leading-none text-center">₹{MN(Math.round(viewingRecord.arrearsAmount || 0))}</p>
                                 </div>
                                 <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/50">
                                     <p className="text-[9px] text-emerald-400 font-black uppercase tracking-widest mb-1.5 leading-none text-center">भरलेले</p>
-                                    <p className="font-black text-emerald-700 text-lg leading-none text-center">₹{Number(viewingRecord.paidAmount || 0).toLocaleString()}</p>
+                                    <p className="font-black text-emerald-700 text-lg leading-none text-center">₹{MN(Math.round(viewingRecord.paidAmount || 0))}</p>
                                 </div>
                             </div>
 
                             {/* Details Grid */}
                             <div className="grid grid-cols-2 gap-x-12 gap-y-6">
                                 {[
-                                    { label: 'वस्ती / वॉर्ड', value: `${viewingRecord.wastiName} (वॉर्ड ${viewingRecord.wardNo})` },
-                                    { label: 'प्लॉट क्र.', value: viewingRecord.plotNo },
-                                    { label: 'खसरा क्र.', value: viewingRecord.khasraNo },
+                                    { label: 'वस्ती / वॉर्ड', value: `${viewingRecord.wastiName} (वॉर्ड ${MN(viewingRecord.wardNo)})` },
+                                    { label: 'प्लॉट क्र.', value: MN(viewingRecord.plotNo) },
+                                    { label: 'खसरा क्र.', value: MN(viewingRecord.khasraNo) },
                                     { label: 'ताबा धारक', value: viewingRecord.occupantName || '-' },
                                 ].map(({ label, value }) => (
                                     <div key={label}>
@@ -912,12 +822,6 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                             >
                                 <FileText className="w-4 h-4" /> मागणी बिल प्रिंट
                             </button>
-                            {/* <button
-                                onClick={() => { window.print(); }}
-                                className="flex-1 flex items-center justify-center gap-3 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all text-sm"
-                            >
-                                <Printer className="w-4 h-4" /> कार्ड प्रिंट
-                            </button> */}
                             <button
                                 onClick={() => setViewingRecord(null)}
                                 className="px-8 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold hover:bg-slate-100 active:scale-95 transition-all text-sm"
@@ -928,9 +832,6 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                     </div>
                 </div>
             )}
-
-
-
         </>
     );
 }

@@ -132,28 +132,28 @@ export default function PaymentEntry({ records, fetchRecords, onUpdateLocalRecor
                 .payment-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
             `}</style>
             
-            <header className="no-print shrink-0">
-                <div className="gp-action-bar">
+            <header className="no-print shrink-0 bg-white border-b border-slate-100 px-4 py-2">
+                <div className="flex items-center justify-between max-w-[1600px] mx-auto">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
                             <IndianRupee className="w-4 h-4 text-indigo-600" />
                         </div>
                         <div>
-                            <h2 className="gp-section-title">भरणा नोंदवा</h2>
-                            <p className="gp-section-subtitle">नवीन कर भरणा व पावती जनरेट करा</p>
+                            <h2 className="text-xs font-black text-slate-900 tracking-tight leading-none uppercase">भरणा नोंदवा</h2>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">नवीन कर भरणा व पावती</p>
                         </div>
                     </div>
                 </div>
             </header>
 
-            <div className="flex-1 overflow-auto p-4 lg:p-6 payment-scroll">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
+            <div className="flex-1 overflow-auto p-2 lg:p-4 payment-scroll">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-7xl mx-auto">
                     {/* Left: Payment Form */}
                     {canAdd ? (
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
-                            <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                                <Receipt className="w-4 h-4 text-indigo-600" />
-                                <h3 className="text-[13px] font-black text-slate-800 uppercase tracking-wider">नवा भरणा</h3>
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4">
+                            <div className="flex items-center gap-2 pb-1.5 border-b border-slate-100">
+                                <Receipt className="w-3.5 h-3.5 text-indigo-600" />
+                                <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-wider">नवा भरणा</h3>
                             </div>
 
                             <div className="relative">

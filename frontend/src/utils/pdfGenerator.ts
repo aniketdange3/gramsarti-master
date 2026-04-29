@@ -4,7 +4,8 @@ import { PropertyRecord } from '../types';
 import { PANCHAYAT_CONFIG } from '../utils/panchayatConfig';
 import { calculateBill } from './billCalculations';
 import { registerFonts } from './fonts';
-import logo from '../assets/images/logo.png?base64';
+// import logo from '../images';
+const logo = '/images/logo.jpeg';
 
 // ─── Constants (Legal Landscape) ─────────────────────────────────────────────
 const PW = 355.6; // Legal width (landscape) mm
@@ -668,3 +669,156 @@ export const generateMaganiBillPDF = async (record: PropertyRecord) => {
 
 
 
+
+// ─── WASTI REPORT PDF ────────────────────────────────────────────────────────
+export const generateWastiReportPDF = async (wastiData: any[]) => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const logo = await loadLogo();
+    registerFonts(doc);
+
+    const T1 = 'वस्तीनिहाय कर अहवाल';
+    const T2 = `ग्रामपंचायत: ${PANCHAYAT_CONFIG.gpName}, तालुका: ${PANCHAYAT_CONFIG.taluka}`;
+    drawHeader(doc, logo, T1, T2, true);
+
+    const body = wastiData.map((w, i) => [
+        MN(i + 1),
+        w.name,
+        MN(w.count),
+        MN(w.demand),
+        MN(w.paid),
+        MN(w.balance),
+        `${MN(w.rate.toFixed(1))}%`
+    ]);
+
+    autoTable(doc, {
+        head: [['अ.क्र.', 'वस्तीचे नाव', 'मालमत्ता', 'एकूण मागणी', 'एकूण वसुली', 'थकबाकी', 'वसुली %']],
+        body,
+        startY: 45,
+        styles: { font: 'NotoMarathi', fontSize: 9, halign: 'center' },
+        headStyles: { fillColor: HEAD_BG, textColor: BLACK, fontStyle: 'bold' },
+    });
+
+    doc.save(`Wasti_Report_${new Date().toLocaleDateString('mr-IN')}.pdf`);
+};
+
+// ─── KHASARA REPORT PDF ──────────────────────────────────────────────────────
+export const generateKhasaraReportPDF = async (khasaraData: any[]) => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const logo = await loadLogo();
+    registerFonts(doc);
+
+    const T1 = 'खसरा निहाय कर अहवाल';
+    const T2 = `ग्रामपंचायत: ${PANCHAYAT_CONFIG.gpName}, तालुका: ${PANCHAYAT_CONFIG.taluka}`;
+    drawHeader(doc, logo, T1, T2, true);
+
+    const body = khasaraData.map((k, i) => [
+        MN(i + 1),
+        k.name,
+        MN(k.count),
+        MN(k.demand),
+        MN(k.paid),
+        MN(k.balance)
+    ]);
+
+    autoTable(doc, {
+        head: [['अ.क्र.', 'खसरा क्र.', 'मालमत्ता', 'एकूण मागणी', 'एकूण वसुली', 'थकबाकी']],
+        body,
+        startY: 45,
+        styles: { font: 'NotoMarathi', fontSize: 9, halign: 'center' },
+        headStyles: { fillColor: HEAD_BG, textColor: BLACK, fontStyle: 'bold' },
+    });
+
+    doc.save(`Khasara_Report_${new Date().toLocaleDateString('mr-IN')}.pdf`);
+};
+
+export const generateBulkMaganiBillsPDF = async (records: PropertyRecord[]) => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const logo = await loadLogo();
+    registerFonts(doc);
+    const P_WIDTH = 210;
+    const P_HEIGHT = 297;
+    const MARGIN = 10;
+    const MTB_MAGANI = P_HEIGHT * 0.05;
+    const currYear = (records[0] as any)?.financialYear || '२०२५-२६';
+
+    for (let i = 0; i < records.length; i++) {
+        const record = records[i];
+        if (i > 0) doc.addPage();
+
+        const calc = {
+            arrearsTotal: Number(record.arrearsAmount) || 0,
+            currentTaxTotal: Number(record.totalTaxAmount) || 0,
+            billTotal: (Number(record.arrearsAmount) || 0) + (Number(record.totalTaxAmount) || 0),
+            penaltyAmount: Math.round((Number(record.arrearsAmount) || 0) * 0.05)
+        };
+
+        if (logo) {
+            doc.saveGraphicsState();
+            doc.setGState(new (doc as any).GState({ opacity: 0.05 }));
+            doc.addImage(logo, 'PNG', 55, 100, 100, 100);
+            doc.restoreGraphicsState();
+        }
+
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.5);
+        doc.rect(MARGIN, MTB_MAGANI, P_WIDTH - 2 * MARGIN, P_HEIGHT - 2 * MTB_MAGANI);
+        doc.line(MARGIN, MTB_MAGANI + 40, P_WIDTH - MARGIN, MTB_MAGANI + 40);
+
+        safeSetFont(doc, 'NotoMarathi', 'bold');
+        doc.setFontSize(8);
+        doc.text(`बुक नं. ${MN((record as any).bookNo || 1)}`, MARGIN + 5, MTB_MAGANI + 10);
+        doc.text(`बिल नं. ${MN(record.srNo)}`, P_WIDTH - MARGIN - 5, MTB_MAGANI + 10, { align: 'right' });
+        
+        safeSetFont(doc, 'NotoMarathi', 'normal');
+        doc.text(`(नमुना नं. ९ "क")`, P_WIDTH / 2, MTB_MAGANI + 10, { align: 'center' });
+
+        safeSetFont(doc, 'NotoMarathi', 'bold');
+        doc.setFontSize(18);
+        doc.text(`कराच्या मागणीचे बिल`, P_WIDTH / 2, MTB_MAGANI + 18, { align: 'center' });
+
+        safeSetFont(doc, 'NotoMarathi', 'normal');
+        doc.setFontSize(9);
+        doc.text(`कार्यालय ग्रामपंचायत मौजा ${record.wastiName || ''}`, P_WIDTH / 2, MTB_MAGANI + 25, { align: 'center' });
+
+        doc.text(`श्री ${record.ownerName || '-'} यांचेकडुन`, MARGIN + 5, MTB_MAGANI + 48);
+
+        autoTable(doc, {
+            body: [
+                [`मालमत्ता क्र. - ${MN(record.propertyId || record.srNo)}`, `प्लॉट नं. - ${MN(record.plotNo || '-')}`, `खसरा नं. - ${MN(record.khasraNo || '-')}`],
+            ],
+            startY: MTB_MAGANI + 55,
+            margin: { left: MARGIN + 2, right: MARGIN + 2 },
+            styles: { font: 'NotoMarathi', fontSize: 8, cellPadding: 2, lineWidth: 0.1, lineColor: [0, 0, 0] },
+        });
+
+        const subY = (doc as any).lastAutoTable.finalY + 5;
+        doc.text(`सन ${currYear} करीता पुढे नमूद केलेल्या रकमा`, MARGIN + 5, subY + 6);
+
+        const taxRows = [
+            ['१. घरपट्टी', MN(0), MN(record.propertyTax || 0), MN(record.propertyTax || 0)],
+            ['२. जागा कर', MN(0), MN(record.openSpaceTax || 0), MN(record.openSpaceTax || 0)],
+            ['३. दिवाबत्ती कर', MN(0), MN(record.streetLightTax || 0), MN(record.streetLightTax || 0)],
+            ['४. आरोग्य कर', MN(0), MN(record.healthTax || 0), MN(record.healthTax || 0)],
+            ['५. पाणी कर', MN(0), MN(record.generalWaterTax || 0), MN(record.generalWaterTax || 0)],
+            ['६. मागील थकबाकी', MN(record.arrearsAmount || 0), MN(0), MN(record.arrearsAmount || 0)],
+        ];
+
+        autoTable(doc, {
+            head: [['कराची नावे', 'मागील बाकी', 'चालू कर', 'एकुण']],
+            body: [
+                ...taxRows,
+                [{ content: 'एकूण येणे रक्कम', styles: { fontStyle: 'bold' } }, '', '', { content: `रु. ${MN(calc.billTotal)}`, styles: { fontStyle: 'bold' } }]
+            ],
+            startY: subY + 12,
+            margin: { left: MARGIN + 2, right: MARGIN + 2 },
+            styles: { font: 'NotoMarathi', fontSize: 9, cellPadding: 2, lineWidth: 0.2, lineColor: [0, 0, 0] },
+        });
+
+        const footerY = (doc as any).lastAutoTable.finalY + 15;
+        doc.text(`वरील बिल कार्यालयात पटवून पावती घ्यावी.`, MARGIN + 5, footerY);
+        doc.text(`सही: ________________`, P_WIDTH - MARGIN - 40, footerY + 10);
+        doc.text(`ग्रामसेवक/सरपंच`, P_WIDTH - MARGIN - 40, footerY + 15);
+    }
+
+    doc.save(`Bulk_Magil_Bills_${new Date().getTime()}.pdf`);
+};

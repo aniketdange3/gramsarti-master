@@ -37,7 +37,7 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
         <div className="flex-1 p-6 relative h-[210mm] border-r border-dashed border-slate-300 last:border-r-0 overflow-hidden">
             {/* Watermark Logo */}
             <img
-                src="/images/logo.png"
+                src="/images/logo.jpeg"
                 alt="Watermark"
                 className="absolute  top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-55 h-55 opacity-[0.3] pointer-events-none p-10"
             />
@@ -56,7 +56,7 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
                 <div className="relative text-center border-b border-gray-600 pb-2 mb-4">
                     {/* Top Left Logo (Aligned with Header) */}
                     <img
-                        src="/images/logo.png"
+                        src="/images/logo.jpeg"
                         alt="Logo"
                         className="absolute top-0 left-0 w-[90px] h-[90px] object-contain"
                     />
@@ -204,8 +204,8 @@ export default function MaganiBillDocument({ record, onClose }: Props) {
                     <p className="text-gray-500 text-[15px] font-bold leading-relaxed mb-8">
                         या मालमत्तेसाठी <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">(मालमत्ता क्र. {MN(record.propertyId || record.plotNo || record.srNo)})</span> कोणतीही कर मागणी बाकी नाही. संपूर्ण कर भरणा झाला आहे.
                     </p>
-                    <button 
-                        onClick={() => onClose ? onClose() : window.history.back()} 
+                    <button
+                        onClick={() => onClose ? onClose() : window.history.back()}
                         className="w-full py-4 bg-gray-900 text-white font-black rounded-2xl hover:bg-gray-800 transition-colors shadow-lg shadow-gray-900/20 active:scale-95"
                     >
                         विंडो बंद करा
@@ -243,10 +243,6 @@ export default function MaganiBillDocument({ record, onClose }: Props) {
             <div className="flex flex-row w-full h-[210mm] overflow-hidden print-container">
                 <BillContent record={record} copyLabel="कार्यालयीन प्रत" />
                 <BillContent record={record} copyLabel="लाभार्थी प्रत" />
-            </div>
-
-            <div className="no-print mt-8 p-4 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 font-bold max-w-[210mm] mx-auto text-center mb-10 shadow-sm">
-                💡 लँडस्केप (Landscape) मोड मध्ये प्रिंट करा.
             </div>
         </div>
     );

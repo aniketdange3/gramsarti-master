@@ -275,8 +275,8 @@ export default function UserManagement({ onAuthError, addToast }: UserManagement
                     <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
                         <div className="overflow-x-auto">
                         <table className="w-full text-left min-w-[1100px]">
-                            <thead>
-                                <tr className="bg-slate-50 text-slate-600 border-b border-slate-200">
+                            <thead className="sticky top-0 z-20">
+                                <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 shadow-sm">
                                     <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest">नाव</th>
                                     <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest">वापरकर्तानाव</th>
                                     <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest">ईमेल / संपर्क</th>
@@ -426,8 +426,8 @@ export default function UserManagement({ onAuthError, addToast }: UserManagement
                                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
                                     <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm">
                                         <table className="w-full text-left border-collapse">
-                                            <thead>
-                                                <tr className="bg-slate-50 border-b border-slate-200">
+                                            <thead className="sticky top-0 z-20">
+                                                <tr className="bg-slate-50 border-b border-slate-200 shadow-sm">
                                                     <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">मॉड्यूल (Module)</th>
                                                     <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest text-center text-slate-500">View</th>
                                                     <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest text-center text-slate-500">Add</th>

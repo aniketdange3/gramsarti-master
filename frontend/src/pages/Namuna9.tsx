@@ -34,6 +34,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
     const [filterKhasra, setFilterKhasra] = useState('');
     const [filterPlotNo, setFilterPlotNo] = useState('');
     const [filterPropertyType, setFilterPropertyType] = useState('');
+    const [filterPropertyId, setFilterPropertyId] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [showRegister, setShowRegister] = useState(false);
     const [showForm, setShowForm] = useState(false);
@@ -109,11 +110,17 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
     const handleKhasraChange = (v: string) => { setFilterKhasra(v); setFilterPlotNo(''); };
 
     const filteredRecords = useMemo(() => {
+        // जर एखादा विशिष्ट ID निवडला असेल (उदा. डॅशबोर्डवरून रिडायरेक्ट), तर फक्त तीच नोंद दाखवा
+        if (viewId) {
+            return records.filter(r => r.id === viewId);
+        }
+
         let res = records;
         if (filterWasti) res = res.filter(r => r.wastiName === filterWasti);
         if (filterLayout) res = res.filter(r => r.layoutName === filterLayout);
         if (filterKhasra) res = res.filter(r => r.khasraNo === filterKhasra);
         if (filterPlotNo) res = res.filter(r => r.plotNo === filterPlotNo);
+        if (filterPropertyId) res = res.filter(r => r.propertyId === filterPropertyId);
         if (filterPropertyType) {
             res = res.filter(r => r.sections.some(s => s.propertyType === filterPropertyType));
         }
@@ -121,7 +128,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
             res = res.filter(r => matchesSearch(r, searchTerm));
         }
         return res;
-    }, [records, filterWasti, filterLayout, filterKhasra, filterPlotNo, filterPropertyType, searchTerm]);
+    }, [records, viewId, filterWasti, filterLayout, filterKhasra, filterPlotNo, filterPropertyId, filterPropertyType, searchTerm]);
 
     const selectedRecord = useMemo(() => records.find(r => r.id === viewId), [records, viewId]);
 
@@ -395,18 +402,33 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                                 options={uniqueKhasras.map(k => ({ value: k, label: k }))}
                             />
                             <CustomDropdown
+                                value={filterPropertyId}
+                                onChange={setFilterPropertyId}
+                                placeholder="आयडी निवडा"
+                                options={records.map(r => ({ value: r.propertyId || '', label: r.propertyId || '' })).filter(o => o.value).sort((a, b) => a.value.localeCompare(b.value, undefined, { numeric: true }))}
+                            />
+                            <CustomDropdown
                                 value={filterPlotNo}
                                 onChange={setFilterPlotNo}
                                 placeholder="प्लॉट निवडा"
                                 options={uniquePlots.map(p => ({ value: p, label: p }))}
                             />
 
-                            {(filterWasti || filterLayout || filterKhasra || filterPlotNo || filterPropertyType || searchTerm) && (
+                            {(filterWasti || filterLayout || filterKhasra || filterPlotNo || filterPropertyId || filterPropertyType || searchTerm || viewId) && (
                                 <button
-                                    onClick={() => { setFilterWasti(''); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); setFilterPropertyType(''); setSearchTerm(''); }}
+                                    onClick={() => { 
+                                        setFilterWasti(''); 
+                                        setFilterLayout(''); 
+                                        setFilterKhasra(''); 
+                                        setFilterPlotNo(''); 
+                                        setFilterPropertyId(''); 
+                                        setFilterPropertyType(''); 
+                                        setSearchTerm(''); 
+                                        setViewId(null);
+                                    }}
                                     className="flex items-center gap-1.5 px-3 py-2 text-[9px] font-black text-rose-600 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100 transition-all flex-shrink-0"
                                 >
-                                    <RotateCcw className="w-3 h-3" /> रीसेट
+                                    <RotateCcw className="w-3 h-3" /> सर्व नोंदी पहा
                                 </button>
                             )}
 

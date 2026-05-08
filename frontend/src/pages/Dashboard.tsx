@@ -108,7 +108,6 @@ interface DashboardProps {
 export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, onRemoveLocalRecord, taxRates, onViewRecord, onAuthError, initialTab }: DashboardProps) {
     const [showForm, setShowForm] = useState(false);
     const [editingRecord, setEditingRecord] = useState<PropertyRecord | null>(null);
-    const [viewingRecord, setViewingRecord] = useState<PropertyRecord | null>(null);
     const [visibleFloorCount, setVisibleFloorCount] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterWasti, setFilterWasti] = useState('');
@@ -671,7 +670,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                             </div>
                             <div className="flex-1 overflow-auto">
                                 <table className="w-full text-left border-collapse min-w-[900px]">
-                                    <thead className="sticky top-0 z-20 text-Marathi">
+                                    <thead className="sticky top-0 z-50 text-Marathi">
                                         <tr className="bg-slate-50/80 backdrop-blur-md border-b border-slate-200">
                                             <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[60px] text-center">अ.क्र.</th>
                                             <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[120px]">वस्ती</th>
@@ -739,9 +738,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <div className="flex justify-center gap-1.5">
-                                                            <button onClick={() => setViewingRecord(record)} className="w-7 h-7 flex items-center justify-center text-slate-400 bg-slate-50 rounded-lg hover:bg-slate-600 hover:text-white transition-all shadow-sm border border-slate-100" title="तपशील">
-                                                                <Eye className="w-3.5 h-3.5" />
-                                                            </button>
+
                                                             {canEdit && (
                                                                 <button onClick={() => {
                                                                     const count = record.sections.filter(s => s.propertyType && s.propertyType !== 'निवडा').length;
@@ -860,108 +857,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                 />
             )}
 
-            {/* View Record Modal */}
-            {viewingRecord && (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center">
-                    <div className="bg-white rounded-[3rem] max-w-xl w-full overflow-hidden premium-shadow-lg border border-white/20 animate-in zoom-in-95 duration-300">
-                        {/* Modal Header */}
-                        <div className="p-8 pb-6 flex justify-between items-start bg-gradient-to-br from-indigo-900 to-indigo-700 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mr-24 -mt-24 blur-3xl" />
-                            <div className="relative z-10">
-                                <h2 className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-2 leading-none">मालमत्ता तपशील कार्ड</h2>
-                                <h3 className="text-2xl font-black text-white tracking-tight leading-tight">{viewingRecord.ownerName}</h3>
-                                <p className="text-indigo-200 text-xs font-bold mt-1.5 opacity-80 flex items-center gap-2">
-                                    <span className="bg-indigo-400/20 px-2 py-0.5 rounded-md">ID: {MN(viewingRecord.srNo)}</span>
-                                    <span>•</span>
-                                    <span>{viewingRecord.wastiName}</span>
-                                </p>
-                            </div>
-                            <button onClick={() => setViewingRecord(null)} className="relative z-10 w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-all">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
 
-                        <div className="p-8 space-y-8">
-                            {/* Stats Grid */}
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-100/50">
-                                    <p className="text-[9px] text-indigo-400 font-black uppercase tracking-widest mb-1.5 leading-none text-center">चालू कर</p>
-                                    <p className="font-black text-indigo-700 text-lg leading-none text-center">₹{MN(Math.round(viewingRecord.totalTaxAmount))}</p>
-                                </div>
-                                <div className="bg-rose-50/50 rounded-2xl p-4 border border-rose-100/50">
-                                    <p className="text-[9px] text-rose-400 font-black uppercase tracking-widest mb-1.5 leading-none text-center">थकबाकी</p>
-                                    <p className="font-black text-rose-700 text-lg leading-none text-center">₹{MN(Math.round(viewingRecord.arrearsAmount || 0))}</p>
-                                </div>
-                                <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/50">
-                                    <p className="text-[9px] text-emerald-400 font-black uppercase tracking-widest mb-1.5 leading-none text-center">भरलेले</p>
-                                    <p className="font-black text-emerald-700 text-lg leading-none text-center">₹{MN(Math.round(viewingRecord.paidAmount || 0))}</p>
-                                </div>
-                            </div>
-
-                            {/* Details Grid */}
-                            <div className="grid grid-cols-2 gap-x-12 gap-y-6">
-                                {[
-                                    { label: 'वस्ती / वॉर्ड', value: `${viewingRecord.wastiName} (वॉर्ड ${MN(viewingRecord.wardNo)})` },
-                                    { label: 'प्लॉट क्र.', value: MN(viewingRecord.plotNo) },
-                                    { label: 'खसरा क्र.', value: MN(viewingRecord.khasraNo) },
-                                    { label: 'ताबा धारक', value: viewingRecord.occupantName || '-' },
-                                ].map(({ label, value }) => (
-                                    <div key={label}>
-                                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none mb-1.5">{label}</p>
-                                        <p className="font-black text-slate-700 text-sm tracking-tight">{value}</p>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Actions Area */}
-                            <div className="space-y-3">
-                                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-4">द्रुत अहवाल (Quick Reports)</p>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <button
-                                        onClick={() => { onViewRecord(viewingRecord.id, 'namuna8'); setViewingRecord(null); }}
-                                        className="flex items-center gap-4 p-4 bg-white border border-indigo-100 rounded-3xl hover:border-indigo-600 hover:bg-indigo-50 group transition-all"
-                                    >
-                                        <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
-                                            <FileText className="w-5 h-5" />
-                                        </div>
-                                        <div className="text-left">
-                                            <p className="font-black text-slate-800 text-sm leading-tight">नमुना ८</p>
-                                            <p className="text-[10px] text-slate-400 font-bold mt-0.5">आकारणी नोंदवही</p>
-                                        </div>
-                                    </button>
-                                    <button
-                                        onClick={() => { onViewRecord(viewingRecord.id, 'namuna9'); setViewingRecord(null); }}
-                                        className="flex items-center gap-4 p-4 bg-white border border-indigo-100 rounded-3xl hover:border-indigo-600 hover:bg-slate-50 group transition-all"
-                                    >
-                                        <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-600 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
-                                            <Receipt className="w-5 h-5" />
-                                        </div>
-                                        <div className="text-left">
-                                            <p className="font-black text-slate-800 text-sm leading-tight">नमुना ९</p>
-                                            <p className="text-[10px] text-slate-400 font-bold mt-0.5">मागणी व वसुली</p>
-                                        </div>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="p-8 bg-slate-50/80 border-t border-slate-100 flex gap-4">
-                            <button
-                                onClick={() => { setActiveBillRecord(viewingRecord); setViewingRecord(null); }}
-                                className="flex-1 flex items-center justify-center gap-3 py-4 bg-rose-600 text-white rounded-2xl font-bold hover:bg-rose-700 shadow-lg shadow-rose-600/20 active:scale-95 transition-all text-sm"
-                            >
-                                <FileText className="w-4 h-4" /> मागणी बिल प्रिंट
-                            </button>
-                            <button
-                                onClick={() => setViewingRecord(null)}
-                                className="px-8 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold hover:bg-slate-100 active:scale-95 transition-all text-sm"
-                            >
-                                बंद करा
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </>
     );
 }

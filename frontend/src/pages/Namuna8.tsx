@@ -55,18 +55,31 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
     React.useEffect(() => {
         const loadMasters = async () => {
             try {
+                const token = localStorage.getItem('gp_token');
+                const headers = { 'Authorization': `Bearer ${token}` };
                 const [wRes, pRes] = await Promise.all([
-                    fetch(`${API_BASE_URL}/api/master/items/WASTI`),
-                    fetch(`${API_BASE_URL}/api/master/items/PROPERTY_TYPE`)
+                    fetch(`${API_BASE_URL}/api/master/items/WASTI`, { headers }),
+                    fetch(`${API_BASE_URL}/api/master/items/PROPERTY_TYPE`, { headers })
                 ]);
+
+                if (wRes.status === 401 || pRes.status === 401) {
+                    onAuthError?.();
+                    return;
+                }
+
                 const wastis = await wRes.json();
                 const types = await pRes.json();
-                setDynamicWastis(wastis.map((i: any) => i.item_value_mr));
-                setDynamicPropertyTypes(types.map((i: any) => i.item_value_mr));
+                
+                if (Array.isArray(wastis)) {
+                    setDynamicWastis(wastis.map((i: any) => i.item_value_mr));
+                }
+                if (Array.isArray(types)) {
+                    setDynamicPropertyTypes(types.map((i: any) => i.item_value_mr));
+                }
             } catch (err) { console.error(err); }
         };
         loadMasters();
-    }, []);
+    }, [onAuthError]);
 
     const API_URL = `${API_BASE_URL}/api/properties`;
 
@@ -120,11 +133,19 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
         setEditingRecord(null);
 
         try {
+            const token = localStorage.getItem('gp_token');
             const res = await fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(updatedRecord)
             });
+            if (res.status === 401) {
+                onAuthError?.();
+                return;
+            }
             if (!res.ok) {
                 fetchRecords(); // Rollback on error
             } else {
@@ -145,7 +166,15 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
         }
 
         try {
-            const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            const token = localStorage.getItem('gp_token');
+            const res = await fetch(`${API_URL}/${id}`, { 
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.status === 401) {
+                onAuthError?.();
+                return;
+            }
             if (res.ok) {
                 fetchRecords();
                 if (viewId === id) {

@@ -17,14 +17,19 @@ const JWT_SECRET = process.env.JWT_SECRET || 'gramsarthi_secret_key_2025';
  * रोलनुसार नवीन एम्प्लॉयी आयडी तयार करणे
  */
 const generateEmployeeId = async (role) => {
-    const prefixes = {
-        'gram_sachiv': 'GS', 'gram_sevak': 'GV', 'operator': 'OP', 'clerk': 'CL',
-        'bill_operator': 'BS', 'sarpanch': 'SP', 'auditor': 'AU', 'collection_officer': 'CO', 'super_admin': 'ADM'
-    };
-    const prefix = prefixes[role] || 'EMP';
-    const [rows] = await db.query('SELECT COUNT(*) as count FROM users WHERE role = ?', [role]);
-    const num = (rows[0].count + 1).toString().padStart(3, '0');
-    return `${prefix}-${num}`;
+    try {
+        const prefixes = {
+            'gram_sachiv': 'GS', 'gram_sevak': 'GV', 'operator': 'OP', 'clerk': 'CL',
+            'bill_operator': 'BS', 'sarpanch': 'SP', 'auditor': 'AU', 'collection_officer': 'CO', 'super_admin': 'ADM'
+        };
+        const prefix = prefixes[role] || 'EMP';
+        const [rows] = await db.query('SELECT COUNT(*) as count FROM users WHERE role = ?', [role]);
+        const num = (rows[0].count + 1).toString().padStart(3, '0');
+        return `${prefix}-${num}`;
+    } catch (err) {
+        console.error('generateEmployeeId Error:', err);
+        throw err;
+    }
 };
 
 /**
@@ -100,7 +105,8 @@ exports.register = async (req, res) => {
 
         res.status(201).json({ message: 'नोंदणी यशस्वी! प्रशासकाच्या मान्यतेनंतर तुम्ही लॉगिन करू शकाल.', employee_id });
     } catch (err) {
-        res.status(500).json({ error: 'सर्व्हर त्रुटी' });
+        console.error('Registration Error:', err);
+        res.status(500).json({ error: 'सर्व्हर त्रुटी: ' + err.message });
     }
 };
 

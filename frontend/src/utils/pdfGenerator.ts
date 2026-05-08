@@ -386,12 +386,10 @@ export const generateNamuna9PDF = async (records: PropertyRecord[], filterWasti 
             } else if (head.key === 'penaltyCurrent') {
                 dCurr = penaltyOnCurrent;
             } else {
-                // Individual current taxes
                 dCurr = Number((r as any)[head.key]) || 0;
             }
 
             const dTotal = dPrev + dCurr;
-
             row.push(dPrev > 0 ? MN(dPrev) : '');
             row.push(dCurr > 0 ? MN(dCurr) : '');
             row.push({ content: dTotal > 0 ? MN(dTotal) : '', styles: { fontStyle: head.isBold ? 'bold' : 'normal' } });
@@ -429,14 +427,9 @@ export const generateNamuna9PDF = async (records: PropertyRecord[], filterWasti 
 
             if (hIdx === 10) {
                 row.push({ content: paid > 0 ? MN(paid) : '', styles: { fontStyle: 'bold' } });
-            } else {
-                row.push('');
-            }
-
-            // Column 18: Balance
-            if (hIdx === 10) {
                 row.push({ content: MN(balance), styles: { fontStyle: 'bold' } });
             } else {
+                row.push('');
                 row.push('');
             }
 
@@ -470,7 +463,7 @@ export const generateNamuna9PDF = async (records: PropertyRecord[], filterWasti 
     autoTable(doc, {
         head: headN9,
         body,
-        startY: mtb + 30, // Adjusted for reduced margin <!-- id: a5 -->
+        startY: mtb + 30,
         margin: { top: mtb, bottom: mtb, left: M, right: M },
         tableWidth: PW - 2 * M,
         styles: {
@@ -519,156 +512,117 @@ export const generateNamuna9PDF = async (records: PropertyRecord[], filterWasti 
 };
 
 // ─── MAGANI BILL (DEMAND BILL) ────────────────────────────────────────────────
-export const generateMaganiBillPDF = async (record: PropertyRecord) => {
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const logo = await loadLogo();
-    registerFonts(doc);
-    const P_WIDTH = 210;
-    const P_HEIGHT = 297;
-    const MARGIN = 10;
-    const MTB_MAGANI = P_HEIGHT * 0.05; // ~14.85mm
-
+const drawMaganiBillContent = (doc: jsPDF, record: PropertyRecord, startX: number, startY: number, width: number, copyLabel: string, logo: string | null) => {
     const calc = calculateBill(record.arrearsAmount || 0, record.totalTaxAmount || 0);
     const currYear = PANCHAYAT_CONFIG.financialYear;
+    const margin = 5;
+    const innerWidth = width - 2 * margin;
 
-    // 1. Watermark (Mandatory & Larger)
+    // Watermark
     if (logo) {
         doc.saveGraphicsState();
         doc.setGState(new (doc as any).GState({ opacity: 0.05 }));
-        doc.addImage(logo, 'PNG', 55, 100, 100, 100);
+        doc.addImage(logo, 'PNG', startX + width/4, startY + 40, width/2, width/2);
         doc.restoreGraphicsState();
     }
 
-    // Outer Border
+    // Border
     doc.setDrawColor(...BLACK);
-    doc.setLineWidth(0.5);
-    doc.rect(MARGIN, MTB_MAGANI, P_WIDTH - 2 * MARGIN, P_HEIGHT - 2 * MTB_MAGANI);
+    doc.setLineWidth(0.3);
+    doc.rect(startX + margin, startY, innerWidth, 190);
+    doc.line(startX + margin, startY + 30, startX + width - margin, startY + 30);
 
-    // 2. Header Section
-    doc.setDrawColor(...BLACK);
-    doc.setLineWidth(0.5);
-    doc.line(MARGIN, MTB_MAGANI + 40, P_WIDTH - MARGIN, MTB_MAGANI + 40);
-
+    // Header
     safeSetFont(doc, 'NotoMarathi', 'bold');
-    doc.setFontSize(8);
-    doc.text(`बुक नं. ${MN((record as any).bookNo || 1)}`, MARGIN + 5, MTB_MAGANI + 10);
-    doc.text(`बिल नं. ${MN(record.srNo)}`, P_WIDTH - MARGIN - 5, MTB_MAGANI + 10, { align: 'right' });
-
-    safeSetFont(doc, 'NotoMarathi', 'normal');
-    doc.setFontSize(8);
-    doc.text(`(नमुना नं. ९ "क")`, P_WIDTH / 2, MTB_MAGANI + 10, { align: 'center' });
-
-    safeSetFont(doc, 'NotoMarathi', 'bold');
-    doc.setFontSize(18);
-    doc.setTextColor(...HEAD_BG);
-    doc.text(`कराच्या मागणीचे बिल`, P_WIDTH / 2, MTB_MAGANI + 18, { align: 'center' });
-
-    doc.setTextColor(...BLACK);
-    safeSetFont(doc, 'NotoMarathi', 'normal');
-    doc.setFontSize(9);
-    doc.text(`कार्यालय ग्रामपंचायत ${PANCHAYAT_CONFIG.gpName} मौजा ${record.wastiName || ''}`, P_WIDTH / 2, MTB_MAGANI + 25, { align: 'center' });
-    doc.text(`पंचायत समिती ${PANCHAYAT_CONFIG.taluka} जि. ${PANCHAYAT_CONFIG.jilha}`, P_WIDTH / 2, MTB_MAGANI + 30, { align: 'center' });
     doc.setFontSize(7);
-    doc.text(`(मुंबई ग्रा. पं. कायदा १९५८ कलम १२९ अन्वये)`, P_WIDTH / 2, MTB_MAGANI + 35, { align: 'center' });
-
-    // 3. Owner Info Section
-    safeSetFont(doc, 'NotoMarathi', 'bold');
-    doc.setFontSize(10);
-    doc.text(`श्री ${record.ownerName || '-'}`, MARGIN + 5, MTB_MAGANI + 48);
+    doc.text(`बुक नं. ${MN((record as any).bookNo || 1)}`, startX + margin + 3, startY + 7);
+    doc.text(`बिल नं. ${MN(record.srNo)}`, startX + width - margin - 3, startY + 7, { align: 'right' });
+    doc.text(copyLabel, startX + width - margin - 3, startY + 11, { align: 'right' });
+    
     safeSetFont(doc, 'NotoMarathi', 'normal');
+    doc.text(`(नमुना नं. ९ "क")`, startX + width / 2, startY + 7, { align: 'center' });
+
+    safeSetFont(doc, 'NotoMarathi', 'bold');
+    doc.setFontSize(14);
+    doc.text(`कराच्या मागणीचे बिल`, startX + width / 2, startY + 15, { align: 'center' });
+
+    safeSetFont(doc, 'NotoMarathi', 'normal');
+    doc.setFontSize(8);
+    doc.text(`गट ग्रामपंचायत ${PANCHAYAT_CONFIG.gpName}`, startX + width / 2, startY + 21, { align: 'center' });
+    doc.text(`ता. ${PANCHAYAT_CONFIG.taluka} जि. ${PANCHAYAT_CONFIG.jilha}`, startX + width / 2, startY + 26, { align: 'center' });
+
     doc.setFontSize(9);
-    doc.text(`यांचेकडुन`, MARGIN + 5, MTB_MAGANI + 53);
+    doc.text(`श्री ${record.ownerName || '-'} यांचेकडुन`, startX + margin + 3, startY + 37);
 
     autoTable(doc, {
-        body: [
-            [`वार्ड नं. - ${MN(record.wardNo || '-')}`, `घर नं. - ${MN(record.srNo || '-')}`, `प्लॉट नं. - ${MN(record.plotNo || '-')}`, `खसरा नं. - ${MN(record.khasraNo || '-')}`],
-        ],
-        startY: MTB_MAGANI + 55,
-        margin: { left: MARGIN + 2, right: MARGIN + 2, top: MTB_MAGANI, bottom: MTB_MAGANI },
-        theme: 'grid',
-        styles: { fontSize: 8, cellPadding: 2, lineWidth: 0.1, lineColor: BLACK, font: (doc as any).getFontList().NotoMarathi ? 'NotoMarathi' : 'helvetica' },
-        columnStyles: { 0: { cellWidth: 45 }, 1: { cellWidth: 45 }, 2: { cellWidth: 45 }, 3: { cellWidth: 'auto' } }
+        body: [[`मौजा: ${record.wastiName || '-'}`, `खसरा: ${MN(record.khasraNo)}`, `प्लॉट: ${MN(record.plotNo)}`]],
+        startY: startY + 40,
+        margin: { left: startX + margin + 2, right: (297 - (startX + width - margin)) + 2 },
+        styles: { font: 'NotoMarathi', fontSize: 7, cellPadding: 1, lineWidth: 0.1, lineColor: BLACK },
+        tableWidth: innerWidth - 4
     });
 
-    const subY = (doc as any).lastAutoTable.finalY + 5;
-    safeSetFont(doc, 'NotoMarathi', 'normal');
-    doc.setFontSize(9);
-    doc.text(`सोसायटीचे नाव - ${record.layoutName || '-'} याबद्दल`, MARGIN + 5, subY);
-    safeSetFont(doc, 'NotoMarathi', 'bold');
-    doc.text(`सन ${currYear} करीता पुढे नमूद केलेल्या रकमा`, MARGIN + 5, subY + 6);
+    const tableY = (doc as any).lastAutoTable.finalY + 3;
+    doc.text(`सन ${currYear} करीता येणे रकमा:`, startX + margin + 3, tableY + 4);
 
-    // 4. Main Tax Table
-    const taxRows: any[][] = [
-        ['घरपट्टी', MN(0), MN(record.propertyTax || 0), MN(record.propertyTax || 0)],
-        ['घरपट्टी (जागा)', MN(0), MN(record.openSpaceTax || 0), MN(record.openSpaceTax || 0)],
-        ['दिवाबत्ती कर', MN(0), MN(record.streetLightTax || 0), MN(record.streetLightTax || 0)],
-        ['आरोग्य कर', MN(0), MN(record.healthTax || 0), MN(record.healthTax || 0)],
-        ['कचरा गाडी कर', MN(0), MN(record.wasteCollectionTax || 0), MN(record.wasteCollectionTax || 0)],
-        ['सामान्य पाणी कर', MN(0), MN(record.generalWaterTax || 0), MN(record.generalWaterTax || 0)],
-        ['विशेष पाणी कर', MN(0), MN(record.specialWaterTax || 0), MN(record.specialWaterTax || 0)],
-        ['उशिरा कर (५% दंड)', MN(calc.penaltyAmount), MN(0), MN(calc.penaltyAmount)],
-        ['नोटीस फी', MN(0), MN(0), MN(0)],
-        ['अधिकाऱ्याची (वॉरंटी फी)', MN(0), MN(0), MN(0)],
-        ['इतर', MN(0), MN(0), MN(0)],
+    const taxRows = [
+        ['१. घरपट्टी', MN(0), MN(record.propertyTax || 0), MN(record.propertyTax || 0)],
+        ['२. जागा कर', MN(0), MN(record.openSpaceTax || 0), MN(record.openSpaceTax || 0)],
+        ['३. दिवाबत्ती कर', MN(0), MN(record.streetLightTax || 0), MN(record.streetLightTax || 0)],
+        ['४. आरोग्य कर', MN(0), MN(record.healthTax || 0), MN(record.healthTax || 0)],
+        ['५. पाणी कर', MN(0), MN(record.generalWaterTax || 0), MN(record.generalWaterTax || 0)],
+        ['६. मागील थकबाकी', MN(record.arrearsAmount || 0), MN(0), MN(record.arrearsAmount || 0)],
     ];
 
     autoTable(doc, {
-        head: [[
-            { content: 'कराची नावे', styles: { halign: 'center', fontStyle: 'bold' } },
-            { content: `सन २०२४-२५\nमागील बाकी रुपये`, styles: { halign: 'center', fontStyle: 'bold' } },
-            { content: `सन ${currYear}\nचालू कर रुपये`, styles: { halign: 'center', fontStyle: 'bold' } },
-            { content: 'एकुण रुपये', styles: { halign: 'center', fontStyle: 'bold' } }
-        ]],
+        head: [['कराची नावे', 'मागील', 'चालू', 'एकुण']],
         body: [
             ...taxRows,
-            [
-                { content: 'एकूण', styles: { halign: 'left', fontStyle: 'bold', fillColor: [240, 240, 240] } },
-                { content: MN(calc.arrearsTotal), styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240] } },
-                { content: MN(calc.currentTaxTotal), styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240] } },
-                { content: `रु. ${MN(calc.billTotal)}`, styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240], fontSize: 10 } }
-            ]
+            [{ content: 'एकूण येणे', styles: { fontStyle: 'bold' } }, '', '', { content: `रु. ${MN(calc.billTotal)}`, styles: { fontStyle: 'bold' } }]
         ],
-        startY: subY + 10,
-        margin: { left: MARGIN + 2, right: MARGIN + 2 },
-        styles: { fontSize: 8.5, cellPadding: 2.5, lineWidth: 0.2, lineColor: BLACK, font: (doc as any).getFontList().NotoMarathi ? 'NotoMarathi' : 'helvetica' },
-        headStyles: { fillColor: [245, 245, 245], textColor: BLACK, lineWidth: 0.2, lineColor: BLACK },
-        columnStyles: {
-            0: { cellWidth: 80 },
-            1: { cellWidth: 35, halign: 'right' },
-            2: { cellWidth: 35, halign: 'right' },
-            3: { cellWidth: 'auto', halign: 'right' }
-        }
+        startY: tableY + 7,
+        margin: { left: startX + margin + 2, right: (297 - (startX + width - margin)) + 2 },
+        styles: { font: 'NotoMarathi', fontSize: 7.5, cellPadding: 1.5, lineWidth: 0.15, lineColor: BLACK },
+        tableWidth: innerWidth - 4
     });
 
     const footerY = (doc as any).lastAutoTable.finalY + 10;
-    doc.setFontSize(8.5);
-    safeSetFont(doc, 'NotoMarathi', 'normal');
-    doc.text(`वरील बिलात नमूद केलेल्या करदाखल्याच्या रकमा दि. ________________ पर्यंत आत ग्रा. पं. चे कार्यालयात`, MARGIN + 5, footerY);
-    doc.text(`पटवून पावती घ्यावी. असे न केल्यास आपले वर योग्य कारवाई करण्यात येईल.`, MARGIN + 5, footerY + 5);
-
-    doc.text(`मागणी बिल मिळाल्याबाबत स्वाक्षरी`, MARGIN + 5, footerY + 25);
-    doc.text(`दिनांक : ${MN(new Date().toLocaleDateString('mr-IN'))}`, MARGIN + 5, footerY + 35);
-
-    // Signature Area
-    const sigX = P_WIDTH - MARGIN - 60;
-    safeSetFont(doc, 'NotoMarathi', 'bold');
-    doc.text(`सरपंच/सचिव`, sigX + 30, footerY + 25, { align: 'center' });
-    doc.text(`ग्रामपंचायत ${PANCHAYAT_CONFIG.gpName}`, sigX + 30, footerY + 30, { align: 'center' });
-    doc.text(`पं. स. ${PANCHAYAT_CONFIG.taluka}`, sigX + 30, footerY + 35, { align: 'center' });
-
-    // Discount Note
-    doc.setDrawColor(...BLACK);
-    doc.setLineWidth(0.3);
-    doc.rect(MARGIN + 5, footerY + 45, P_WIDTH - 2 * MARGIN - 10, 10);
-    safeSetFont(doc, 'NotoMarathi', 'bold');
     doc.setFontSize(8);
-    doc.text(`टिप: महाराष्ट्र ग्रामपंचायत कर व फी (सुधारणा) व नियम २०१५ नुसार ३० सप्टेंबर पर्यंत कर भरल्यास ५% सुट देण्यात येईल.`, P_WIDTH / 2, footerY + 51, { align: 'center' });
-
-    doc.save(`MaganiBill_${record.propertyId || record.srNo}_${record.ownerName}.pdf`);
+    doc.text(`वरील बिल कार्यालयात पटवून पावती घ्यावी.`, startX + margin + 3, footerY);
+    doc.text(`सही: ________________`, startX + width - margin - 35, footerY + 10);
+    doc.text(`सरपंच/सचिव`, startX + width - margin - 35, footerY + 15);
 };
 
+export const generateMaganiBillPDF = async (record: PropertyRecord) => {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const logo = await loadLogo();
+    registerFonts(doc);
+    const L_MARGIN = 30.48; // 1.20 inches
+    const R_MARGIN = 10;
+    const billWidth = (297 - L_MARGIN - R_MARGIN) / 2;
 
+    drawMaganiBillContent(doc, record, L_MARGIN, 10, billWidth, 'कार्यालयीन प्रत', logo);
+    drawMaganiBillContent(doc, record, L_MARGIN + billWidth, 10, billWidth, 'करदात्याची प्रत', logo);
 
+    doc.save(`Magani_Bill_${record.srNo}.pdf`);
+};
+
+export const generateBulkMaganiBillsPDF = async (records: PropertyRecord[]) => {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const logo = await loadLogo();
+    registerFonts(doc);
+    const L_MARGIN = 30.48;
+    const R_MARGIN = 10;
+    const billWidth = (297 - L_MARGIN - R_MARGIN) / 2;
+
+    for (let i = 0; i < records.length; i++) {
+        if (i > 0) doc.addPage();
+        drawMaganiBillContent(doc, records[i], L_MARGIN, 10, billWidth, 'कार्यालयीन प्रत', logo);
+        drawMaganiBillContent(doc, records[i], L_MARGIN + billWidth, 10, billWidth, 'करदात्याची प्रत', logo);
+    }
+
+    doc.save(`Bulk_Magil_Bills_${new Date().getTime()}.pdf`);
+};
 
 // ─── WASTI REPORT PDF ────────────────────────────────────────────────────────
 export const generateWastiReportPDF = async (wastiData: any[]) => {
@@ -729,96 +683,4 @@ export const generateKhasaraReportPDF = async (khasaraData: any[]) => {
     });
 
     doc.save(`Khasara_Report_${new Date().toLocaleDateString('mr-IN')}.pdf`);
-};
-
-export const generateBulkMaganiBillsPDF = async (records: PropertyRecord[]) => {
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const logo = await loadLogo();
-    registerFonts(doc);
-    const P_WIDTH = 210;
-    const P_HEIGHT = 297;
-    const MARGIN = 10;
-    const MTB_MAGANI = P_HEIGHT * 0.05;
-    const currYear = (records[0] as any)?.financialYear || '२०२५-२६';
-
-    for (let i = 0; i < records.length; i++) {
-        const record = records[i];
-        if (i > 0) doc.addPage();
-
-        const calc = {
-            arrearsTotal: Number(record.arrearsAmount) || 0,
-            currentTaxTotal: Number(record.totalTaxAmount) || 0,
-            billTotal: (Number(record.arrearsAmount) || 0) + (Number(record.totalTaxAmount) || 0),
-            penaltyAmount: Math.round((Number(record.arrearsAmount) || 0) * 0.05)
-        };
-
-        if (logo) {
-            doc.saveGraphicsState();
-            doc.setGState(new (doc as any).GState({ opacity: 0.05 }));
-            doc.addImage(logo, 'PNG', 55, 100, 100, 100);
-            doc.restoreGraphicsState();
-        }
-
-        doc.setDrawColor(0, 0, 0);
-        doc.setLineWidth(0.5);
-        doc.rect(MARGIN, MTB_MAGANI, P_WIDTH - 2 * MARGIN, P_HEIGHT - 2 * MTB_MAGANI);
-        doc.line(MARGIN, MTB_MAGANI + 40, P_WIDTH - MARGIN, MTB_MAGANI + 40);
-
-        safeSetFont(doc, 'NotoMarathi', 'bold');
-        doc.setFontSize(8);
-        doc.text(`बुक नं. ${MN((record as any).bookNo || 1)}`, MARGIN + 5, MTB_MAGANI + 10);
-        doc.text(`बिल नं. ${MN(record.srNo)}`, P_WIDTH - MARGIN - 5, MTB_MAGANI + 10, { align: 'right' });
-        
-        safeSetFont(doc, 'NotoMarathi', 'normal');
-        doc.text(`(नमुना नं. ९ "क")`, P_WIDTH / 2, MTB_MAGANI + 10, { align: 'center' });
-
-        safeSetFont(doc, 'NotoMarathi', 'bold');
-        doc.setFontSize(18);
-        doc.text(`कराच्या मागणीचे बिल`, P_WIDTH / 2, MTB_MAGANI + 18, { align: 'center' });
-
-        safeSetFont(doc, 'NotoMarathi', 'normal');
-        doc.setFontSize(9);
-        doc.text(`कार्यालय ग्रामपंचायत मौजा ${record.wastiName || ''}`, P_WIDTH / 2, MTB_MAGANI + 25, { align: 'center' });
-
-        doc.text(`श्री ${record.ownerName || '-'} यांचेकडुन`, MARGIN + 5, MTB_MAGANI + 48);
-
-        autoTable(doc, {
-            body: [
-                [`मालमत्ता क्र. - ${MN(record.propertyId || record.srNo)}`, `प्लॉट नं. - ${MN(record.plotNo || '-')}`, `खसरा नं. - ${MN(record.khasraNo || '-')}`],
-            ],
-            startY: MTB_MAGANI + 55,
-            margin: { left: MARGIN + 2, right: MARGIN + 2 },
-            styles: { font: 'NotoMarathi', fontSize: 8, cellPadding: 2, lineWidth: 0.1, lineColor: [0, 0, 0] },
-        });
-
-        const subY = (doc as any).lastAutoTable.finalY + 5;
-        doc.text(`सन ${currYear} करीता पुढे नमूद केलेल्या रकमा`, MARGIN + 5, subY + 6);
-
-        const taxRows = [
-            ['१. घरपट्टी', MN(0), MN(record.propertyTax || 0), MN(record.propertyTax || 0)],
-            ['२. जागा कर', MN(0), MN(record.openSpaceTax || 0), MN(record.openSpaceTax || 0)],
-            ['३. दिवाबत्ती कर', MN(0), MN(record.streetLightTax || 0), MN(record.streetLightTax || 0)],
-            ['४. आरोग्य कर', MN(0), MN(record.healthTax || 0), MN(record.healthTax || 0)],
-            ['५. पाणी कर', MN(0), MN(record.generalWaterTax || 0), MN(record.generalWaterTax || 0)],
-            ['६. मागील थकबाकी', MN(record.arrearsAmount || 0), MN(0), MN(record.arrearsAmount || 0)],
-        ];
-
-        autoTable(doc, {
-            head: [['कराची नावे', 'मागील बाकी', 'चालू कर', 'एकुण']],
-            body: [
-                ...taxRows,
-                [{ content: 'एकूण येणे रक्कम', styles: { fontStyle: 'bold' } }, '', '', { content: `रु. ${MN(calc.billTotal)}`, styles: { fontStyle: 'bold' } }]
-            ],
-            startY: subY + 12,
-            margin: { left: MARGIN + 2, right: MARGIN + 2 },
-            styles: { font: 'NotoMarathi', fontSize: 9, cellPadding: 2, lineWidth: 0.2, lineColor: [0, 0, 0] },
-        });
-
-        const footerY = (doc as any).lastAutoTable.finalY + 15;
-        doc.text(`वरील बिल कार्यालयात पटवून पावती घ्यावी.`, MARGIN + 5, footerY);
-        doc.text(`सही: ________________`, P_WIDTH - MARGIN - 40, footerY + 10);
-        doc.text(`ग्रामसेवक/सरपंच`, P_WIDTH - MARGIN - 40, footerY + 15);
-    }
-
-    doc.save(`Bulk_Magil_Bills_${new Date().getTime()}.pdf`);
 };

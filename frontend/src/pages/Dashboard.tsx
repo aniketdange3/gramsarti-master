@@ -14,7 +14,8 @@
 import { API_BASE_URL } from '@/utils/config';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useUI } from '../components/UIProvider';
-import { Plus, FileSpreadsheet, Search, Edit2, Trash2, X, ChevronRight, ChevronLeft, FileDown, Printer, FileUp, FileText, Receipt, Eye, TrendingUp, Users, IndianRupee, AlertTriangle, CheckCircle2, Filter, RotateCcw, Shield, ChevronDown, LayoutDashboard } from 'lucide-react';
+import { Plus, FileSpreadsheet, Search, Edit2, Trash2, X, ChevronRight, ChevronLeft, FileDown, Printer, FileUp, FileText, Receipt, Eye, TrendingUp, Users, IndianRupee, AlertTriangle, CheckCircle2, Filter, RotateCcw, Shield, ChevronDown, LayoutDashboard, BookOpen } from 'lucide-react';
+
 import { PropertyRecord, PropertySection, DEFAULT_SECTION, FLOOR_NAMES, PROPERTY_TYPES, WASTI_NAMES } from '../types';
 import { ROLES } from './Login';
 import { EXCEL_HEADERS, PLACEHOLDERS } from '../utils/constants';
@@ -115,6 +116,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
     const [filterKhasra, setFilterKhasra] = useState('');
     const [filterPlotNo, setFilterPlotNo] = useState('');
     const [filterPropertyType, setFilterPropertyType] = useState('');
+    const [filterNamuna, setFilterNamuna] = useState<'' | 'namuna8' | 'namuna9'>('');
     const [saving, setSaving] = useState(false);
     const [dynamicWastis, setDynamicWastis] = useState<string[]>([]);
     const [dynamicPropertyTypes, setDynamicPropertyTypes] = useState<string[]>([]);
@@ -136,18 +138,31 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
     useEffect(() => {
         const loadMasters = async () => {
             try {
+                const token = localStorage.getItem('gp_token');
+                const headers = { 'Authorization': `Bearer ${token}` };
                 const [wRes, pRes] = await Promise.all([
-                    fetch(`${API_BASE_URL}/api/master/items/WASTI`),
-                    fetch(`${API_BASE_URL}/api/master/items/PROPERTY_TYPE`)
+                    fetch(`${API_BASE_URL}/api/master/items/WASTI`, { headers }),
+                    fetch(`${API_BASE_URL}/api/master/items/PROPERTY_TYPE`, { headers })
                 ]);
+
+                if (wRes.status === 401 || pRes.status === 401) {
+                    onAuthError?.();
+                    return;
+                }
+
                 const wastis = await wRes.json();
                 const types = await pRes.json();
-                setDynamicWastis(wastis.map((i: any) => i.item_value_mr));
-                setDynamicPropertyTypes(types.map((i: any) => i.item_value_mr));
+
+                if (Array.isArray(wastis)) {
+                    setDynamicWastis(wastis.map((i: any) => i.item_value_mr));
+                }
+                if (Array.isArray(types)) {
+                    setDynamicPropertyTypes(types.map((i: any) => i.item_value_mr));
+                }
             } catch (err) { console.error(err); }
         };
         loadMasters();
-    }, []);
+    }, [onAuthError]);
 
     const API_URL = `${API_BASE_URL}/api/properties`;
 
@@ -160,7 +175,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
     const uniqueLayouts = useMemo(() => Array.from(new Set(wastiFiltered.map(r => r.layoutName).filter(Boolean))).sort(), [wastiFiltered]);
     const uniqueKhasras = useMemo(() => Array.from(new Set(layoutFiltered.map(r => r.khasraNo).filter(Boolean))).sort(sortKhasra), [layoutFiltered]);
     const uniquePlots = useMemo(() => Array.from(new Set(khasraFiltered.map(r => r.plotNo).filter(Boolean))).sort(sortKhasra), [khasraFiltered]);
-    const hasActiveFilters = filterWasti || filterLayout || filterKhasra || filterPlotNo || filterPropertyType;
+    const hasActiveFilters = filterWasti || filterLayout || filterKhasra || filterPlotNo || filterPropertyType || filterNamuna;
 
     // Reset child filters when parent changes
     const handleWastiChange = (v: string) => { setFilterWasti(v); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); };
@@ -176,14 +191,23 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
         if (filterPropertyType) {
             res = res.filter(r => r.sections.some(s => s.propertyType === filterPropertyType));
         }
+        // Namuna 8: properties with construction (sections with area > 0)
+        if (filterNamuna === 'namuna8') {
+            res = res.filter(r => r.hasConstruction || r.sections?.some(s => s.propertyType && (s.areaSqFt || 0) > 0));
+        }
+        // Namuna 9: properties with any tax demand (milled for recovery)
+        if (filterNamuna === 'namuna9') {
+            res = res.filter(r => (Number(r.totalTaxAmount) || 0) > 0);
+        }
         if (searchTerm.trim()) res = res.filter(r => matchesSearch(r, searchTerm));
         return res;
-    }, [records, searchTerm, filterWasti, filterLayout, filterKhasra, filterPlotNo, filterPropertyType]);
+    }, [records, searchTerm, filterWasti, filterLayout, filterKhasra, filterPlotNo, filterPropertyType, filterNamuna]);
 
     // Reset page on filter/search change
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, filterWasti, filterLayout, filterKhasra, filterPlotNo, filterPropertyType]);
+    }, [searchTerm, filterWasti, filterLayout, filterKhasra, filterPlotNo, filterPropertyType, filterNamuna]);
+
 
     // Highlight duplicate records (same Khasra, Wasti, and Owner Name)
     const duplicateMap = useMemo(() => {
@@ -234,6 +258,43 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
     const handleSave = async (record: PropertyRecord) => {
         setSaving(true);
         const isNew = !editingRecord;
+
+        // --- SOFT UPDATE WORKFLOW ---
+        // जर ही जुनी नोंद असेल, तर ती थेट अपडेट न करता 'Audit Request' म्हणून पाठवावी
+        if (!isNew) {
+            try {
+                const token = localStorage.getItem('gp_token');
+                const response = await fetch(`${API_BASE_URL}/api/audit/requests`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        property_id: record.id,
+                        request_data: record
+                    })
+                });
+                if (response.status === 401) {
+                    onAuthError?.();
+                    return;
+                }
+                if (response.ok) {
+                    setShowForm(false);
+                    setEditingRecord(null);
+                    addToast('दुरुस्तीचा प्रस्ताव सादर केला आहे! प्रशासकाच्या मान्यतेनंतर बदल लागू होतील.', 'info');
+                } else {
+                    const errData = await response.json();
+                    addToast(`त्रुटी: ${errData.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                addToast('सर्व्हरशी संपर्क करता आला नाही.', 'error');
+            } finally {
+                setSaving(false);
+            }
+            return;
+        }
+
         const maxSrNo = records.reduce((max, r) => Math.max(max, Number(r.srNo) || 0), 0);
         const finalRecord = isNew ? {
             ...record,
@@ -241,18 +302,24 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
             id: record.id && record.id !== '' ? record.id : 'prop_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now()
         } : record;
         try {
+            const token = localStorage.getItem('gp_token');
             const response = await fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(finalRecord)
             });
+            if (response.status === 401) {
+                onAuthError?.();
+                return;
+            }
             if (response.ok) {
-                // If it was a new record, the server might have generated an ID, but 
-                // for simplicity and sync, we use the finalRecord we sent as it has our ID.
                 onUpdateLocalRecord(finalRecord);
                 setShowForm(false);
                 setEditingRecord(null);
-                addToast(isNew ? 'नवीन नोंद यशस्वीरित्या जतन केली!' : 'नोंद अद्यतनित केली!', 'success');
+                addToast('नवीन नोंद यशस्वीरित्या जतन केली!', 'success');
             } else {
                 const errData = await response.json();
                 addToast(`त्रुटी: ${errData.error || 'Unknown error'}`, 'error');
@@ -267,7 +334,15 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
     const deleteRecord = async (id: string) => {
         if (!window.confirm('आपली खात्री आहे का की आपण ही नोंद हटवू इच्छिता?')) return;
         try {
-            const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            const token = localStorage.getItem('gp_token');
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.status === 401) {
+                onAuthError?.();
+                return;
+            }
             if (response.ok) {
                 onRemoveLocalRecord(id);
                 addToast('नोंद हटवली गेली.', 'info');
@@ -312,7 +387,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
 
         const importedFiles = JSON.parse(localStorage.getItem('gp_imported_files') || '[]');
         if (importedFiles.includes(file.name)) {
-            alert(`'${file.name}' ही फाईल आधीच आयात केली आहे! कृपया दुसरी फाईल निवडा. (This file is already imported)`);
+            alert(`'${file.name}' ही फाईल आधीच आयात केली आहे! कृपया दुसरी फाईल निवडा.`);
             e.target.value = '';
             return;
         }
@@ -350,14 +425,17 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                     const lastIdx = 10 + (5 * 15);
                     return {
                         id: '', srNo: Number(row[EXCEL_HEADERS[0]]) || 0,
-                        wastiName: String(row[EXCEL_HEADERS[1]] ?? ''), wardNo: String(row[EXCEL_HEADERS[2]] ?? ''),
-                        khasraNo: String(row[EXCEL_HEADERS[3]] ?? row["खसरा नंबर"] ?? ''), layoutName: String(row[EXCEL_HEADERS[4]] ?? ''),
+                        wastiName: String(row[EXCEL_HEADERS[1]] ?? ''),
+                        wardNo: String(row[EXCEL_HEADERS[2]] ?? ''),
+                        khasraNo: String(row[EXCEL_HEADERS[3]] ?? row["خसरा नंबर"] ?? ''),
+                        layoutName: String(row[EXCEL_HEADERS[4]] ?? ''),
                         plotNo: String(row[EXCEL_HEADERS[5]] ?? row["प्लॉट क्रमांक"] ?? row["प्लॉट क्र."] ?? row["प्लॉट नं."] ?? row["प्लॉट नं"] ?? row["Plot No"] ?? row["Plot No."] ?? ''),
                         propertyId: String(row[EXCEL_HEADERS[5]] ?? row["मालमत्ता क्र."] ?? row["मालमत्ता क्रमांक"] ?? row["मालमत्ता नं."] ?? row["Property No"] ?? row["Property ID"] ?? row["प्लॉट क्रमांक"] ?? ''),
                         occupantName: String(row[EXCEL_HEADERS[6]] ?? ''),
                         ownerName: String(row[EXCEL_HEADERS[7]] ?? ''),
                         hasConstruction: (row[EXCEL_HEADERS[8]] || '').toString().includes('हो'),
-                        openSpace: Number(row[EXCEL_HEADERS[9]]) || 0, sections,
+                        openSpace: Number(row[EXCEL_HEADERS[9]]) || 0,
+                        sections,
                         propertyTax: Number(row[EXCEL_HEADERS[lastIdx]]) || 0,
                         openSpaceTax: Number(row[EXCEL_HEADERS[lastIdx + 1]]) || 0,
                         streetLightTax: Number(row[EXCEL_HEADERS[lastIdx + 2]]) || 0,
@@ -373,26 +451,60 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                         createdAt: new Date().toISOString()
                     };
                 });
-                const response = await fetch(`${API_URL}/import`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(mappedRecords)
-                });
-                if (response.ok) {
-                    importedFiles.push(file.name);
-                    localStorage.setItem('gp_imported_files', JSON.stringify(importedFiles));
-                    fetchRecords();
-                    addToast(`${mappedRecords.length} नोंदी यशस्वीरित्या आयात केल्या!`, 'success');
-                } else {
-                    const err = await response.json();
-                    addToast(`आयात त्रुटी: ${err.error}`, 'error');
+
+                // --- Chunked Batch Import: handles 100MB+ files ---
+                const CHUNK_SIZE = 500;
+                const totalChunks = Math.ceil(mappedRecords.length / CHUNK_SIZE);
+                const token = localStorage.getItem('gp_token');
+                let totalImported = 0;
+
+                addToast(`${mappedRecords.length} नोंदी आढळल्या. आयात सुरू आहे... (${totalChunks} batch)`, 'info');
+
+                for (let i = 0; i < totalChunks; i++) {
+                    const chunk = mappedRecords.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+                    let response: Response;
+                    try {
+                        response = await fetch(`${API_URL}/import`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify(chunk)
+                        });
+                    } catch (networkErr) {
+                        addToast(`Batch ${i + 1}/${totalChunks}: सर्व्हरशी संपर्क होउ शकला नाही. सर्व्हर सुरू आहे का ते तपासा.`, 'error');
+                        return;
+                    }
+                    if (response.status === 401) { onAuthError?.(); return; }
+                    if (response.status === 403) {
+                        addToast('परवानगी नाही: डेटा आयात करण्याचा अधिकार नाही. अडमिनशी संपर्क साधा.', 'error');
+                        return;
+                    }
+                    if (!response.ok) {
+                        let errMsg = 'Unknown error';
+                        try { const e2 = await response.json(); errMsg = e2.error || errMsg; } catch (_) { }
+                        addToast(`Batch ${i + 1} आयात त्रुटी: ${errMsg}`, 'error');
+                        return;
+                    }
+                    totalImported += chunk.length;
+                    if (totalChunks > 1) {
+                        addToast(`Batch ${i + 1}/${totalChunks} पूर्ण (${totalImported}/${mappedRecords.length} नोंदी)`, 'info');
+                    }
                 }
+
+                importedFiles.push(file.name);
+                localStorage.setItem('gp_imported_files', JSON.stringify(importedFiles));
+                fetchRecords();
+                addToast(`✅ ${totalImported} नोंदी यशस्वीरित्या आयात केल्या!`, 'success');
             } catch (error) {
-                addToast('फाइल प्रक्रियेत त्रुटी आली.', 'error');
+                addToast('फाइल प्रक्रियेत त्रुटी आली. फाइल योग्य Excel format मध्ये आहे का ते तपासा.', 'error');
             }
         };
         reader.readAsBinaryString(file);
         e.target.value = '';
     };
+
 
     if (activeBillRecord) {
         return (
@@ -466,70 +578,77 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                     <UserManagement onAuthError={onAuthError} addToast={addToast} />
                 ) : (
                     <>
-                        {/* Unified Single-Row Search & Filter Bar */}
-                        <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-xl no-print flex-wrap lg:flex-nowrap shadow-sm text-Marathi">
-                            <div className="relative flex-1 min-w-[200px]">
+                        {/* Search & Filter Bar — Namuna 8 Style */}
+                        <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-xl no-print flex-wrap lg:flex-nowrap shrink-0 shadow-sm text-Marathi">
+                            {/* Search */}
+                            <div className="relative w-[300px] shrink-0">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10" />
                                 <TransliterationInput
                                     placeholder="शोधा..."
-                                    className="w-full pl-9 pr-10 py-2 bg-slate-50 border border-transparent rounded-lg text-xs font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all"
+                                    className="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400"
                                     value={searchTerm}
                                     onChangeText={setSearchTerm}
                                 />
                                 {searchTerm && (
-                                    <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500">
-                                        <X size={14} />
+                                    <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-1 hover:bg-rose-50 rounded-lg transition-colors">
+                                        <X className="w-4 h-4 text-slate-400 hover:text-rose-500" />
                                     </button>
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 scrollbar-thin">
+                            {/* Filters Group */}
+                            <div className="flex items-center gap-2 flex-wrap flex-1 justify-end">
                                 <CustomDropdown
                                     value={filterWasti}
                                     onChange={handleWastiChange}
-                                    placeholder="प्रभाग/वस्ती"
+                                    placeholder="वस्ती निवडा"
                                     options={uniqueWastis.map(w => ({ value: w, label: w }))}
                                 />
                                 <CustomDropdown
                                     value={filterLayout}
                                     onChange={handleLayoutChange}
-                                    placeholder="लेआउट"
+                                    placeholder="लेआउट निवडा"
                                     options={uniqueLayouts.map(l => ({ value: l, label: l }))}
                                 />
                                 <CustomDropdown
                                     value={filterKhasra}
                                     onChange={handleKhasraChange}
-                                    placeholder="खसरा"
+                                    placeholder="खसरा निवडा"
                                     options={uniqueKhasras.map(k => ({ value: k, label: k }))}
                                 />
                                 <CustomDropdown
                                     value={filterPlotNo}
                                     onChange={setFilterPlotNo}
-                                    placeholder="प्लॉट/घर"
+                                    placeholder="प्लॉट निवडा"
                                     options={uniquePlots.map(p => ({ value: p, label: p }))}
                                 />
                                 <CustomDropdown
                                     value={filterPropertyType}
                                     onChange={setFilterPropertyType}
-                                    placeholder="प्रकार"
+                                    placeholder="प्रकार निवडा"
                                     options={dynamicPropertyTypes.map(p => ({ value: p, label: p }))}
                                 />
-                                {hasActiveFilters && (
-                                    <button onClick={() => { setFilterWasti(''); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); setFilterPropertyType(''); setSearchTerm(''); }}
-                                        className="flex items-center gap-1 text-[9px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-3 py-2 rounded-lg hover:bg-rose-100 transition-all active:scale-95 whitespace-nowrap">
+
+                                {(hasActiveFilters || searchTerm) && (
+                                    <button
+                                        onClick={() => { setFilterWasti(''); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); setFilterPropertyType(''); setSearchTerm(''); }}
+                                        className="flex items-center gap-1.5 px-3 py-2 text-[9px] font-black text-rose-600 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100 transition-all flex-shrink-0"
+                                    >
                                         <RotateCcw className="w-3 h-3" /> रीसेट
                                     </button>
                                 )}
-                            </div>
 
-                            {/* Stats Counter */}
-                            <div className="hidden lg:flex items-center gap-1.5 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 shrink-0">
-                                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tight whitespace-nowrap">
-                                    नोंदी: <span className="text-indigo-600 font-black">{MN(filteredRecords.length)}</span>
-                                </span>
+                                {/* Count Badge */}
+                                <div className="hidden lg:flex items-center gap-1.5 bg-indigo-50/50 px-3 py-2 rounded-lg border border-indigo-100 shrink-0">
+                                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+                                    <span className="text-[9px] text-slate-600 font-black uppercase tracking-tight whitespace-nowrap">
+                                        नोंदी: <span className="text-indigo-600 font-black ml-1">{MN(filteredRecords.length)}</span>
+                                        {(hasActiveFilters || searchTerm) && <span className="text-slate-400 font-bold"> / {MN(records.length)}</span>}
+                                    </span>
+                                </div>
                             </div>
                         </div>
+
 
                         {/* Records Table */}
                         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex-1 flex flex-col min-h-0 shadow-sm text-Marathi">
@@ -600,7 +719,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                                     <td className="px-4 py-3 text-center">
                                                         {record.sections?.filter(s => s.propertyType && s.propertyType !== 'निवडा').map((s, si) => (
                                                             <div key={si} className="text-[10px] text-slate-500 font-medium">
-                                                                {s.propertyType} • {MN(s.areaSqFt)} ft²
+                                                                {s.propertyType} • {MN(s.areaSqFt)}चौ.फु
                                                             </div>
                                                         ))}
                                                     </td>
@@ -619,7 +738,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                                         </span>
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <div className="flex justify-center gap-2">
+                                                        <div className="flex justify-center gap-1.5">
                                                             <button onClick={() => setViewingRecord(record)} className="w-7 h-7 flex items-center justify-center text-slate-400 bg-slate-50 rounded-lg hover:bg-slate-600 hover:text-white transition-all shadow-sm border border-slate-100" title="तपशील">
                                                                 <Eye className="w-3.5 h-3.5" />
                                                             </button>
@@ -632,9 +751,20 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                                                     <Edit2 className="w-3.5 h-3.5" />
                                                                 </button>
                                                             )}
-                                                            <button onClick={() => setActiveBillRecord(record)} className="w-7 h-7 flex items-center justify-center text-emerald-500 bg-emerald-50 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100 relative group" title="मागणी बिल (Magani Bill)">
+                                                            <button onClick={() => setActiveBillRecord(record)} className="w-7 h-7 flex items-center justify-center text-emerald-500 bg-emerald-50 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100" title="मागणी बिल">
                                                                 <FileText className="w-3.5 h-3.5" />
                                                             </button>
+                                                            {/* Namuna 8 & 9 quick-view buttons */}
+                                                            <button
+                                                                onClick={() => onViewRecord(record.id, 'namuna8')}
+                                                                className="w-7 h-7 flex items-center justify-center text-violet-600 bg-violet-50 rounded-lg hover:bg-violet-600 hover:text-white transition-all shadow-sm border border-violet-100 text-[8px] font-black"
+                                                                title="नमुना ८ पहा"
+                                                            >न८</button>
+                                                            <button
+                                                                onClick={() => onViewRecord(record.id, 'namuna9')}
+                                                                className="w-7 h-7 flex items-center justify-center text-orange-500 bg-orange-50 rounded-lg hover:bg-orange-500 hover:text-white transition-all shadow-sm border border-orange-100 text-[8px] font-black"
+                                                                title="नमुना ९ पहा"
+                                                            >न९</button>
                                                             {canDelete && !record.remarksNotes && (
                                                                 <button onClick={() => deleteRecord(record.id)} className="w-7 h-7 flex items-center justify-center text-rose-500 bg-rose-50 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm border border-rose-100" title="हटवा">
                                                                     <Trash2 className="w-3.5 h-3.5" />

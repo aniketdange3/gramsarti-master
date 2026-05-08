@@ -39,14 +39,18 @@ export default function Sidebar({ user, activeView, onNavClick, totalRecords, na
   return (
     <aside className={`h-full flex flex-col bg-[#1f1c4f] bg-gradient-to-b from-[#1f1c4f] to-[#12102e] no-print border-r border-white/5 font-sans transition-all duration-300 relative z-[100] ${isCollapsed ? 'w-20' : 'w-full'}`}>
       <div className={`p-6 relative transition-all duration-300 ${isCollapsed ? 'px-4' : 'px-6'}`}>
-        <div className="flex items-center gap-4">
-          <div className="shrink-0 w-10 h-10 roun ">
-            <img src="/images/logo.jpeg" alt="Logo" className="w-8 h-8 object-contain" />
-          </div>
+        <div className="flex items-center group cursor-pointer">
           {!isCollapsed && (
-            <div className="min-w-0 flex-1 animate-in fade-in slide-in-from-left-2 duration-300">
-              <h1 className="font-black text-white text-lg tracking-tighter leading-none uppercase">GramSarthi</h1>
-              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mt-1 leading-none">मालमत्ता कर</p>
+            <div className="min-w-0 flex-1 animate-in fade-in slide-in-from-left-4 duration-500">
+              <h1 className="font-black text-white text-xl tracking-tight leading-none uppercase drop-shadow-md">
+                Gram<span className="text-indigo-400">Sarthi</span>
+              </h1>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="h-px w-4 bg-indigo-500/40"></span>
+                <p className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.25em] leading-none">
+                  मालमत्ता कर
+                </p>
+              </div>
             </div>
           )}
         </div>

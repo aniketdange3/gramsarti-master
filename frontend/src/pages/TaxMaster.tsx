@@ -8,7 +8,7 @@ import {
     FileSpreadsheet, TrendingUp, IndianRupee, Landmark
 } from 'lucide-react';
 import { useUI } from '../components/UIProvider';
-import UserManagement from '../components/UserManagement';
+import FYMigrationWizard from '../components/FYMigrationWizard';
 
 // --- Interfaces ---
 interface TaxRate { id: number; propertyType: string; wastiName: string; buildingRate: number; buildingTaxRate: number; landRate: number; openSpaceTaxRate: number; }
@@ -55,24 +55,27 @@ const StatCard = ({ title, value, icon, gradient, textColor }: any) => (
     </div>
 );
 
-export default function TaxMaster() {
+export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: () => void; onNavigate?: (view: string) => void }) {
     const { addToast } = useUI();
     const [rates, setRates] = useState<TaxRate[]>([]);
-    const [rrRates, setRrRates] = useState<ReadyReckonerRate[]>([]);
     const [depRates, setDepRates] = useState<DepreciationRate[]>([]);
     const [buRates, setBuRates] = useState<BuildingUsage[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [categories, setCategories] = useState<MasterCategory[]>([]);
     const [subItems, setSubItems] = useState<MasterItem[]>([]);
+    const [rrRates, setRrRates] = useState<ReadyReckonerRate[]>([]);
     const [config, setConfig] = useState<SystemConfig>({});
 
-    const [activeTab, setActiveTab] = useState<string>('rr');
+    const [activeTab, setActiveTab] = useState<string>('tax');
     const [loading, setLoading] = useState(true);
 
-    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editingId, setEditingId] = useState<number | string | null>(null);
     const [editForm, setEditForm] = useState<any>({});
     const [showAddForm, setShowAddForm] = useState(false);
     const [newForm, setNewForm] = useState<any>({});
+
+    // --- FY Migration Modal State ---
+    const [showFYModal, setShowFYModal] = useState(false);
 
     const authHeaders = () => ({
         'Content-Type': 'application/json',
@@ -82,20 +85,24 @@ export default function TaxMaster() {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const [taxRes, rrRes, catRes, depRes, buRes, userRes, configRes] = await Promise.all([
+            const [taxRes, catRes, depRes, buRes, rrRes, userRes, configRes] = await Promise.all([
                 fetch(`${API_BASE_URL}/api/tax-rates`, { headers: authHeaders() }),
-                fetch(`${API_BASE_URL}/api/master/ready-reckoner`, { headers: authHeaders() }),
                 fetch(`${API_BASE_URL}/api/master/categories`, { headers: authHeaders() }),
                 fetch(`${API_BASE_URL}/api/master/depreciation`, { headers: authHeaders() }),
                 fetch(`${API_BASE_URL}/api/master/building-usage`, { headers: authHeaders() }),
-                fetch(`${API_BASE_URL}/api/auth/users/all`, { headers: authHeaders() }),
-                fetch(`${API_BASE_URL}/api/system-config`, { headers: authHeaders() })
+                fetch(`${API_BASE_URL}/api/master/ready-reckoner`, { headers: authHeaders() }),
+                fetch(`${API_BASE_URL}/api/auth/users`, { headers: authHeaders() }),
+                fetch(`${API_BASE_URL}/api/master/config`, { headers: authHeaders() })
             ]);
+            if (taxRes.status === 401 || catRes.status === 401 || depRes.status === 401 || buRes.status === 401 || rrRes.status === 401 || userRes.status === 401 || configRes.status === 401) {
+                onAuthError?.();
+                return;
+            }
             if (taxRes.ok) setRates(await taxRes.json());
-            if (rrRes.ok) setRrRates(await rrRes.json());
             if (catRes.ok) setCategories(await catRes.json());
             if (depRes.ok) setDepRates(await depRes.json());
             if (buRes.ok) setBuRates(await buRes.json());
+            if (rrRes.ok) setRrRates(await rrRes.json());
             if (userRes.ok) setUsers(await userRes.json());
             if (configRes.ok) setConfig(await configRes.json());
         } catch (err) {
@@ -109,7 +116,7 @@ export default function TaxMaster() {
     useEffect(() => { fetchData(); }, [fetchData]);
 
     const filteredCategories = useMemo(() => {
-        const specializedCodes = ['BUILDING_USAGE', 'WARD'];
+        const specializedCodes = ['BUILDING_USAGE', 'WARD', 'LAYOUT'];
         return categories.filter(c => !specializedCodes.includes(c.code));
     }, [categories]);
 
@@ -120,6 +127,10 @@ export default function TaxMaster() {
     const fetchSubItems = useCallback(async (catCode: string) => {
         try {
             const res = await fetch(`${API_BASE_URL}/api/master/items/${catCode}`, { headers: authHeaders() });
+            if (res.status === 401) {
+                onAuthError?.();
+                return;
+            }
             if (res.ok) setSubItems(await res.json());
         } catch (err) { console.error(err); }
     }, []);
@@ -130,16 +141,21 @@ export default function TaxMaster() {
         }
     }, [selectedCategory, fetchSubItems]);
 
-    const handleSave = async (type: string, id: number | null, data: any) => {
-        let url = `${API_BASE_URL}/api/${type === 'tax' ? 'tax-rates' : type === 'rr' ? 'master/ready-reckoner' : type === 'dep' ? 'master/depreciation' : type === 'bu' ? 'master/building-usage' : type === 'config' ? 'system-config' : 'master/items'}`;
-        if (id) url += `/${id}`;
+    const handleSave = async (type: string, id: number | string | null, data: any) => {
+        let url = `${API_BASE_URL}/api/${type === 'tax' ? 'tax-rates' : type === 'dep' ? 'master/depreciation' : type === 'bu' ? 'master/building-usage' : type === 'rr' ? 'master/ready-reckoner' : type === 'config' ? 'master/config' : 'master/items'}`;
+        if (id && type !== 'config') url += `/${id}`;
 
         try {
             const res = await fetch(url, {
-                method: id ? 'PUT' : 'POST',
+                method: (id && type !== 'config') ? 'PUT' : 'POST',
                 headers: authHeaders(),
                 body: JSON.stringify(data)
             });
+
+            if (res.status === 401) {
+                onAuthError?.();
+                return;
+            }
             if (res.ok) {
                 setEditingId(null);
                 setShowAddForm(false);
@@ -158,9 +174,13 @@ export default function TaxMaster() {
 
     const handleDelete = async (type: string, id: number) => {
         if (!window.confirm('हे रेकॉर्ड हटवायचे आहे का?')) return;
-        let url = `${API_BASE_URL}/api/${type === 'tax' ? 'tax-rates' : type === 'rr' ? 'master/ready-reckoner' : type === 'dep' ? 'master/depreciation' : type === 'bu' ? 'master/building-usage' : 'master/items'}/${id}`;
+        let url = `${API_BASE_URL}/api/${type === 'tax' ? 'tax-rates' : type === 'dep' ? 'master/depreciation' : type === 'bu' ? 'master/building-usage' : type === 'rr' ? 'master/ready-reckoner' : 'master/items'}/${id}`;
         try {
             const res = await fetch(url, { method: 'DELETE', headers: authHeaders() });
+            if (res.status === 401) {
+                onAuthError?.();
+                return;
+            }
             if (res.ok) {
                 fetchData();
                 if (selectedCategory) fetchSubItems(selectedCategory.code);
@@ -169,26 +189,14 @@ export default function TaxMaster() {
         } catch (err) { console.error(err); }
     };
 
-    const groupedRr = useMemo(() => {
-        return rrRates.reduce((acc: any, rate) => {
-            if (!acc[rate.year_range]) acc[rate.year_range] = [];
-            acc[rate.year_range].push(rate);
-            return acc;
-        }, {});
-    }, [rrRates]);
-
-    // // Stats
-    // const animRrCount = useCountUp(rrRates.length);
-    // const animTaxCount = useCountUp(rates.length);
-    // const animDepCount = useCountUp(depRates.length);
-    // const animBuCount = useCountUp(buRates.length);
-    // const animUserCount = useCountUp(users.length);
+    const openFYModal = () => setShowFYModal(true);
 
     const renderTabButton = (id: string, label: string, icon: any) => (
         <button
             key={id}
             onClick={() => { setActiveTab(id); setEditingId(null); setShowAddForm(false); }}
             className={`flex flex-col items-center gap-1.5 px-4 py-3 transition-all relative group shrink-0 ${activeTab === id ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+
         >
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${activeTab === id ? 'bg-indigo-50 shadow-sm' : 'bg-transparent'}`}>
                 {React.cloneElement(icon, { size: 18, className: activeTab === id ? 'text-indigo-600' : 'text-slate-400 group-hover:scale-110 transition-transform' })}
@@ -224,7 +232,15 @@ export default function TaxMaster() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        {activeTab !== 'users' && activeTab !== 'common' && (
+                        <button
+                            onClick={openFYModal}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl font-black uppercase tracking-wider hover:bg-amber-600 hover:text-white transition-all text-[10px] active:scale-95 group shadow-sm"
+                            title="आर्थिक वर्ष बदला - विश्लेषण व पुष्टी"
+                        >
+                            <IndianRupee className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" /> आर्थिक वर्ष बदला
+                        </button>
+
+                        {activeTab !== 'users' && activeTab !== 'common' && activeTab !== 'import' && (
                             <button
                                 onClick={() => {
                                     setShowAddForm(!showAddForm);
@@ -251,10 +267,10 @@ export default function TaxMaster() {
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col min-h-[500px] overflow-hidden">
                     {/* Navigation Tabs */}
                     <div className="px-6 bg-white border-b border-slate-100 flex items-center justify-start shrink-0 overflow-x-auto hide-scrollbar">
-                        {renderTabButton('rr', 'रेडीरेकणर', <FileText />)}
                         {renderTabButton('tax', 'कर दर', <TrendingDown />)}
                         {renderTabButton('dep', 'घसारा', <Activity />)}
                         {renderTabButton('bu', 'वापर प्रकार', <Briefcase />)}
+                        {renderTabButton('rr', 'रेडी रेकनर', <FileSpreadsheet />)}
 
                         {/* Dynamic Category Tabs */}
                         {filteredCategories.map(cat => (
@@ -262,7 +278,6 @@ export default function TaxMaster() {
                         ))}
 
                         {renderTabButton('common', 'सामान्य कर ', <Landmark />)}
-                        {renderTabButton('users', 'युजर मॅनेजमेंट', <Users />)}
                     </div>
 
                     <div className="flex-1 p-6 overflow-y-auto">
@@ -276,95 +291,6 @@ export default function TaxMaster() {
                             </div>
                         ) : (
                             <div className="animate-in fade-in duration-500">
-                                {activeTab === 'rr' && (
-                                    <div className="space-y-6">
-                                        <div className="flex justify-between items-center bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100/50">
-                                            <div>
-                                                <h3 className="text-sm font-black text-indigo-900 uppercase tracking-tight">📋 रेडीरेकणर दर (Ready Reckoner Rates)</h3>
-                                                <p className="text-[10px] text-indigo-500 font-bold uppercase mt-1">Property Valuation Units & Rates</p>
-                                            </div>
-                                        </div>
-                                        {showAddForm && (
-                                            <div className="bg-slate-50 p-5 rounded-3xl border-2 border-dashed border-slate-200 grid grid-cols-1 md:grid-cols-5 gap-4 animate-in slide-in-from-top-4 duration-300 shadow-inner">
-                                                <input className="bg-white border-slate-200 rounded-xl p-3 text-sm font-bold" placeholder="कालावधी (उदा. २०२०-२१)" value={newForm.year_range} onChange={e => setNewForm({ ...newForm, year_range: e.target.value })} />
-                                                <input className="bg-white border-slate-200 rounded-xl p-3 text-sm font-bold" placeholder="क्षेत्र वर्णन" value={newForm.item_name_mr} onChange={e => setNewForm({ ...newForm, item_name_mr: e.target.value })} />
-                                                <input className="bg-white border-slate-200 rounded-xl p-3 text-sm font-bold" type="number" placeholder="मूल्यांकन दर" value={newForm.valuation_rate} onChange={e => setNewForm({ ...newForm, valuation_rate: Number(e.target.value) })} />
-                                                <input className="bg-white border-slate-200 rounded-xl p-3 text-sm font-bold" type="number" step="0.01" placeholder="कर दर" value={newForm.tax_rate} onChange={e => setNewForm({ ...newForm, tax_rate: Number(e.target.value) })} />
-                                                <div className="flex gap-2">
-                                                    <select className="flex-1 bg-white border-slate-200 rounded-xl p-3 text-sm font-bold" value={newForm.unit_mr} onChange={e => setNewForm({ ...newForm, unit_mr: e.target.value })}>
-                                                        <option value="चौ. मी.">चौ. मी.</option>
-                                                        <option value="चौ. फूट">चौ. फूट</option>
-                                                    </select>
-                                                    <button onClick={() => handleSave('rr', null, newForm)} className="bg-indigo-600 text-white p-3 rounded-xl hover:bg-indigo-700 transition-all shadow-md group">
-                                                        <Save className="w-5 h-5 group-active:scale-90" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
-                                        {Object.entries(groupedRr).map(([year, yrates]: [string, any]) => (
-                                            <div key={year} className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-6">
-                                                <div className="bg-slate-50/50 px-6 py-3 border-b border-slate-100 flex items-center justify-between">
-                                                    <span className="font-black text-slate-700 text-xs uppercase tracking-widest flex items-center gap-2">
-                                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" /> कालावधी: {MN(year)}
-                                                    </span>
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{MN(yrates.length)} नोंदी</span>
-                                                </div>
-                                                <div className="overflow-x-auto">
-                                                    <table className="w-full text-sm text-left">
-                                                        <thead className="sticky top-0 z-20 bg-slate-100/90 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-200 shadow-sm">
-                                                            <tr>
-                                                                <th className="px-6 py-4">क्षेत्र / वर्णन</th>
-                                                                <th className="px-6 py-4 text-center">मूल्यांकन (₹)</th>
-                                                                <th className="px-6 py-4 text-center">कर दर</th>
-                                                                <th className="px-6 py-4 text-center">एकक</th>
-                                                                <th className="px-6 py-4 text-right">कृती</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody className="divide-y divide-slate-50">
-                                                            {yrates.map((r: any) => (
-                                                                <tr key={r.id} className="hover:bg-indigo-50/30 transition-colors group">
-                                                                    <td className="px-6 py-4">
-                                                                        {editingId === r.id ? <input className="w-full bg-white border-slate-200 rounded-lg p-2 font-bold text-sm" value={editForm.item_name_mr} onChange={e => setEditForm({ ...editForm, item_name_mr: e.target.value })} /> : <span className="font-bold text-slate-700">{r.item_name_mr}</span>}
-                                                                    </td>
-                                                                    <td className="px-6 py-4 text-center">
-                                                                        {editingId === r.id ? <input className="w-24 bg-white border-slate-200 rounded-lg p-2 font-bold text-sm text-right" type="number" value={editForm.valuation_rate} onChange={e => setEditForm({ ...editForm, valuation_rate: Number(e.target.value) })} /> : <span className="text-indigo-600 font-extrabold tabular-nums">₹{MN(r.valuation_rate)}</span>}
-                                                                    </td>
-                                                                    <td className="px-6 py-4 text-center">
-                                                                        {editingId === r.id ? <input className="w-20 bg-white border-slate-200 rounded-lg p-2 font-bold text-sm text-center" type="number" step="0.01" value={editForm.tax_rate} onChange={e => setEditForm({ ...editForm, tax_rate: Number(e.target.value) })} /> : <span className="text-emerald-600 font-extrabold tabular-nums">{MN(r.tax_rate)}</span>}
-                                                                    </td>
-                                                                    <td className="px-6 py-4 text-center">
-                                                                        {editingId === r.id ? (
-                                                                            <select className="bg-white border-slate-200 rounded-lg p-2 font-bold text-sm" value={editForm.unit_mr} onChange={e => setEditForm({ ...editForm, unit_mr: e.target.value })}>
-                                                                                <option value="चौ. मी.">चौ. मी.</option>
-                                                                                <option value="चौ. फूट">चौ. फूट</option>
-                                                                            </select>
-                                                                        ) : <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px] font-black uppercase">{r.unit_mr}</span>}
-                                                                    </td>
-                                                                    <td className="px-6 py-4 text-right">
-                                                                        <div className="flex justify-end gap-2">
-                                                                            {editingId === r.id ? (
-                                                                                <>
-                                                                                    <button onClick={() => handleSave('rr', r.id, editForm)} className="w-8 h-8 flex items-center justify-center bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm"><Save className="w-4 h-4" /></button>
-                                                                                    <button onClick={() => setEditingId(null)} className="w-8 h-8 flex items-center justify-center bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm"><X className="w-4 h-4" /></button>
-                                                                                </>
-                                                                            ) : (
-                                                                                <>
-                                                                                    <button onClick={() => { setEditingId(r.id); setEditForm(r); }} className="w-8 h-8 flex items-center justify-center bg-indigo-50 text-indigo-500 rounded-xl opacity-0 group-hover:opacity-100 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"><Edit2 className="w-3.5 h-3.5" /></button>
-                                                                                    <button onClick={() => handleDelete('rr', r.id)} className="w-8 h-8 flex items-center justify-center bg-rose-50 text-rose-500 rounded-xl opacity-0 group-hover:opacity-100 hover:bg-rose-600 hover:text-white transition-all shadow-sm"><Trash2 className="w-3.5 h-3.5" /></button>
-                                                                                </>
-                                                                            )}
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
                                 {activeTab === 'tax' && (
                                     <div className="space-y-6">
                                         <div className="flex justify-between items-center bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100/50">
@@ -553,6 +479,88 @@ export default function TaxMaster() {
                                     </div>
                                 )}
 
+                                {activeTab === 'rr' && (
+                                    <div className="space-y-6">
+                                        <div className="flex justify-between items-center bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100/50">
+                                            <div>
+                                                <h3 className="text-sm font-black text-indigo-900 uppercase tracking-tight">📜 रेडी रेकनर दर (Ready Reckoner Rates)</h3>
+                                                <p className="text-[10px] text-indigo-500 font-bold uppercase mt-1">Government valuation rates for property calculation</p>
+                                            </div>
+                                        </div>
+                                        {showAddForm && (
+                                            <div className="bg-white p-6 rounded-3xl border-2 border-dashed border-indigo-100 grid grid-cols-1 md:grid-cols-5 gap-4 animate-in slide-in-from-top-4 duration-300">
+                                                <input className="bg-slate-50 border-transparent rounded-2xl p-3.5 text-sm font-bold focus:bg-white focus:border-indigo-600 outline-none transition-all" placeholder="वर्ष (उदा. २०२५-२६)" value={newForm.year_range} onChange={e => setNewForm({ ...newForm, year_range: e.target.value })} />
+                                                <input className="bg-slate-50 border-transparent rounded-2xl p-3.5 text-sm font-bold focus:bg-white focus:border-indigo-600 outline-none transition-all" placeholder="प्रकार (उदा. निवासी)" value={newForm.item_name_mr} onChange={e => setNewForm({ ...newForm, item_name_mr: e.target.value })} />
+                                                <input className="bg-slate-50 border-transparent rounded-2xl p-3.5 text-sm font-bold focus:bg-white focus:border-indigo-600 outline-none transition-all" type="number" placeholder="मूल्यांकन दर" value={newForm.valuation_rate} onChange={e => setNewForm({ ...newForm, valuation_rate: Number(e.target.value) })} />
+                                                <input className="bg-slate-50 border-transparent rounded-2xl p-3.5 text-sm font-bold focus:bg-white focus:border-indigo-600 outline-none transition-all" type="number" step="0.01" placeholder="कर दर (%)" value={newForm.tax_rate} onChange={e => setNewForm({ ...newForm, tax_rate: Number(e.target.value) })} />
+                                                <button onClick={() => handleSave('rr', null, newForm)} className="bg-indigo-600 text-white rounded-2xl font-black uppercase text-[11px] shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition-all">जतन करा</button>
+                                            </div>
+                                        )}
+                                        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden min-h-[400px]">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead className="sticky top-0 z-20">
+                                                    <tr className="bg-slate-50/90 backdrop-blur-md text-slate-500 border-b border-slate-200 shadow-sm">
+                                                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">वर्ष / कालावधी</th>
+                                                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">वापर / आयटम नाव</th>
+                                                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-center">मूल्यांकन (₹)</th>
+                                                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-center">कर दर (%)</th>
+                                                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-right">कृती</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100">
+                                                    {rrRates.map(r => (
+                                                        <tr key={r.id} className="hover:bg-slate-50/80 transition-all group">
+                                                            <td className="px-8 py-4">
+                                                                {editingId === r.id ? (
+                                                                    <input className="bg-white border border-slate-200 rounded-xl px-4 py-2 w-full font-bold text-sm shadow-inner" value={editForm.year_range} onChange={e => setEditForm({ ...editForm, year_range: e.target.value })} />
+                                                                ) : (
+                                                                    <span className="bg-amber-50 text-amber-700 px-3 py-1 rounded-lg font-black text-xs border border-amber-100">{MN(r.year_range)}</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-8 py-4">
+                                                                {editingId === r.id ? (
+                                                                    <input className="bg-white border border-slate-200 rounded-xl px-4 py-2 w-full font-bold text-sm shadow-inner" value={editForm.item_name_mr} onChange={e => setEditForm({ ...editForm, item_name_mr: e.target.value })} />
+                                                                ) : (
+                                                                    <span className="font-extrabold text-slate-800 text-[13px]">{r.item_name_mr}</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-8 py-4 text-center">
+                                                                {editingId === r.id ? (
+                                                                    <input className="w-24 bg-white border border-slate-200 rounded-xl px-4 py-2 font-bold text-sm shadow-inner text-center" type="number" value={editForm.valuation_rate} onChange={e => setEditForm({ ...editForm, valuation_rate: Number(e.target.value) })} />
+                                                                ) : (
+                                                                    <span className="font-black text-indigo-600">₹{MN(r.valuation_rate)}</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-8 py-4 text-center">
+                                                                {editingId === r.id ? (
+                                                                    <input className="w-20 bg-white border border-slate-200 rounded-xl px-4 py-2 font-bold text-sm shadow-inner text-center" type="number" step="0.01" value={editForm.tax_rate} onChange={e => setEditForm({ ...editForm, tax_rate: Number(e.target.value) })} />
+                                                                ) : (
+                                                                    <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg font-black text-xs border border-emerald-100">{MN(r.tax_rate)}%</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-8 py-4 text-right">
+                                                                <div className="flex justify-end gap-2">
+                                                                    {editingId === r.id ? (
+                                                                        <>
+                                                                            <button onClick={() => handleSave('rr', r.id, editForm)} className="w-9 h-9 flex items-center justify-center bg-emerald-50 text-emerald-600 rounded-2xl hover:bg-emerald-600 hover:text-white transition-all shadow-md"><Save className="w-4 h-4" /></button>
+                                                                            <button onClick={() => setEditingId(null)} className="w-9 h-9 flex items-center justify-center bg-rose-50 text-rose-500 rounded-2xl hover:bg-rose-600 hover:text-white transition-all shadow-md"><X className="w-4 h-4" /></button>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <button onClick={() => { setEditingId(r.id); setEditForm(r); }} className="w-9 h-9 flex items-center justify-center bg-indigo-50 text-indigo-500 rounded-2xl opacity-0 group-hover:opacity-100 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"><Edit2 className="w-4 h-4" /></button>
+                                                                            <button onClick={() => handleDelete('rr', r.id)} className="w-9 h-9 flex items-center justify-center bg-rose-50 text-rose-500 rounded-2xl opacity-0 group-hover:opacity-100 hover:bg-rose-600 hover:text-white transition-all shadow-sm"><Trash2 className="w-4 h-4" /></button>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {selectedCategory && (
                                     <div className="space-y-6">
                                         <div className="flex justify-between items-center bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100/50">
@@ -561,9 +569,19 @@ export default function TaxMaster() {
                                                     📁 {selectedCategory.code === 'WASTI' ? 'वस्ती आणि वॉर्ड व्यवस्थापन' : `${selectedCategory.name_mr} व्यवस्थापन`}
                                                 </h3>
                                                 <p className="text-[10px] text-indigo-500 font-bold uppercase mt-1">
-                                                    {selectedCategory.code === 'WASTI' ? 'येथून तुम्ही वस्ती आणि त्यांच्याशी संबंधित वॉर्ड नंबर व्यवस्थापित करू शकता.' : `Manage items for ${selectedCategory.code}`}
+                                                    {selectedCategory.code === 'WASTI' ? 'येथून तुम्ही वस्ती आणि त्यांच्याशी संबंधित वॉर्ड नंबर व्यवस्थापित करू शकता.' : 
+                                                     selectedCategory.code === 'PROPERTY_TYPE' ? 'येथून तुम्ही मालमत्तेचे विविध प्रकार (उदा. आर.सी.सी, कच्चा, पक्का) व्यवस्थापित करू शकता.' :
+                                                     `येथून तुम्ही ${selectedCategory.name_mr} ची माहिती व्यवस्थापित करू शकता.`}
                                                 </p>
                                             </div>
+                                            {selectedCategory.code === 'PROPERTY_TYPE' && subItems.length === 0 && (
+                                                <button 
+                                                    onClick={() => fetchData()} 
+                                                    className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-indigo-700 transition-all"
+                                                >
+                                                    प्रमाणित प्रकार लोड करा (Refresh)
+                                                </button>
+                                            )}
                                         </div>
                                         {showAddForm && (
                                             <div className="bg-white p-6 rounded-3xl border-2 border-dashed border-indigo-100 grid grid-cols-1 md:grid-cols-4 gap-4 animate-in slide-in-from-top-4 duration-300">
@@ -664,7 +682,7 @@ export default function TaxMaster() {
                                                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Global Default Value</span>
                                                         </div>
                                                         <div className="flex items-center gap-4">
-                                                            {editingId === Number(field.key.length) ? ( // Using a pseudo-id for editing config
+                                                            {editingId === field.key ? ( 
                                                                 <div className="flex gap-2 items-center">
                                                                     <input
                                                                         className="w-24 bg-white border border-indigo-200 rounded-xl px-4 py-2 font-black text-sm text-center shadow-inner focus:ring-2 focus:ring-indigo-100 outline-none"
@@ -672,13 +690,13 @@ export default function TaxMaster() {
                                                                         value={editForm[field.key] ?? (config[field.key] || '0')}
                                                                         onChange={e => setEditForm({ ...editForm, [field.key]: e.target.value })}
                                                                     />
-                                                                    <button onClick={() => handleSave('config', null, { [field.key]: editForm[field.key] })} className="bg-emerald-500 text-white p-2 rounded-lg shadow-md hover:bg-emerald-600 transition-all"><Save className="w-4 h-4" /></button>
+                                                                    <button onClick={() => handleSave('config', field.key, { [field.key]: editForm[field.key] })} className="bg-emerald-500 text-white p-2 rounded-lg shadow-md hover:bg-emerald-600 transition-all"><Save className="w-4 h-4" /></button>
                                                                     <button onClick={() => setEditingId(null)} className="bg-slate-100 text-slate-400 p-2 rounded-lg hover:bg-slate-200 transition-all"><X className="w-4 h-4" /></button>
                                                                 </div>
                                                             ) : (
                                                                 <div className="flex items-center gap-6">
                                                                     <span className="text-lg font-black text-indigo-600 tabular-nums">₹{MN(config[field.key] || '०')}</span>
-                                                                    <button onClick={() => { setEditingId(field.key.length); setEditForm({ [field.key]: config[field.key] }); }} className="p-2.5 bg-slate-50 text-slate-400 rounded-xl opacity-0 group-hover:opacity-100 hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
+                                                                    <button onClick={() => { setEditingId(field.key); setEditForm({ [field.key]: config[field.key] }); }} className="p-2.5 bg-slate-50 text-slate-400 rounded-xl opacity-0 group-hover:opacity-100 hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
                                                                         <Edit2 className="w-3.5 h-3.5" />
                                                                     </button>
                                                                 </div>
@@ -694,12 +712,6 @@ export default function TaxMaster() {
                                                 टीप: सामान्य कर  दरांमध्ये बदल केल्यास, भविष्यात जोडल्या जाणाऱ्या सर्व नवीन मालमत्तांवर हे दर आपोआप लागू होतील. जुन्या मालमत्तांचे दर बदलण्यासाठी "मालमत्ता व्यवस्थापन" मध्ये जावे लागेल.
                                             </p>
                                         </div>
-                                    </div>
-                                )}
-
-                                {activeTab === 'users' && (
-                                    <div className="flex flex-col h-full bg-white rounded-3xl overflow-hidden border border-slate-100 animate-in fade-in duration-500">
-                                        <UserManagement onAuthError={() => { }} addToast={addToast} />
                                     </div>
                                 )}
                             </div>
@@ -725,6 +737,17 @@ export default function TaxMaster() {
                     GramSarthi v2.0 • Last Sync: {MN(new Date().toLocaleTimeString())}
                 </div>
             </footer>
+
+            {/* ====== FY MIGRATION WIZARD ====== */}
+            {showFYModal && (
+                <FYMigrationWizard
+                    currentFY={config['current_fy'] || ''}
+                    onClose={() => setShowFYModal(false)}
+                    onDone={fetchData}
+                    addToast={addToast}
+                    onAuthError={onAuthError}
+                />
+            )}
         </div>
     );
 }

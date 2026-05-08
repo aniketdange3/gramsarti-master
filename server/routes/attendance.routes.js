@@ -19,6 +19,3 @@ router.post('/check-out', authenticate, attendanceController.checkOut);
 router.get('/status', authenticate, attendanceController.getStatus);
 
 module.exports = router;
-
-
-module.exports = router;

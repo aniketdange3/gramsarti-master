@@ -2,7 +2,7 @@ import { API_BASE_URL } from '@/utils/config';
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, FileWarning, Send, ChevronRight, CheckCircle2, ArrowRightCircle, Filter, Eye, Printer, FileDown, X, ArrowLeft } from 'lucide-react';
 import MaganiBillDocument from '../components/MaganiBillDocument';
-import { generateMaganiBillPDF } from '../utils/pdfGenerator';
+import { generateMaganiBillPDF, generateBulkMaganiBillsPDF } from '../utils/pdfGenerator';
 import { PropertyRecord } from '../types';
 import { hasModulePermission } from '../utils/permissions';
 
@@ -63,6 +63,26 @@ export default function MaganiBill({ onAuthError }: MaganiBillProps) {
             if (next.has(id)) next.delete(id); else next.add(id);
             return next;
         });
+    };
+
+    const printAllKhasra = async () => {
+        if (bills.length === 0) return;
+        setLoading(true);
+        try {
+            // Sort bills by Khasra number (handling strings vs numbers)
+            const sortedBills = [...bills].sort((a, b) => {
+                const ka = String(a.khasraNo || '').replace(/[^0-9]/g, '');
+                const kb = String(b.khasraNo || '').replace(/[^0-9]/g, '');
+                return (parseInt(ka) || 0) - (parseInt(kb) || 0);
+            });
+            await generateBulkMaganiBillsPDF(sortedBills);
+            addToast('सर्व बिले (खसरा नुसार) जनरेट झाली', 'success');
+        } catch (error) {
+            console.error('Print Error:', error);
+            addToast('प्रिंट करताना त्रुटी आली', 'error');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const selectAll = () => {
@@ -231,9 +251,19 @@ export default function MaganiBill({ onAuthError }: MaganiBillProps) {
 
                 {tab === 'bills' && (
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="p-5 border-b border-gray-100">
-                            <h3 className="font-black text-gray-800">मागणी बिले</h3>
-                            <p className="text-xs text-gray-400">{bills.length} बिले</p>
+                        <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+                            <div>
+                                <h3 className="font-black text-gray-800">मागणी बिले</h3>
+                                <p className="text-xs text-gray-400">{bills.length} बिले</p>
+                            </div>
+                            <button 
+                                onClick={printAllKhasra}
+                                disabled={loading || bills.length === 0}
+                                className="flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-bold shadow-md disabled:opacity-50 hover:from-blue-700 hover:to-indigo-700 transition-all"
+                            >
+                                <Printer className="w-4 h-4" />
+                                खसरा नुसार सर्व प्रिंट
+                            </button>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">

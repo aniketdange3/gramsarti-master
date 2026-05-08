@@ -21,7 +21,7 @@ const clearTaxRatesCache = () => {
  */
 exports.getAllTaxRates = async (req, res) => {
     try {
-        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         if (taxRatesCache) {
             return res.json(taxRatesCache);
         }

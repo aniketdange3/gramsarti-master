@@ -27,7 +27,7 @@ export default function UserManagement({ onAuthError, addToast }: UserManagement
         setFetchingRequests(true);
         try {
             const token = localStorage.getItem('gp_token');
-            const res = await fetch(`${API_BASE_URL}/api/auth/users/requests`, {
+            const res = await fetch(`${API_BASE_URL}/api/auth/users?status=PENDING`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.status === 401 && onAuthError) {
@@ -50,7 +50,7 @@ export default function UserManagement({ onAuthError, addToast }: UserManagement
         setFetchingRequests(true);
         try {
             const token = localStorage.getItem('gp_token');
-            const res = await fetch(`${API_BASE_URL}/api/auth/users/all`, {
+            const res = await fetch(`${API_BASE_URL}/api/auth/users`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.status === 401 && onAuthError) {

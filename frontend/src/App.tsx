@@ -1,17 +1,23 @@
 /**
  * GRAMSARTHI - मुख्य व्यवस्थापन प्रणाली (Main Application Entry)
- * 
- * या फाईलमध्ये संपूर्ण प्रणालीचे राउटिंग (Routing), ऑथेंटिकेशन (Authentication), 
- * आणि युजर अटेंडन्स (Attendance) मॅनेजमेंट हाताळले जाते.
- * 
- * STEP-BY-STEP PROCESS:
- * 1. ऑथेंटिकेशन चेक (Session Auth): रिलोड झाल्यावर युजर लॉग-इन आहे का ते तपासले जाते (gp_token).
- * 2. लेआउट रेंडरिंग (Sidebar & Main): युजर रोलनुसार साइडबार आणि मुख्य दृश्य (Dashboard/Namuna) दाखवले जाते.
- * 3. अटेंडन्स ट्रॅकिंग (Duty Session): 'Check-In' आणि 'Check-Out' द्वारे कर्मचार्‍यांच्या कामाच्या वेळा सर्व्हरवर नोंदवल्या जातात.
+ *
+ * URL Routes:
+ *  /              → redirect to /dashboard
+ *  /login         → Login page
+ *  /dashboard     → Dashboard (मालमत्ता व्यवस्थापन)
+ *  /namuna8       → नमुना ८ (Assessment Register)
+ *  /namuna9       → नमुना ९ (Tax Notice / Demand Register)
+ *  /reports       → अहवाल (Reports)
+ *  /ferfar        → फेरफार नोंदवही (Mutation Register)
+ *  /taxmaster     → प्रणाली संचलन केंद्र (Tax Master / System Config)
+ *  /role-access   → रोल अ‍ॅक्सेस (User Management)
  */
 
-import React, { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, FileText, Receipt, Settings, Menu, X, Home, Activity, ChevronRight, LogOut, User, Shield, IndianRupee, FileWarning, BarChart3, List, ChevronDown, Edit2, Save, Phone, Mail, BadgeCheck, MapPin, PanelLeftClose } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation
+} from 'react-router-dom';
+import { X, Save, LayoutDashboard, FileText, Receipt, Settings, BarChart3, Shield, Printer } from 'lucide-react';
 import { PropertyRecord, DEFAULT_SECTION } from './types';
 import { API_BASE_URL as BASE } from './utils/config';
 
@@ -19,56 +25,68 @@ import Dashboard from './pages/Dashboard';
 import Namuna8 from './pages/Namuna8';
 import Namuna9 from './pages/Namuna9';
 import Login from './pages/Login';
-import PaymentEntry from './pages/PaymentEntry';
-import MaganiBill from './pages/MaganiBill';
 import Reports from './pages/Reports';
 import TaxMaster from './pages/TaxMaster';
 import Ferfar from './pages/Ferfar';
 import Sidebar from './components/Sidebar';
 import { UIProvider } from './components/UIProvider';
+import MaganiBillsPage from './pages/MaganiBillsPage';
 
+// ── Route map ──────────────────────────────────────────────────────────────
+export type ViewType = 'dashboard' | 'namuna8' | 'namuna9' | 'taxMaster' | 'reports' | 'roleAccess' | 'ferfar' | 'maganiBills';
 
-type ViewType = 'dashboard' | 'namuna8' | 'namuna9' | 'taxMaster' | 'payments' | 'magani' | 'reports' | 'roleAccess' | 'ferfar';
-
-const ROLE_LABELS: Record<string, string> = {
-  super_admin: 'सुपर अ‍ॅडमिन',
-  gram_sevak: 'ग्रामसेवक',
-  operator: 'ऑपरेटर',
-  collection_officer: 'वसुली अधिकारी',
-  sarpanch: 'सरपंच',
-  auditor: 'लेखापरीक्षक',
-  gram_sachiv: 'ग्राम सचिव',
-  clerk: 'लिपीक',
-  bill_operator: 'बिल ऑपरेटर',
+export const VIEW_TO_PATH: Record<ViewType, string> = {
+  dashboard:  '/dashboard',
+  namuna8:    '/namuna8',
+  namuna9:    '/namuna9',
+  taxMaster:  '/taxmaster',
+  reports:    '/reports',
+  ferfar:     '/ferfar',
+  roleAccess: '/role-access',
+  maganiBills: '/magani-bills',
 };
 
-export default function App() {
-  const [records, setRecords] = useState<PropertyRecord[]>([]);
-  const [activeView, setActiveView] = useState<ViewType>('dashboard');
-  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
-  const [taxRates, setTaxRates] = useState<any[]>([]);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-  const [checkedIn, setCheckedIn] = useState(false);
-  const [checkInTime, setCheckInTime] = useState<string | null>(null);
-  const [attendanceLoading, setAttendanceLoading] = useState(false);
-  const [editProfileOpen, setEditProfileOpen] = useState(false);
-  const [editProfile, setEditProfile] = useState<any>(null);
-  const [profileSaving, setProfileSaving] = useState(false);
+export const PATH_TO_VIEW: Record<string, ViewType> = {
+  '/dashboard':   'dashboard',
+  '/namuna8':     'namuna8',
+  '/namuna9':     'namuna9',
+  '/taxmaster':   'taxMaster',
+  '/reports':     'reports',
+  '/ferfar':      'ferfar',
+  '/role-access': 'roleAccess',
+  '/magani-bills': 'maganiBills',
+};
 
-  // ── Auth state ──────────────────────────────────────
+// ── Inner app (needs router context) ───────────────────────────────────────
+function AppInner() {
+  const navigate  = useNavigate();
+  const location  = useLocation();
+
+  const [records,           setRecords]           = useState<PropertyRecord[]>([]);
+  const [taxRates,          setTaxRates]          = useState<any[]>([]);
+  const [sidebarOpen,       setSidebarOpen]       = useState(false);
+  const [desktopSidebarOpen,setDesktopSidebarOpen]= useState(true);
+  const [isLoading,         setIsLoading]         = useState(true);
+  const [checkedIn,         setCheckedIn]         = useState(false);
+  const [checkInTime,       setCheckInTime]       = useState<string | null>(null);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [editProfileOpen,   setEditProfileOpen]   = useState(false);
+  const [editProfile,       setEditProfile]       = useState<any>(null);
+  const [profileSaving,     setProfileSaving]     = useState(false);
+
   const [token, setToken] = useState<string | null>(localStorage.getItem('gp_token'));
-  const [user, setUser] = useState<any>(() => {
+  const [user,  setUser]  = useState<any>(() => {
     try { return JSON.parse(localStorage.getItem('gp_user') || 'null'); } catch { return null; }
   });
 
   const isLoggedIn = !!token && !!user;
 
-  const API_URL = `${BASE}/api/properties`;
+  // Derive activeView from URL
+  const activeView: ViewType = PATH_TO_VIEW[location.pathname] ?? 'dashboard';
+
+  const API_URL     = `${BASE}/api/properties`;
   const TAX_API_URL = `${BASE}/api/tax-rates`;
 
-  // Fetch data on login
   useEffect(() => {
     if (isLoggedIn) {
       fetchRecords();
@@ -77,44 +95,30 @@ export default function App() {
     }
   }, [isLoggedIn]);
 
+  const authHeaders = () => ({
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  });
+
   const fetchAttendanceStatus = async () => {
     try {
       const res = await fetch(`${BASE}/api/attendance/status`, { headers: authHeaders() });
-      if (res.status === 401) {
-        handleLogout();
-        return;
-      }
+      if (res.status === 401) { handleLogout(); return; }
       const data = await res.json();
       setCheckedIn(data.checkedIn);
       setCheckInTime(data.checkInTime);
-    } catch (err) {
-      console.error('Error fetching attendance:', err);
-    }
+    } catch (err) { console.error('Attendance fetch error:', err); }
   };
 
   const handleAttendanceToggle = async () => {
     setAttendanceLoading(true);
     try {
       const endpoint = checkedIn ? '/api/attendance/check-out' : '/api/attendance/check-in';
-      const res = await fetch(`${BASE}${endpoint}`, {
-        method: 'POST',
-        headers: authHeaders()
-      });
-      if (res.status === 401) {
-        handleLogout();
-        return;
-      }
-      const data = await res.json();
-      if (res.ok) {
-        fetchAttendanceStatus();
-      } else {
-        alert(data.error);
-      }
-    } catch (err) {
-      console.error('Attendance error:', err);
-    } finally {
-      setAttendanceLoading(false);
-    }
+      const res = await fetch(`${BASE}${endpoint}`, { method: 'POST', headers: authHeaders() });
+      if (res.status === 401) { handleLogout(); return; }
+      if (res.ok) fetchAttendanceStatus();
+    } catch (err) { console.error('Attendance error:', err); }
+    finally { setAttendanceLoading(false); }
   };
 
   const handleLogin = (newToken: string, newUser: any) => {
@@ -122,6 +126,7 @@ export default function App() {
     setUser(newUser);
     localStorage.setItem('gp_token', newToken);
     localStorage.setItem('gp_user', JSON.stringify(newUser));
+    navigate('/dashboard', { replace: true });
   };
 
   const handleLogout = () => {
@@ -130,9 +135,8 @@ export default function App() {
     localStorage.removeItem('gp_token');
     localStorage.removeItem('gp_user');
     setRecords([]);
-    setActiveView('dashboard');
+    navigate('/login', { replace: true });
   };
-
 
   const handleProfileSave = async () => {
     if (!editProfile) return;
@@ -142,323 +146,263 @@ export default function App() {
         method: 'PUT',
         headers: authHeaders(),
         body: JSON.stringify({
-          name: editProfile.name,
-          email: editProfile.email,
-          mobile: editProfile.mobile,
-          age: editProfile.age,
-          address: editProfile.address
-        })
+          name: editProfile.name, email: editProfile.email,
+          mobile: editProfile.mobile, age: editProfile.age, address: editProfile.address,
+        }),
       });
-      if (res.status === 401) {
-        handleLogout();
-        return;
-      }
+      if (res.status === 401) { handleLogout(); return; }
       if (res.ok) {
         const updatedUser = { ...user, ...editProfile };
         setUser(updatedUser);
         localStorage.setItem('gp_user', JSON.stringify(updatedUser));
         setEditProfileOpen(false);
       }
-    } catch (err) {
-      console.error('Profile update error:', err);
-    } finally {
-      setProfileSaving(false);
-    }
+    } catch (err) { console.error('Profile update error:', err); }
+    finally { setProfileSaving(false); }
   };
 
+  // Navigate to namuna page; pass selected record id as query param
   const handleViewRecord = (id: string, view: 'namuna8' | 'namuna9') => {
-    setSelectedRecordId(id);
-    setActiveView(view);
+    navigate(`/${view}?id=${id}`);
     setSidebarOpen(false);
   };
-
-  const authHeaders = () => ({
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  });
 
   const fetchTaxRates = async () => {
     try {
       const res = await fetch(TAX_API_URL, { headers: authHeaders() });
-      if (res.status === 401) {
-        handleLogout();
-        return;
-      }
-      const data = await res.json();
-      setTaxRates(data);
-    } catch (err) {
-      console.error('Error fetching tax rates:', err);
-    }
+      if (res.status === 401) { handleLogout(); return; }
+      setTaxRates(await res.json());
+    } catch (err) { console.error('Tax rates error:', err); }
   };
 
   const fetchRecords = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(API_URL, { headers: authHeaders() });
-      if (response.status === 401) {
-        handleLogout();
-        return;
-      }
-      const data = await response.json();
-
-      if (!Array.isArray(data)) {
-        console.error('Invalid records data format:', data);
-        setRecords([]);
-        return;
-      }
-
-      const normalizedData = data.map((r: any) => ({
+      const res = await fetch(API_URL, { headers: authHeaders() });
+      if (res.status === 401) { handleLogout(); return; }
+      const data = await res.json();
+      if (!Array.isArray(data)) { setRecords([]); return; }
+      setRecords(data.map((r: any) => ({
         ...r,
-        wastiName: r.wastiName || '',
+        wastiName:     r.wastiName || '',
         arrearsAmount: Number(r.arrearsAmount) || 0,
-        paidAmount: Number(r.paidAmount) || 0,
-        sections: (r.sections || []).map((s: any) => ({
-          ...DEFAULT_SECTION,
-          ...s
-        }))
-      }));
-      setRecords(normalizedData);
-    } catch (error) {
-      console.error('Error fetching records:', error);
-    } finally {
-      setIsLoading(false);
-    }
+        paidAmount:    Number(r.paidAmount)    || 0,
+        sections: (r.sections || []).map((s: any) => ({ ...DEFAULT_SECTION, ...s })),
+      })));
+    } catch (err) { console.error('Fetch records error:', err); }
+    finally { setIsLoading(false); }
   };
 
-  const handleUpdateLocalRecord = (updatedRecord: any) => {
+  const handleUpdateLocalRecord = (updated: any) => {
     setRecords(prev => {
-      const index = prev.findIndex(r => r.id === updatedRecord.id);
-      if (index !== -1) {
-        const newRecords = [...prev];
-        newRecords[index] = { ...updatedRecord };
-        return newRecords;
-      }
-      return [updatedRecord, ...prev];
+      const idx = prev.findIndex(r => r.id === updated.id);
+      if (idx !== -1) { const next = [...prev]; next[idx] = { ...updated }; return next; }
+      return [updated, ...prev];
     });
   };
 
-  const handleRemoveLocalRecord = (id: string) => {
+  const handleRemoveLocalRecord = (id: string) =>
     setRecords(prev => prev.filter(r => r.id !== id));
-  };
-
-  // ── If not logged in, show Login page ──
-  if (!isLoggedIn) {
-    return <Login onLogin={handleLogin} />;
-  }
-
-  const navItems: { id: ViewType; label: string; sublabel: string; icon: React.ReactNode; color: string; allowedRoles?: string[] }[] = [
-    { id: 'dashboard', label: 'डैशबोर्ड', sublabel: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, color: 'from-violet-500 to-indigo-600' },
-    { id: 'namuna8', label: 'नमुना ८', sublabel: 'Assessment Register', icon: <FileText className="w-5 h-5" />, color: 'from-sky-500 to-blue-600' },
-    { id: 'namuna9', label: 'नमुना ९', sublabel: 'Tax Notice', icon: <Receipt className="w-5 h-5" />, color: 'from-emerald-500 to-green-600' },
-    // { id: 'payments', label: 'कर वसुली', sublabel: 'Payment Entry', icon: <IndianRupee className="w-5 h-5" />, color: 'from-teal-500 to-cyan-600', allowedRoles: ['super_admin', 'gram_sevak', 'operator', 'gram_sachiv', 'bill_operator'] },
-    // { id: 'magani', label: 'मागणी बिल', sublabel: 'Recovery System', icon: <FileWarning className="w-5 h-5" />, color: 'from-rose-500 to-red-600', allowedRoles: ['super_admin', 'gram_sevak', 'operator', 'gram_sachiv'] },
-    { id: 'reports', label: 'अहवाल', sublabel: 'Reports', icon: <BarChart3 className="w-5 h-5" />, color: 'from-purple-500 to-fuchsia-600', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
-    { id: 'ferfar', label: 'फेरफार नोंदवही', sublabel: 'Mutation Register', icon: <FileText className="w-5 h-5" />, color: 'from-fuchsia-500 to-purple-600', allowedRoles: ['super_admin', 'gram_sevak', 'operator'] },
-    { id: 'roleAccess', label: 'रोल अ‍ॅक्सेस', sublabel: 'Role Access', icon: <Shield className="w-5 h-5" />, color: 'from-rose-600 to-rose-400', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
-    { id: 'taxMaster', label: 'प्रणाली संचलन केंद्र', sublabel: 'Tax Master', icon: <Settings className="w-5 h-5" />, color: 'from-amber-500 to-orange-500', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
-  ];
 
   const handleNavClick = (viewId: ViewType) => {
-    setActiveView(viewId);
-    setSelectedRecordId(null);
+    navigate(VIEW_TO_PATH[viewId] ?? '/dashboard');
     setSidebarOpen(false);
   };
 
+  const navItems = [
+    { id: 'dashboard'  as ViewType, label: 'डैशबोर्ड',           sublabel: 'Dashboard',          icon: <LayoutDashboard className="w-5 h-5" />, color: 'from-violet-500 to-indigo-600' },
+    { id: 'namuna8'    as ViewType, label: 'नमुना ८',             sublabel: 'Assessment Register', icon: <FileText className="w-5 h-5" />,        color: 'from-sky-500 to-blue-600' },
+    { id: 'namuna9'    as ViewType, label: 'नमुना ९',             sublabel: 'Tax Notice',          icon: <Receipt className="w-5 h-5" />,         color: 'from-emerald-500 to-green-600' },
+    { id: 'maganiBills' as ViewType, label: 'मागणी बिलं',          sublabel: 'Magani Bills',        icon: <Printer className="w-5 h-5" />,         color: 'from-indigo-500 to-blue-600' },
+    { id: 'reports'    as ViewType, label: 'अहवाल',               sublabel: 'Reports',             icon: <BarChart3 className="w-5 h-5" />,       color: 'from-purple-500 to-fuchsia-600', allowedRoles: ['super_admin','gram_sevak','gram_sachiv'] },
+    { id: 'ferfar'     as ViewType, label: 'फेरफार नोंदवही',      sublabel: 'Mutation Register',   icon: <FileText className="w-5 h-5" />,        color: 'from-fuchsia-500 to-purple-600', allowedRoles: ['super_admin','gram_sevak','operator'] },
+    { id: 'roleAccess' as ViewType, label: 'रोल अ‍ॅक्सेस',        sublabel: 'Role Access',         icon: <Shield className="w-5 h-5" />,          color: 'from-rose-600 to-rose-400',      allowedRoles: ['super_admin','gram_sevak','gram_sachiv'] },
+    { id: 'taxMaster'  as ViewType, label: 'प्रणाली संचलन केंद्र', sublabel: 'Tax Master',         icon: <Settings className="w-5 h-5" />,        color: 'from-amber-500 to-orange-500',   allowedRoles: ['super_admin','gram_sevak','gram_sachiv'] },
+  ];
+
+  // ── Unauthenticated ──────────────────────────────────────────────────────
+  if (!isLoggedIn) {
+    if (location.pathname !== '/login') return <Navigate to="/login" replace />;
+    return <Login onLogin={handleLogin} />;
+  }
+
+  // Redirect root & /login → /dashboard when authenticated
+  if (location.pathname === '/login' || location.pathname === '/') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Read ?id= query param for namuna pages
+  const selectedId = new URLSearchParams(location.search).get('id');
 
   return (
-    <UIProvider>
-      <div className="min-h-screen bg-slate-50 flex font-sans">
-        {/* Desktop Sidebar */}
-        <div className={`hidden md:flex shrink-0 no-print h-screen sticky top-0 transition-all duration-300 ease-in-out relative z-50 ${desktopSidebarOpen ? 'w-64' : 'w-20'}`}>
+    <div className="min-h-screen bg-slate-50 flex font-sans">
+
+      {/* Desktop Sidebar */}
+      <div className={`hidden md:flex shrink-0 no-print h-screen sticky top-0 transition-all duration-300 ease-in-out relative z-50 ${desktopSidebarOpen ? 'w-64' : 'w-20'}`}>
+        <Sidebar
+          user={user} activeView={activeView} onNavClick={handleNavClick}
+          totalRecords={records.length} navItems={navItems as any}
+          onLogout={handleLogout}
+          onEditProfile={() => { setEditProfile({ ...user }); setEditProfileOpen(true); }}
+          isCollapsed={!desktopSidebarOpen}
+          onToggleCollapse={() => setDesktopSidebarOpen(!desktopSidebarOpen)}
+        />
+      </div>
+
+      {/* Mobile backdrop */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Mobile Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 md:hidden transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="relative h-full w-64">
           <Sidebar
-            user={user}
-            activeView={activeView}
-            onNavClick={handleNavClick}
-            totalRecords={records.length}
-            navItems={navItems as any}
+            user={user} activeView={activeView} onNavClick={handleNavClick}
+            totalRecords={records.length} navItems={navItems as any}
             onLogout={handleLogout}
             onEditProfile={() => { setEditProfile({ ...user }); setEditProfileOpen(true); }}
-            isCollapsed={!desktopSidebarOpen}
-            onToggleCollapse={() => setDesktopSidebarOpen(!desktopSidebarOpen)}
           />
         </div>
+      </div>
 
-        {/* Mobile Sidebar */}
-        <div className={`fixed inset-y-0 left-0 z-50 md:hidden transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-          <div className="relative h-full w-64">
-            <Sidebar
-              user={user}
-              activeView={activeView}
-              onNavClick={handleNavClick}
-              totalRecords={records.length}
-              navItems={navItems as any}
-              onLogout={handleLogout}
-              onEditProfile={() => { setEditProfile({ ...user }); setEditProfileOpen(true); }}
-            />
-          </div>
-        </div>
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col h-screen overflow-hidden">
 
-        {/* Main Content */}
-        <main className="flex-1 flex flex-col h-screen overflow-hidden">
-
-
-          {/* Loading Overlay */}
-          {isLoading && (
-            <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-30 flex items-center justify-center text-Marathi">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-10 h-10 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">डेटा लोड होत आहे...</p>
-              </div>
+        {/* Loading Overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-30 flex items-center justify-center text-Marathi">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin" />
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">डेटा लोड होत आहे...</p>
             </div>
-          )}
+          </div>
+        )}
 
-          <div className="flex-1 overflow-auto ">
-            {(activeView === 'dashboard' || activeView === 'roleAccess') && (
+        <div className="flex-1 overflow-auto">
+          <Routes>
+            <Route path="/dashboard" element={
               <Dashboard
-                records={records}
-                fetchRecords={fetchRecords}
+                records={records} fetchRecords={fetchRecords}
                 onUpdateLocalRecord={handleUpdateLocalRecord}
                 onRemoveLocalRecord={handleRemoveLocalRecord}
-                taxRates={taxRates}
-                onViewRecord={handleViewRecord}
+                taxRates={taxRates} onViewRecord={handleViewRecord}
                 onAuthError={handleLogout}
-                initialTab={activeView === 'roleAccess' ? 'user_requests' : 'dashboard'}
-                key={activeView === 'roleAccess' ? 'roleAccess' : 'dashboard'}
               />
-            )}
-
-            {activeView === 'namuna8' && (
+            } />
+            <Route path="/role-access" element={
+              <Dashboard
+                key="role-access"
+                records={records} fetchRecords={fetchRecords}
+                onUpdateLocalRecord={handleUpdateLocalRecord}
+                onRemoveLocalRecord={handleRemoveLocalRecord}
+                taxRates={taxRates} onViewRecord={handleViewRecord}
+                onAuthError={handleLogout} initialTab="user_requests"
+              />
+            } />
+            <Route path="/namuna8" element={
               <Namuna8
-                records={records}
-                selectedId={selectedRecordId}
-                onClearSelected={() => setSelectedRecordId(null)}
+                records={records} selectedId={selectedId}
+                onClearSelected={() => navigate('/namuna8', { replace: true })}
                 fetchRecords={fetchRecords}
                 onUpdateLocalRecord={handleUpdateLocalRecord}
                 onRemoveLocalRecord={handleRemoveLocalRecord}
-                taxRates={taxRates}
-                onAuthError={handleLogout}
+                taxRates={taxRates} onAuthError={handleLogout}
               />
-            )}
-            {activeView === 'namuna9' && (
+            } />
+            <Route path="/namuna9" element={
               <Namuna9
                 records={records}
-                selectedId={selectedRecordId}
+                selectedId={selectedId}
                 fetchRecords={fetchRecords}
                 onUpdateLocalRecord={handleUpdateLocalRecord}
                 onRemoveLocalRecord={handleRemoveLocalRecord}
-                taxRates={taxRates}
-                onAuthError={handleLogout}
+                taxRates={taxRates} onAuthError={handleLogout}
               />
-            )}
-            {activeView === 'reports' && (
-              <Reports records={records} onAuthError={handleLogout} />
-            )}
-            {activeView === 'taxMaster' && (
-              <TaxMaster />
-            )}
-            {activeView === 'ferfar' && (
-              <Ferfar records={records} fetchRecords={fetchRecords} />
-            )}
+            } />
+            <Route path="/reports"   element={<Reports    records={records} onAuthError={handleLogout} />} />
+            <Route path="/ferfar"    element={<Ferfar     records={records} fetchRecords={fetchRecords} onAuthError={handleLogout} />} />
+            <Route path="/taxmaster" element={<TaxMaster  onAuthError={handleLogout} onNavigate={handleNavClick} />} />
+            <Route path="/magani-bills" element={<MaganiBillsPage records={records} onAuthError={handleLogout} />} />
+            <Route path="*"          element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </div>
 
-            {/* Edit Profile Modal */}
-            {editProfileOpen && editProfile && (
-              <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-200">
-                  {/* Simple Header */}
-                  <div className="p-6 pb-0 flex justify-between items-start">
-                    <div>
-                      <h3 className="text-xl font-black text-slate-900 tracking-tighter">प्रोफाइल संपादित करा</h3>
-                      <p className="text-slate-400 text-[10px] font-bold mt-1">तुमची माहिती अद्यतनित करा</p>
-                    </div>
-                    <button onClick={() => setEditProfileOpen(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-all text-slate-400">
-                      <X className="w-5 h-5" />
-                    </button>
+        {/* Edit Profile Modal */}
+        {editProfileOpen && editProfile && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-200">
+              <div className="p-6 pb-0 flex justify-between items-start">
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 tracking-tighter">प्रोफाइल संपादित करा</h3>
+                  <p className="text-slate-400 text-[10px] font-bold mt-1">तुमची माहिती अद्यतनित करा</p>
+                </div>
+                <button onClick={() => setEditProfileOpen(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-all text-slate-400">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">पूर्ण नाव</label>
+                  <input type="text" className="w-full px-4 py-3 bg-white border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-indigo-600 outline-none transition-all placeholder:text-slate-300"
+                    placeholder="तुमचे नाव प्रविष्ट करा" value={editProfile.name || ''}
+                    onChange={e => setEditProfile({ ...editProfile, name: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">ईमेल</label>
+                    <input type="email" className="w-full px-4 py-3 bg-white border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-indigo-600 outline-none transition-all"
+                      value={editProfile.email || ''} onChange={e => setEditProfile({ ...editProfile, email: e.target.value })} />
                   </div>
-
-                  <div className="p-6 space-y-4">
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">पूर्ण नाव</label>
-                      <input
-                        type="text"
-                        className="w-full px-4 py-3 bg-white border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-indigo-600 outline-none transition-all placeholder:text-slate-300"
-                        placeholder="तुमचे नाव प्रविष्ट करा"
-                        value={editProfile.name || ''}
-                        onChange={e => setEditProfile({ ...editProfile, name: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">ईमेल</label>
-                        <input
-                          type="email"
-                          className="w-full px-4 py-3 bg-white border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-indigo-600 outline-none transition-all"
-                          value={editProfile.email || ''}
-                          onChange={e => setEditProfile({ ...editProfile, email: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">संपर्क</label>
-                        <input
-                          type="tel"
-                          maxLength={10}
-                          className="w-full px-4 py-3 bg-white border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-indigo-600 outline-none transition-all"
-                          value={editProfile.mobile || ''}
-                          onChange={e => setEditProfile({ ...editProfile, mobile: e.target.value.replace(/\D/g, '') })}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">वय</label>
-                        <input
-                          type="number"
-                          className="w-full px-4 py-3 bg-white border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-indigo-600 outline-none transition-all"
-                          value={editProfile.age || ''}
-                          onChange={e => setEditProfile({ ...editProfile, age: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">आयडी (ID)</label>
-                        <input
-                          type="text"
-                          disabled
-                          className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-xl text-sm font-bold text-slate-400 cursor-not-allowed"
-                          value={editProfile.employee_id || ''}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">पत्ता</label>
-                      <textarea
-                        rows={2}
-                        className="w-full px-5 py-4 bg-white border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-600 outline-none transition-all resize-none"
-                        value={editProfile.address || ''}
-                        onChange={e => setEditProfile({ ...editProfile, address: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="pt-4 flex gap-4">
-                      <button
-                        onClick={handleProfileSave}
-                        disabled={profileSaving}
-                        className="flex-1 py-4.5 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                      >
-                        {profileSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin p-2" /> : <><Save className="w-4 h-4" /> जतन करा</>}
-                      </button>
-                      <button onClick={() => setEditProfileOpen(false)} className="flex-1 py-4.5 p-2 bg-white border-2 border-slate-200 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-50 active:scale-[0.98] transition-all">
-                        रद्द करा
-                      </button>
-                    </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">संपर्क</label>
+                    <input type="tel" maxLength={10} className="w-full px-4 py-3 bg-white border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-indigo-600 outline-none transition-all"
+                      value={editProfile.mobile || ''} onChange={e => setEditProfile({ ...editProfile, mobile: e.target.value.replace(/\D/g, '') })} />
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">वय</label>
+                    <input type="number" className="w-full px-4 py-3 bg-white border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-indigo-600 outline-none transition-all"
+                      value={editProfile.age || ''} onChange={e => setEditProfile({ ...editProfile, age: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">आयडी (ID)</label>
+                    <input type="text" disabled className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-xl text-sm font-bold text-slate-400 cursor-not-allowed"
+                      value={editProfile.employee_id || ''} />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">पत्ता</label>
+                  <textarea rows={2} className="w-full px-5 py-4 bg-white border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-indigo-600 outline-none transition-all resize-none"
+                    value={editProfile.address || ''} onChange={e => setEditProfile({ ...editProfile, address: e.target.value })} />
+                </div>
+                <div className="pt-4 flex gap-4">
+                  <button onClick={handleProfileSave} disabled={profileSaving}
+                    className="flex-1 py-3 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                    {profileSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> जतन करा</>}
+                  </button>
+                  <button onClick={() => setEditProfileOpen(false)}
+                    className="flex-1 py-3 bg-white border-2 border-slate-200 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-50 active:scale-[0.98] transition-all">
+                    रद्द करा
+                  </button>
+                </div>
               </div>
-            )}
+            </div>
           </div>
-        </main>
-      </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+// ── Root wrapper provides BrowserRouter + UIProvider ───────────────────────
+export default function App() {
+  return (
+    <UIProvider>
+      <BrowserRouter>
+        <AppInner />
+      </BrowserRouter>
     </UIProvider>
   );
 }

@@ -493,7 +493,7 @@ const PropertyForm = ({
             const headers = { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) };
 
             const [configRes, ratesRes] = await Promise.all([
-                fetch(`${API_BASE_URL}/api/system-config`, { headers }),
+                fetch(`${API_BASE_URL}/api/master/config`, { headers }),
                 fetch(`${API_BASE_URL}/api/tax-rates`, { headers })
             ]);
 
@@ -774,7 +774,7 @@ const PropertyForm = ({
                         {/* Section 4: Floor Details & Valuation */}
                         <div>
                             <h3 className="text-sm font-black text-primary-dark uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <div className="w-5 h-5 bg-primary/10 rounded-lg flex items-center justify-center text-primary text-xs font-black">४</div>
+                                <div className="w-5 h-5 bg-primary/10 rounded-lg flex items-center justify-center text-primary text-xs font-black">३</div>
                                 मोजमाप व कर मूल्य (Valuation)
                             </h3>
                             <div className="space-y-3">
@@ -1006,55 +1006,6 @@ const PropertyForm = ({
                             </div>
                         </div>
 
-                        {/* Section 4: Property Remarks & Notes */}
-                        <div className="bg-white rounded-2xl p-6 border border-border shadow-sm">
-                            <h3 className="text-sm font-black text-primary uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <div className="w-5 h-5 bg-primary/10 rounded-lg flex items-center justify-center text-primary text-xs font-black">५</div>
-                                मासिक सभा व टिप्पणी (Remarks/Notes)
-                            </h3>
-                            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                                <div>
-                                    <FieldLabel>दिनांक</FieldLabel>
-                                    <FormInput type="date" value={remarksObj.date} onChange={e => updateRemark('date', e.target.value)} />
-                                </div>
-                                <div>
-                                    <FieldLabel>विषय</FieldLabel>
-                                    <TransliterationInput
-                                        placeholder="विषय"
-                                        className={INPUT_CLASSES}
-                                        value={remarksObj.subject}
-                                        onChangeText={v => updateRemark('subject', v)}
-                                    />
-                                </div>
-                                <div>
-                                    <FieldLabel>फेरफार</FieldLabel>
-                                    <TransliterationInput
-                                        placeholder="फेरफार"
-                                        className={INPUT_CLASSES}
-                                        value={remarksObj.ferfar}
-                                        onChangeText={v => updateRemark('ferfar', v)}
-                                    />
-                                </div>
-                                <div>
-                                    <FieldLabel>पान </FieldLabel>
-                                    <TransliterationInput
-                                        placeholder="पान"
-                                        className={INPUT_CLASSES}
-                                        value={remarksObj.pan}
-                                        onChangeText={v => updateRemark('pan', v)}
-                                    />
-                                </div>
-                                <div>
-                                    <FieldLabel>अनु.</FieldLabel>
-                                    <TransliterationInput
-                                        placeholder="अनु."
-                                        className={INPUT_CLASSES}
-                                        value={remarksObj.anu}
-                                        onChangeText={v => updateRemark('anu', v)}
-                                    />
-                                </div>
-                            </div>
-                        </div>
 
                         {/* Section 5: Financial Tracking */}
                         <div className="bg-rose-50/50 rounded-2xl p-6 border border-rose-100/50">
@@ -1123,7 +1074,7 @@ const PropertyForm = ({
                         {/* Section 8: Receipt Information */}
                         <div className="rounded-2xl p-5 border border-emerald-100 bg-emerald-50/30">
                             <h3 className="text-sm font-black text-emerald-600 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <div className="w-5 h-5 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 text-xs font-black">६</div>
+                                <div className="w-5 h-5 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 text-xs font-black">५</div>
                                 पावती माहिती (Receipt Info)
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

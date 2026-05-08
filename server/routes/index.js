@@ -16,6 +16,8 @@ const attendanceRoutes = require('./attendance.routes');
 const ferfarRoutes = require('./ferfar.routes');
 const masterRoutes = require('./master.routes');
 const taxRoutes = require('./tax.routes');
+const auditRoutes = require('./audit.routes');
+const fyRoutes = require('./fy.routes');
 
 // प्रत्येक मॉड्युलसाठी स्वतंत्र रस्ता (Mounting separate modules)
 router.use('/auth', authRoutes);
@@ -26,5 +28,7 @@ router.use('/attendance', attendanceRoutes);
 router.use('/ferfar', ferfarRoutes);
 router.use('/master', masterRoutes);
 router.use('/tax-rates', taxRoutes);
+router.use('/audit', auditRoutes);
+router.use('/fy', fyRoutes);
 
 module.exports = router;

@@ -5,7 +5,7 @@ import {
     Search, History, BookOpen, UserCheck, AlertTriangle,
     FileSignature, CheckCircle2, XCircle, ChevronRight, X,
     Loader2, UserPlus, Activity, ArrowRight, UserMinus,
-    Info, Calendar, Hash, User, ExternalLink, Filter, Shield
+    Info, Calendar, Hash, User, ExternalLink, Filter, Shield, Edit2
 } from 'lucide-react';
 import { PropertyRecord, FerfarRequest } from '../types';
 import { matchesSearch } from '../utils/transliterate';
@@ -15,14 +15,15 @@ import OwnerNameDisplay from '../components/OwnerNameDisplay';
 interface Props {
     records: PropertyRecord[];
     fetchRecords: () => void;
+    onAuthError?: () => void;
 }
 
 // --- Marathi Numerals Helper ---
 const MN = (v: number | string | undefined) =>
     String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
 
-export default function Ferfar({ records, fetchRecords }: Props) {
-    const [activeTab, setActiveTab] = useState<'NEW' | 'MONITOR' | 'HISTORY'>('NEW');
+export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
+    const [activeTab, setActiveTab] = useState<'NEW' | 'MONITOR' | 'HISTORY' | 'AUDIT'>('NEW');
     const [search, setSearch] = useState('');
     const [selectedProp, setSelectedProp] = useState<PropertyRecord | null>(null);
     const [newOwnerName, setNewOwnerName] = useState('');
@@ -37,6 +38,7 @@ export default function Ferfar({ records, fetchRecords }: Props) {
     const [loading, setLoading] = useState(false);
     const [processingId, setProcessingId] = useState<number | null>(null);
     const [requests, setRequests] = useState<FerfarRequest[]>([]);
+    const [auditRequests, setAuditRequests] = useState<any[]>([]);
     const [statusFilter, setStatusFilter] = useState<'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL'>('ALL');
 
     const { addToast } = useUI();
@@ -54,16 +56,34 @@ export default function Ferfar({ records, fetchRecords }: Props) {
             const res = await fetch(`${BASE}/api/ferfar`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            if (res.status === 401) {
+                onAuthError?.();
+                return;
+            }
             const data = await res.json();
-            setRequests(data);
+            setRequests(Array.isArray(data) ? data : []);
         } catch (e) {
             console.error('Failed to fetch ferfar requests', e);
+            setRequests([]);
         }
     };
 
+
     useEffect(() => {
         fetchRequests();
+        fetchAuditRequests();
     }, []);
+
+    const fetchAuditRequests = async () => {
+        try {
+            const res = await fetch(`${BASE}/api/audit/pending`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.status === 401) { onAuthError?.(); return; }
+            const data = await res.json();
+            setAuditRequests(data);
+        } catch (e) { console.error(e); }
+    };
 
     const filtered = useMemo(() => {
         if (!search.trim()) return records;
@@ -123,6 +143,10 @@ export default function Ferfar({ records, fetchRecords }: Props) {
                     remarks: `मासिक सभा\nदिनांक: ${remarkDate}\nविषय: ${remarkSubject}\nप्रकार: ${ferfarType}\nफेरफार बुक क्र: ${remarkFerfarNo}\nपान क्र: ${remarkPageNo}\nअनु क्र: ${remarkSerialNo}`
                 })
             });
+            if (res.status === 401) {
+                onAuthError?.();
+                return;
+            }
             if (!res.ok) throw new Error('Failed to apply');
             addToast('नवीन फेरफार अर्ज यशस्वीरित्या जतन झाला.', 'success');
             setSearch('');
@@ -152,6 +176,10 @@ export default function Ferfar({ records, fetchRecords }: Props) {
                 method: 'PUT',
                 headers: { Authorization: `Bearer ${token}` }
             });
+            if (res.status === 401) {
+                onAuthError?.();
+                return;
+            }
             if (!res.ok) throw new Error('मंजुरी अयशस्वी.');
             addToast('अभिनंदन! फेरफार मंजूर झाला आणि रेकॉर्ड अपडेट झाले.', 'success');
             fetchRequests();
@@ -163,25 +191,35 @@ export default function Ferfar({ records, fetchRecords }: Props) {
         }
     };
 
-    const handleReject = async () => {
-        if (!rejectionReason) {
-            addToast('कृपया नामंजूर करण्याचे कारण द्या.', 'error');
-            return;
-        }
+    const handleApproveAudit = async (id: number) => {
+        if (!confirm('तुम्ही हा बदल मंजूर करू इच्छिता? मालमत्तेचा मूळ डेटा अपडेट होईल.')) return;
+        setProcessingId(id);
         try {
-            const res = await fetch(`${BASE}/api/ferfar/reject/${rejectionModal.id}`, {
+            const res = await fetch(`${BASE}/api/audit/approve/${id}`, {
+                method: 'PUT',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.status === 401) { onAuthError?.(); return; }
+            if (!res.ok) throw new Error('Approve failed');
+            addToast('बदल यशस्वीरित्या लागू करण्यात आले आहेत.', 'success');
+            fetchAuditRequests();
+            fetchRecords();
+        } catch (e: any) { addToast(e.message, 'error'); }
+        finally { setProcessingId(null); }
+    };
+
+    const handleRejectAudit = async (id: number, reason: string) => {
+        try {
+            const res = await fetch(`${BASE}/api/audit/reject/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ remarks: rejectionReason })
+                body: JSON.stringify({ remarks: reason })
             });
+            if (res.status === 401) { onAuthError?.(); return; }
             if (!res.ok) throw new Error('Reject failed');
-            addToast('अर्ज नामंजूर करण्यात आला.', 'success');
-            setRejectionModal({ id: 0, open: false });
-            setRejectionReason('');
-            fetchRequests();
-        } catch (e: any) {
-            addToast(e.message, 'error');
-        }
+            addToast('दुरुस्तीचा प्रस्ताव नाकारला.', 'success');
+            fetchAuditRequests();
+        } catch (e: any) { addToast(e.message, 'error'); }
     };
 
     return (
@@ -202,7 +240,7 @@ export default function Ferfar({ records, fetchRecords }: Props) {
                 </div>
 
                 <div className="flex items-center gap-10 overflow-x-auto no-scrollbar max-w-[1600px] mx-auto">
-                    {(['NEW', 'MONITOR', 'HISTORY'] as const).map(tab => (
+                    {(['NEW', 'MONITOR', 'AUDIT', 'HISTORY'] as const).map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -211,8 +249,9 @@ export default function Ferfar({ records, fetchRecords }: Props) {
                         >
                             {tab === 'NEW' && <UserPlus className="w-4 h-4" />}
                             {tab === 'MONITOR' && <Activity className="w-4 h-4" />}
+                            {tab === 'AUDIT' && <Shield className="w-4 h-4" />}
                             {tab === 'HISTORY' && <History className="w-4 h-4" />}
-                            {tab === 'NEW' ? 'नवीन अर्ज नोंदणी' : tab === 'MONITOR' ? 'अर्ज स्थिती मॉनिटर' : 'हस्तांतरण तपशील'}
+                            {tab === 'NEW' ? 'नवीन अर्ज नोंदणी' : tab === 'MONITOR' ? 'अर्ज स्थिती मॉनिटर' : tab === 'AUDIT' ? 'दुरुस्ती मंजुरी' : 'हस्तांतरण तपशील'}
                             {activeTab === tab && <div className="absolute bottom-0 left-0 right-0 h-1 bg-indigo-600 rounded-t-full transition-all" />}
                         </button>
                     ))}
@@ -435,6 +474,75 @@ export default function Ferfar({ records, fetchRecords }: Props) {
                     </div>
                 )}
 
+                {activeTab === 'AUDIT' && (
+                    <div className="h-full flex flex-col animate-in fade-in slide-in-from-right-4 duration-400 p-6 overflow-y-auto no-scrollbar">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-20">
+                            {auditRequests.length === 0 ? (
+                                <div className="col-span-full py-20 text-center text-slate-300 font-black uppercase tracking-widest">कोणतेही दुरुस्ती प्रस्ताव प्रलंबित नाहीत</div>
+                            ) : auditRequests.map(r => {
+                                const newData = JSON.parse(r.request_data);
+                                return (
+                                    <div key={r.id} className="bg-white border-2 border-slate-100 rounded-[2rem] p-8 space-y-6 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all group">
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                                    <Edit2 className="w-6 h-6" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">मालमत्ता दुरुस्ती प्रस्ताव</p>
+                                                    <h3 className="text-lg font-black text-slate-900 tracking-tight">A.SR-{MN(r.srNo)} | {r.old_owner_name}</h3>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">अर्जदार</p>
+                                                <p className="text-xs font-bold text-slate-600">{r.requester_name}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                                            <div>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase mb-2">प्रस्तावित बदल (Changes)</p>
+                                                <ul className="space-y-2">
+                                                    {Object.entries(newData).map(([key, val]: [string, any]) => {
+                                                        if (['id', 'sections', 'payments', 'receipts', 'srNo', 'createdAt'].includes(key)) return null;
+                                                        return (
+                                                            <li key={key} className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                                                <span className="text-indigo-400 opacity-50 uppercase text-[9px] w-20">{key}:</span>
+                                                                <span className="text-indigo-600">{String(val)}</span>
+                                                            </li>
+                                                        );
+                                                    })}
+                                                </ul>
+                                            </div>
+                                            {newData.sections && (
+                                                <div className="border-l border-slate-200 pl-4">
+                                                    <p className="text-[9px] font-black text-slate-400 uppercase mb-2">बांधकाम क्षेत्रफळ (Sections)</p>
+                                                    <p className="text-xs font-black text-emerald-600">{MN(newData.sections.length)} मजले / विभाग</p>
+                                                    <p className="text-[10px] font-bold text-slate-500 mt-1">नवीन एकूण कर: ₹ {MN(newData.totalTaxAmount)}</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex gap-4 pt-2">
+                                            <button 
+                                                onClick={() => handleApproveAudit(r.id)}
+                                                className="flex-1 h-14 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-100"
+                                            >
+                                                <CheckCircle2 className="w-4 h-4" /> मंजूर करा
+                                            </button>
+                                            <button 
+                                                onClick={() => setRejectionModal({ id: r.id, open: true })}
+                                                className="flex-1 h-14 bg-white border-2 border-slate-100 text-rose-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <XCircle className="w-4 h-4" /> नाकारा
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
                 {(activeTab === 'MONITOR' || activeTab === 'HISTORY') && (
                     <div className="h-full flex flex-col animate-in fade-in slide-in-from-right-4 duration-400">
                         <div className="flex-1 overflow-hidden flex flex-col p-6">
@@ -574,7 +682,12 @@ export default function Ferfar({ records, fetchRecords }: Props) {
                             />
                         </div>
                         <div className="pt-4 flex flex-col gap-4">
-                            <button onClick={handleReject} className="w-full h-14 bg-rose-600 text-white font-black rounded-2xl hover:bg-rose-700 shadow-xl shadow-rose-100 uppercase text-xs tracking-widest">नक्की नाकारा</button>
+                            <button onClick={() => {
+                                if (activeTab === 'AUDIT') handleRejectAudit(rejectionModal.id, rejectionReason);
+                                else handleReject();
+                                setRejectionModal({ id: 0, open: false });
+                                setRejectionReason('');
+                            }} className="w-full h-14 bg-rose-600 text-white font-black rounded-2xl hover:bg-rose-700 shadow-xl shadow-rose-100 uppercase text-xs tracking-widest">नक्की नाकारा</button>
                         </div>
                     </div>
                 </div>

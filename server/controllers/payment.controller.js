@@ -6,6 +6,7 @@
  */
 
 const db = require('../config/db.config');
+const { clearPropertiesCache } = require('../utils/cache.util');
 
 /**
  * Record a new payment
@@ -44,18 +45,24 @@ exports.createPayment = async (req, res) => {
             ]
         );
 
-        // मालमत्तेचा भरलेला कर आणि सूट अपडेट करणे (Update property balances)
+        // मालमत्तेचा भरलेला कर, सूट, आणि पावती तपशील अपडेट करणे
         const disc = Number(discount_applied) || 0;
-        const pen = Number(penalty_applied) || 0;
+        const pen  = Number(penalty_applied)  || 0;
 
         await db.query(
-            `UPDATE properties 
-             SET paidAmount = COALESCE(paidAmount, 0) + ?, 
-                 discountAmount = COALESCE(discountAmount, 0) + ?, 
-                 penaltyAmount = GREATEST(COALESCE(penaltyAmount, 0), ?) 
+            `UPDATE properties
+             SET paidAmount      = COALESCE(paidAmount, 0) + ?,
+                 discountAmount  = COALESCE(discountAmount, 0) + ?,
+                 penaltyAmount   = GREATEST(COALESCE(penaltyAmount, 0), ?),
+                 receiptNo       = ?,
+                 receiptBook     = ?,
+                 paymentDate     = ?
              WHERE id = ?`,
-            [amount, disc, pen, property_id]
+            [amount, disc, pen, receipt_no, receipt_book || null, payment_date, property_id]
         );
+
+        // Cache साफ करा जेणेकरून frontend ला नवीन data मिळेल
+        clearPropertiesCache();
 
         res.status(201).json({ 
             id: result.insertId, 
@@ -83,8 +90,9 @@ exports.getAllPayments = async (req, res) => {
             LEFT JOIN users u ON p.collector_id = u.id
             LEFT JOIN properties pr ON p.property_id = pr.id
             WHERE 1=1
+            AND (p.collector_id = ? OR ? IN ('super_admin', 'gram_sevak', 'sarpanch', 'gram_sachiv'))
         `;
-        const params = [];
+        const params = [req.user.id, req.user.role];
         if (property_id) { sql += ' AND p.property_id = ?'; params.push(property_id); }
         if (date_from) { sql += ' AND p.payment_date >= ?'; params.push(date_from); }
         if (date_to) { sql += ' AND p.payment_date <= ?'; params.push(date_to); }

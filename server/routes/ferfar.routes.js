@@ -23,6 +23,3 @@ router.put('/approve/:id', authenticate, authorize('super_admin', 'gram_sevak'),
 router.put('/reject/:id', authenticate, authorize('super_admin', 'gram_sevak'), ferfarController.rejectFerfar);
 
 module.exports = router;
-
-
-module.exports = router;

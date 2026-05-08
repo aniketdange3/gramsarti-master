@@ -22,10 +22,4 @@ router.get('/bills', authenticate, maganiController.getAllBills);
 // पुढील सूचनेचा स्तर अपडेट करणे (Admin Only)
 router.put('/:id/advance-notice', authenticate, authorize('super_admin', 'gram_sevak'), maganiController.advanceNotice);
 
-// थकीत वसुली अहवाल मिळवणे
-router.get('/report', authenticate, maganiController.getReport);
-
-module.exports = router;
-
-
 module.exports = router;

@@ -51,18 +51,69 @@ exports.getAllProperties = async (req, res) => {
         return res.json(cachedData);
     }
 
-    const query = `
-        SELECT p.*, s.floorIndex, s.propertyType, s.lengthFt, s.widthFt, s.areaSqFt, s.areaSqMt, 
-               s.landRate, s.buildingRate, s.depreciationRate, s.weightage, s.buildingValue, 
-               s.openSpaceValue, s.buildingTaxRate, s.openSpaceTaxRate, s.constructionYear as sectionYear, s.propertyAge as sectionAge
-        FROM properties p
-        LEFT JOIN property_sections s ON p.id = s.propertyId
-        ORDER BY p.srNo ASC
-    `;
-
     try {
-        const [rows] = await db.query(query);
+        // १. वर्तमान आर्थिक वर्ष मिळवणे
+        const [configRows] = await db.query("SELECT config_value FROM system_config WHERE config_key = 'current_fy'");
+        const currentFY = configRows[0]?.config_value || '2024-25';
         
+        // २. मागील आर्थिक वर्ष काढणे (उदा. '2025-26' -> '2024-25')
+        const parts = currentFY.split('-');
+        const startYear = parseInt(parts[0]);
+        const prevFY = `${startYear - 1}-${startYear.toString().slice(-2)}`;
+
+        // मुख्य क्वेरी: मालमत्ता + मजले + नवीनतम पावती तपशील + मागील वर्षाचा ब्रेकडाउन
+        const query = `
+            SELECT
+                p.id, p.srNo, p.wardNo, p.khasraNo, p.layoutName, p.plotNo,
+                p.occupantName, p.ownerName, p.contactNo, p.hasConstruction, p.openSpace,
+                p.propertyTax, p.openSpaceTax, p.streetLightTax, p.healthTax,
+                p.generalWaterTax, p.specialWaterTax, p.wasteCollectionTax,
+                p.totalTaxAmount, p.arrearsAmount, p.paidAmount, p.penaltyAmount, p.discountAmount,
+                p.wastiName, p.buildingUsage, p.status, p.createdAt,
+                p.propertyId, p.constructionYear, p.propertyAge,
+                p.readyReckonerLand, p.readyReckonerBuilding, p.readyReckonerComposite,
+                p.depreciationAmount, p.remarksNotes,
+                p.propertyLength, p.propertyWidth, p.totalAreaSqFt, p.totalAreaSqMt,
+                p.billNo, p.lastBillDate,
+                -- पावती तपशील
+                COALESCE(p.receiptNo,   lat_pay.receipt_no)   AS receiptNo,
+                COALESCE(p.receiptBook, lat_pay.receipt_book) AS receiptBook,
+                COALESCE(p.paymentDate, lat_pay.payment_date) AS paymentDate,
+                -- मजला तपशील
+                s.floorIndex, s.propertyType, s.lengthFt, s.widthFt,
+                s.areaSqFt, s.areaSqMt, s.landRate, s.buildingRate,
+                s.depreciationRate, s.weightage, s.buildingValue,
+                s.openSpaceValue, s.buildingTaxRate, s.openSpaceTaxRate,
+                s.constructionYear AS sectionYear, s.propertyAge AS sectionAge,
+                -- मागील वर्षाचा ब्रेकडाउन (Arrears Breakdown)
+                pfy.property_tax AS prev_propertyTax,
+                pfy.open_space_tax AS prev_openSpaceTax,
+                pfy.street_light_tax AS prev_streetLightTax,
+                pfy.health_tax AS prev_healthTax,
+                pfy.general_water_tax AS prev_generalWaterTax,
+                pfy.special_water_tax AS prev_specialWaterTax,
+                pfy.waste_collection_tax AS prev_wasteCollectionTax,
+                pfy.penalty_amount AS prev_penaltyAmount
+            FROM properties p
+            LEFT JOIN property_sections s ON p.id = s.propertyId
+            LEFT JOIN property_fy_records pfy ON p.id = pfy.property_id AND pfy.financial_year = ?
+            LEFT JOIN (
+                SELECT property_id,
+                       receipt_no,
+                       receipt_book,
+                       payment_date
+                FROM payments
+                WHERE id IN (
+                    SELECT MAX(id) FROM payments GROUP BY property_id
+                )
+            ) lat_pay ON lat_pay.property_id = p.id
+            WHERE p.status != 'rejected'
+            AND (p.created_by = ? OR ? IN ('super_admin', 'gram_sevak', 'sarpanch', 'gram_sachiv'))
+            ORDER BY p.srNo ASC
+        `;
+
+        const [rows] = await db.query(query, [prevFY, req.user.id, req.user.role]);
+
         // डेटा प्रोसेसिंग: मालमत्ता आणि मजले एकत्र करणे (Grouping sections)
         const propertiesMap = {};
         rows.forEach(row => {
@@ -70,32 +121,44 @@ exports.getAllProperties = async (req, res) => {
                 propertiesMap[row.id] = { ...row, sections: [] };
                 // मजल्यांची वैयक्तिक माहिती मुख्य ऑब्जेक्टमधून काढणे
                 const fieldsToDelete = [
-                    'floorIndex', 'propertyType', 'lengthFt', 'widthFt', 'areaSqFt', 
-                    'areaSqMt', 'landRate', 'buildingRate', 'depreciationRate', 'weightage', 
-                    'buildingValue', 'openSpaceValue', 'buildingTaxRate', 'openSpaceTaxRate', 
+                    'floorIndex', 'propertyType', 'lengthFt', 'widthFt', 'areaSqFt',
+                    'areaSqMt', 'landRate', 'buildingRate', 'depreciationRate', 'weightage',
+                    'buildingValue', 'openSpaceValue', 'buildingTaxRate', 'openSpaceTaxRate',
                     'sectionYear', 'sectionAge'
                 ];
                 fieldsToDelete.forEach(field => delete propertiesMap[row.id][field]);
+
+                // Breakdown fields to keep in main object
+                propertiesMap[row.id].prev_breakdown = {
+                    propertyTax:        row.prev_propertyTax || 0,
+                    openSpaceTax:       row.prev_openSpaceTax || 0,
+                    streetLightTax:     row.prev_streetLightTax || 0,
+                    healthTax:           row.prev_healthTax || 0,
+                    generalWaterTax:    row.prev_generalWaterTax || 0,
+                    specialWaterTax:    row.prev_specialWaterTax || 0,
+                    wasteCollectionTax: row.prev_wasteCollectionTax || 0,
+                    penaltyAmount:      row.prev_penaltyAmount || 0
+                };
             }
 
             if (row.floorIndex !== null) {
                 propertiesMap[row.id].sections.push({
-                    floorIndex: row.floorIndex,
-                    propertyType: row.propertyType,
-                    lengthFt: row.lengthFt,
-                    widthFt: row.widthFt,
-                    areaSqFt: row.areaSqFt,
-                    areaSqMt: row.areaSqMt,
-                    landRate: row.landRate,
-                    buildingRate: row.buildingRate,
+                    floorIndex:       row.floorIndex,
+                    propertyType:     row.propertyType,
+                    lengthFt:         row.lengthFt,
+                    widthFt:          row.widthFt,
+                    areaSqFt:         row.areaSqFt,
+                    areaSqMt:         row.areaSqMt,
+                    landRate:         row.landRate,
+                    buildingRate:     row.buildingRate,
                     depreciationRate: row.depreciationRate,
-                    weightage: row.weightage,
-                    buildingValue: row.buildingValue,
-                    openSpaceValue: row.openSpaceValue,
-                    buildingTaxRate: row.buildingTaxRate,
+                    weightage:        row.weightage,
+                    buildingValue:    row.buildingValue,
+                    openSpaceValue:   row.openSpaceValue,
+                    buildingTaxRate:  row.buildingTaxRate,
                     openSpaceTaxRate: row.openSpaceTaxRate,
                     constructionYear: row.sectionYear,
-                    propertyAge: row.sectionAge
+                    propertyAge:      row.sectionAge,
                 });
             }
         });
@@ -105,6 +168,7 @@ exports.getAllProperties = async (req, res) => {
         res.setHeader('ETag', newEtag);
         res.json(propertiesArray);
     } catch (err) {
+        console.error('[PROPERTIES] getAllProperties error:', err);
         res.status(500).json({ error: err.message });
     }
 };
@@ -138,8 +202,8 @@ exports.saveProperty = async (req, res) => {
                 createdAt, receiptNo, receiptBook, paymentDate, propertyId, 
                 constructionYear, propertyAge, readyReckonerLand, readyReckonerBuilding, 
                 readyReckonerComposite, depreciationAmount, remarksNotes, propertyLength, 
-                propertyWidth, totalAreaSqFt, totalAreaSqMt, contactNo, buildingUsage
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                propertyWidth, totalAreaSqFt, totalAreaSqMt, contactNo, buildingUsage, created_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
         const params = [
             finalId, property.srNo, property.wardNo, property.khasraNo, property.layoutName,
@@ -153,7 +217,7 @@ exports.saveProperty = async (req, res) => {
             property.readyReckonerLand || 0, property.readyReckonerBuilding || 0, property.readyReckonerComposite || 0,
             property.depreciationAmount || 0, property.remarksNotes || null,
             property.propertyLength || null, property.propertyWidth || null, property.totalAreaSqFt || null, property.totalAreaSqMt || null, property.contactNo || null,
-            property.buildingUsage || 'निवास'
+            property.buildingUsage || 'निवास', req.user.id
         ];
 
         await connection.query(propertyQuery, params);
@@ -217,8 +281,8 @@ exports.bulkImport = async (req, res) => {
                     hasConstruction, openSpace, propertyTax, openSpaceTax, streetLightTax, 
                     healthTax, generalWaterTax, specialWaterTax, wasteCollectionTax, 
                     penaltyAmount, totalTaxAmount, arrearsAmount, paidAmount, wastiName, 
-                    createdAt, contactNo, buildingUsage
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                    createdAt, contactNo, buildingUsage, created_by
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
             await connection.query(propertyQuery, [
                 finalId, property.srNo, property.wardNo, property.khasraNo, property.layoutName,
@@ -227,7 +291,7 @@ exports.bulkImport = async (req, res) => {
                 property.healthTax, property.generalWaterTax, property.specialWaterTax, property.wasteCollectionTax || 0,
                 property.penaltyAmount || 0, property.totalTaxAmount, property.arrearsAmount || 0, property.paidAmount || 0,
                 property.wastiName, property.createdAt || new Date().toISOString(), property.contactNo || null,
-                property.buildingUsage || 'निवास'
+                property.buildingUsage || 'निवास', req.user.id
             ]);
 
             const sectionQuery = `INSERT INTO property_sections (propertyId, floorIndex, propertyType, lengthFt, widthFt, areaSqFt, areaSqMt) VALUES (?, ?, ?, ?, ?, ?, ?)`;

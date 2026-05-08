@@ -68,10 +68,6 @@ export default function NamunaTable9({
         if (next.has(id)) {
             next.delete(id);
         } else {
-            if (next.size >= 3) {
-                alert('एकावेळी जास्तीत जास्त ३ नोंदी निवडता येतील. (Maximum 3 records can be selected at a time)');
-                return;
-            }
             next.add(id);
         }
         setSelectedIds(next);
@@ -79,12 +75,14 @@ export default function NamunaTable9({
 
     const toggleAllPage = () => {
         const next = new Set(selectedIds);
-        if (next.size > 0) {
+        // If all records in the current list are selected, clear all
+        const allOnPageSelected = records.every(r => r.id && next.has(r.id));
+
+        if (allOnPageSelected) {
             next.clear();
         } else {
-            for (const r of pageRecords) {
-                if (r.id && !next.has(r.id)) {
-                    if (next.size >= 3) break;
+            for (const r of records) {
+                if (r.id) {
                     next.add(r.id);
                 }
             }
@@ -175,7 +173,7 @@ export default function NamunaTable9({
                                     checked={selectedIds.size > 0}
                                     ref={(input) => {
                                         if (input) {
-                                            input.indeterminate = selectedIds.size > 0 && selectedIds.size < 3 && selectedIds.size < pageRecords.length;
+                                            input.indeterminate = selectedIds.size > 0 && selectedIds.size < records.length;
                                         }
                                     }}
                                     onChange={toggleAllPage}
@@ -185,7 +183,7 @@ export default function NamunaTable9({
                             <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center w-[90px]">वस्ती</th>
                             <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center w-[70px]">खसरा</th>
                             <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center w-[80px]">प्लॉट</th>
-                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-left min-w-[180px]">मालकाचे नाव</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-left min-w-[150px]">मालकाचे नाव</th>
                             <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[120px]">प्रकार / क्षेत्रफळ</th>
                             <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-start min-w-[130px]">कराचा तपशील</th>
                             <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[110px]">मागील थकबाकी</th>
@@ -274,16 +272,51 @@ export default function NamunaTable9({
                                     <td className="px-3 py-2 text-center bg-indigo-50/30">
                                         <div className="text-[12px] font-black text-indigo-700">₹{MN(demand.toFixed(2))}</div>
                                     </td>
-                                    <td className="px-3 py-2 text-center">
-                                        <div className="text-[9px] text-slate-500 font-bold mb-0.5 whitespace-nowrap">
-                                            {r.paymentDate ? (r.paymentDate.includes('-') ? r.paymentDate.split('-').reverse().join('/') : r.paymentDate) : '-'}
-                                        </div>
+                                    {/* पावती तपशील col */}
+                                    <td className="px-3 py-2 text-center min-w-[110px]">
                                         {r.receiptNo ? (
-                                            <div className="text-[12px] font-black text-emerald-600 flex items-center gap-1 leading-none">
-                                                <CheckCircle2 className="w-3 h-3" /> {MN(r.receiptNo)}
+                                            /* पावती उपलब्ध आहे */
+                                            <div className="flex flex-col items-center gap-0.5">
+                                                {r.receiptBook && (
+                                                    <div className="flex items-center gap-1 text-[9px] leading-none">
+                                                        <span className="text-slate-400 font-bold whitespace-nowrap">बुक क्र.</span>
+                                                        <span className="font-black text-slate-700">{MN(r.receiptBook)}</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center gap-1 text-[10px] leading-none">
+                                                    <span className="text-slate-400 font-bold whitespace-nowrap">पा. क्र.</span>
+                                                    <span className="font-black text-emerald-700 flex items-center gap-0.5">
+                                                        <CheckCircle2 className="w-2.5 h-2.5 shrink-0" />
+                                                        {MN(r.receiptNo)}
+                                                    </span>
+                                                </div>
+                                                {r.paymentDate && (
+                                                    <div className="flex items-center gap-1 text-[9px] leading-none">
+                                                        <span className="text-slate-400 font-bold whitespace-nowrap">दि.</span>
+                                                        <span className="font-bold text-slate-600">
+                                                            {r.paymentDate.includes('T')
+                                                                ? r.paymentDate.split('T')[0].split('-').reverse().join('/')
+                                                                : r.paymentDate.includes('-')
+                                                                    ? r.paymentDate.split('-').reverse().join('/')
+                                                                    : r.paymentDate}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : paid > 0 ? (
+                                            /* वसुली झाली पण पावती नोंदवली नाही (Excel import) */
+                                            <div className="flex flex-col items-center gap-0.5">
+                                                <div className="text-[8px] text-amber-600 font-black bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 inline-block leading-tight">
+                                                    वसुली नोंदवली
+                                                </div>
+                                                <div className="text-[10px] font-black text-emerald-700">₹{MN(paid.toFixed(2))}</div>
+                                                <div className="text-[7px] text-slate-400 font-bold">पावती उपलब्ध नाही</div>
                                             </div>
                                         ) : (
-                                            <div className="text-[8px] text-slate-400 font-black uppercase tracking-wider leading-none">थकीत</div>
+                                            /* थकीत — कोणतीच वसुली नाही */
+                                            <div className="text-[8px] text-rose-400 font-black uppercase tracking-wider bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100 inline-block">
+                                                थकीत
+                                            </div>
                                         )}
                                     </td>
 

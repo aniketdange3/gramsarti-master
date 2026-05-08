@@ -19,7 +19,9 @@ exports.getDefaulters = async (req, res) => {
                     (COALESCE(p.totalTaxAmount, 0) + COALESCE(p.arrearsAmount, 0) - COALESCE(p.paidAmount, 0)) as balance
              FROM properties p
              WHERE (COALESCE(p.totalTaxAmount, 0) + COALESCE(p.arrearsAmount, 0) - COALESCE(p.paidAmount, 0)) > 0
-             ORDER BY balance DESC`
+             AND (p.created_by = ? OR ? IN ('super_admin', 'gram_sevak', 'sarpanch', 'gram_sachiv'))
+             ORDER BY balance DESC`,
+             [req.user.id, req.user.role]
         );
         res.json(rows);
     } catch (err) {
@@ -94,7 +96,9 @@ exports.getAllBills = async (req, res) => {
              FROM magani_bills m
              LEFT JOIN properties p ON m.property_id = p.id
              LEFT JOIN users u ON m.created_by = u.id
-             ORDER BY m.created_at DESC`
+             WHERE (m.created_by = ? OR ? IN ('super_admin', 'gram_sevak', 'sarpanch', 'gram_sachiv'))
+             ORDER BY m.created_at DESC`,
+             [req.user.id, req.user.role]
         );
         res.json(rows);
     } catch (err) {

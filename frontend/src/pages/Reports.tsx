@@ -1,8 +1,7 @@
 import { API_BASE_URL } from '@/utils/config';
-import React, { useState, useMemo, useEffect } from 'react';
-import { IndianRupee, TrendingUp, Activity, Users, Search, FileText, Filter, Download, CheckSquare, Square, Printer, X } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { IndianRupee, TrendingUp, Activity, Users } from 'lucide-react';
 import { PropertyRecord } from '../types';
-import MaganiBillDocument from '../components/MaganiBillDocument';
 
 interface ReportsProps {
     records: PropertyRecord[];
@@ -37,13 +36,7 @@ function SummaryCard({ label, value, icon, color }: { label: string; value: stri
     );
 }
 
-export default function Reports({ records, onAuthError }: ReportsProps) {
-    const [activeTab, setActiveTab] = useState<'overview' | 'unpaid'>('overview');
-    const [filterWasti, setFilterWasti] = useState('');
-    const [filterKhasara, setFilterKhasara] = useState('');
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-    const [printQueue, setPrintQueue] = useState<PropertyRecord[] | null>(null);
-
+export default function Reports({ records }: ReportsProps) {
     const stats = useMemo(() => {
         const currentTax = records.reduce((s, r) => s + (Number(r.totalTaxAmount) || 0), 0);
         const arrears = records.reduce((s, r) => s + (Number(r.arrearsAmount) || 0), 0);
@@ -73,38 +66,6 @@ export default function Reports({ records, onAuthError }: ReportsProps) {
 
         return { currentTax, arrears, paid, demand, balance, rate, wastiData, taxBreakdown };
     }, [records]);
-
-    const unpaidRecords = useMemo(() => {
-        return records.filter(r => {
-            const matchesWasti = !filterWasti || r.wastiName === filterWasti;
-            const matchesKhasara = !filterKhasara || (r.khasraNo && r.khasraNo.toString().includes(filterKhasara));
-            const isUnpaid = (Number(r.paidAmount) || 0) <= 0;
-            const hasDemand = (Number(r.totalTaxAmount) || 0) + (Number(r.arrearsAmount) || 0) > 0;
-            return matchesWasti && matchesKhasara && isUnpaid && hasDemand;
-        }).sort((a, b) => (a.khasraNo || '').localeCompare(b.khasraNo || '', undefined, { numeric: true }));
-    }, [records, filterWasti, filterKhasara]);
-
-    const toggleSelect = (id: string) => {
-        const next = new Set(selectedIds);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-        setSelectedIds(next);
-    };
-
-    const toggleSelectAll = () => {
-        if (selectedIds.size === unpaidRecords.length) {
-            setSelectedIds(new Set());
-        } else {
-            setSelectedIds(new Set(unpaidRecords.map(r => r.id!)));
-        }
-    };
-
-    const handleBulkPrint = () => {
-        const toPrint = unpaidRecords.filter(r => selectedIds.has(r.id!));
-        if (toPrint.length > 0) {
-            setPrintQueue(toPrint);
-        }
-    };
 
     const ProgressCircle = ({ percent, color, size = "w-20 h-20" }: { percent: number; color: string; size?: string }) => {
         const r = 36;
@@ -175,45 +136,6 @@ export default function Reports({ records, onAuthError }: ReportsProps) {
         );
     };
 
-    if (printQueue) {
-        return (
-            <div className="fixed inset-0 z-[100] bg-white overflow-auto">
-                <div className="no-print sticky top-0 bg-slate-900 text-white p-4 flex items-center justify-between shadow-xl">
-                    <div className="flex items-center gap-4">
-                        <button 
-                            onClick={() => setPrintQueue(null)}
-                            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
-                        <h2 className="text-lg font-black uppercase tracking-widest">प्रिंट प्रिव्ह्यू ({MN(printQueue.length)} बिलं)</h2>
-                    </div>
-                    <button 
-                        onClick={() => window.print()}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black uppercase tracking-widest transition-all"
-                    >
-                        <Printer className="w-5 h-5" />
-                        प्रिंट करा
-                    </button>
-                </div>
-                <div className="p-0 bg-white">
-                    {printQueue.map((r, i) => (
-                        <div key={r.id} className="page-break-after">
-                            <MaganiBillDocument record={r} onClose={() => {}} />
-                            {i < printQueue.length - 1 && <div className="no-print h-8 bg-slate-100 border-y border-slate-200" />}
-                        </div>
-                    ))}
-                </div>
-                <style>{`
-                    @media print {
-                        .no-print { display: none !important; }
-                        .page-break-after { page-break-after: always; }
-                    }
-                `}</style>
-            </div>
-        );
-    }
-
     return (
         <div className="flex flex-col h-full bg-slate-50/50">
             <div className="p-2 lg:p-4 no-print bg-white border-b border-slate-200">
@@ -225,226 +147,84 @@ export default function Reports({ records, onAuthError }: ReportsProps) {
                         </h2>
                         <p className="text-slate-500 font-bold text-[9px] uppercase tracking-widest mt-0.5">GramSarthi Analytics Dashboard</p>
                     </div>
-                    <div className="flex bg-slate-100 p-1 rounded-xl">
-                        <button 
-                            onClick={() => setActiveTab('overview')}
-                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${activeTab === 'overview' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                        >
-                            डॅशबोर्ड
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('unpaid')}
-                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${activeTab === 'unpaid' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                        >
-                            थकबाकीदार शोध (Bills)
-                        </button>
-                    </div>
                 </div>
 
-                {activeTab === 'overview' && (
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2 no-print animate-in fade-in slide-in-from-top-2 duration-300">
-                        <SummaryCard label="एकूण मालमत्ता" value={MN(records.length)} icon={<Users />} color="primary" />
-                        <SummaryCard label="एकूण मागणी" value={`₹${MN(stats.demand)}`} icon={<IndianRupee />} color="blue" />
-                        <SummaryCard label="एकूण वसुली" value={`₹${MN(stats.paid)}`} icon={<IndianRupee />} color="success" />
-                        <SummaryCard label="एकूण बाकी" value={`₹${MN(stats.balance)}`} icon={<IndianRupee />} color="rose" />
-                        <SummaryCard label="वसुली %" value={`${MN(stats.rate.toFixed(1))}%`} icon={<TrendingUp />} color="amber" />
-                    </div>
-                )}
-
-                {activeTab === 'unpaid' && (
-                    <div className="flex flex-wrap gap-3 no-print animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex-1 min-w-[200px]">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">वस्ती निवडा</p>
-                            <div className="relative">
-                                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                                <select 
-                                    value={filterWasti}
-                                    onChange={(e) => setFilterWasti(e.target.value)}
-                                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                                >
-                                    <option value="">सर्व वस्त्या</option>
-                                    {stats.wastiData.map(w => <option key={w.name} value={w.name}>{w.name}</option>)}
-                                </select>
-                            </div>
-                        </div>
-                        <div className="flex-1 min-w-[200px]">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">खसरा क्र. शोध</p>
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                                <input 
-                                    type="text"
-                                    value={filterKhasara}
-                                    onChange={(e) => setFilterKhasara(e.target.value)}
-                                    placeholder="उदा. २३/१..."
-                                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                )}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 no-print animate-in fade-in slide-in-from-top-2 duration-300">
+                    <SummaryCard label="एकूण मालमत्ता" value={MN(records.length)} icon={<Users />} color="primary" />
+                    <SummaryCard label="एकूण मागणी" value={`₹${MN(stats.demand)}`} icon={<IndianRupee />} color="blue" />
+                    <SummaryCard label="एकूण वसुली" value={`₹${MN(stats.paid)}`} icon={<IndianRupee />} color="success" />
+                    <SummaryCard label="एकूण बाकी" value={`₹${MN(stats.balance)}`} icon={<IndianRupee />} color="rose" />
+                    <SummaryCard label="वसुली %" value={`${MN(stats.rate.toFixed(1))}%`} icon={<TrendingUp />} color="amber" />
+                </div>
             </div>
 
             <div className="flex-1 overflow-hidden p-2 flex flex-col min-h-0">
                 <div className="bg-white rounded-t-3xl shadow-sm border border-slate-200 border-b-0 overflow-hidden flex-1 flex flex-col min-h-0">
-                    {activeTab === 'overview' ? (
-                        <div className="flex-1 overflow-auto bg-slate-50/30 p-4 lg:p-6 space-y-6 scrollbar-hide">
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                <AnalyticsCard title="एकूण मागणी">
-                                    <div className="flex items-end justify-between">
-                                        <p className="text-2xl font-black text-slate-800 tracking-tighter">₹{MN(stats.demand)}</p>
-                                        <TrendingUp className="w-6 h-6 text-indigo-500" />
-                                    </div>
-                                    <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">Assessment Target</p>
-                                </AnalyticsCard>
-                                <AnalyticsCard title="एकूण वसुली">
-                                    <div className="flex items-end justify-between">
-                                        <p className="text-2xl font-black text-emerald-600 tracking-tighter">₹{MN(stats.paid)}</p>
-                                        <IndianRupee className="w-6 h-6 text-emerald-500" />
-                                    </div>
-                                    <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">Realized Revenue</p>
-                                </AnalyticsCard>
-                                <AnalyticsCard title="एकूण थकबाकी">
-                                    <div className="flex items-end justify-between">
-                                        <p className="text-2xl font-black text-rose-600 tracking-tighter">₹{MN(stats.balance)}</p>
-                                        <Activity className="w-6 h-6 text-rose-500" />
-                                    </div>
-                                    <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">Outstanding Balance</p>
-                                </AnalyticsCard>
-                                <AnalyticsCard title="वसुली प्रगती">
-                                    <div className="flex items-center gap-4">
-                                        <ProgressCircle percent={stats.rate} color="text-indigo-600" size="w-12 h-12" />
-                                        <div>
-                                            <p className="text-xl font-black text-slate-800 tracking-tighter">{MN(stats.rate.toFixed(1))}%</p>
-                                            <p className="text-[8px] text-indigo-600 font-black uppercase">Growth Rate</p>
-                                        </div>
-                                    </div>
-                                </AnalyticsCard>
-                            </div>
-
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                <AnalyticsCard title="कराचे वर्गीकरण (Tax Breakdown)" className="lg:col-span-1">
-                                    <PieChartSVG data={[
-                                        { label: 'घरपट्टी', value: stats.taxBreakdown.property, color: '#6366f1' },
-                                        { label: 'जागा कर', value: stats.taxBreakdown.openSpace, color: '#0ea5e9' },
-                                        { label: 'पाणी कर', value: stats.taxBreakdown.water, color: '#10b981' },
-                                        { label: 'आरोग्य', value: stats.taxBreakdown.health, color: '#f59e0b' },
-                                        { label: 'इतर', value: stats.taxBreakdown.other, color: '#f43f5e' },
-                                    ]} />
-                                </AnalyticsCard>
-
-                                <AnalyticsCard title="वस्तीनिहाय वसुली (Top Settlements)" className="lg:col-span-2">
-                                    <div className="space-y-4">
-                                        {stats.wastiData.slice(0, 5).map((w, i) => (
-                                            <div key={i} className="space-y-1.5">
-                                                <div className="flex justify-between text-[10px] font-black uppercase tracking-wider">
-                                                    <span className="text-slate-500">{w.name}</span>
-                                                    <span className="text-slate-800">{MN(w.rate.toFixed(1))}%</span>
-                                                </div>
-                                                <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                                                    <div 
-                                                        className={`h-full rounded-full transition-all duration-1000 ${i === 0 ? 'bg-indigo-600 shadow-[0_0_10px_rgba(99,102,241,0.3)]' : i === 1 ? 'bg-blue-600' : 'bg-emerald-600'}`} 
-                                                        style={{ width: `${w.rate}%` }} 
-                                                    />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </AnalyticsCard>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex-1 flex flex-col min-h-0 bg-slate-50/30">
-                            <div className="p-4 border-b border-slate-100 bg-white flex items-center justify-between shadow-sm">
+                    <div className="flex-1 overflow-auto bg-slate-50/30 p-4 lg:p-6 space-y-6 scrollbar-hide">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <AnalyticsCard title="एकूण मागणी">
+                                <div className="flex items-end justify-between">
+                                    <p className="text-2xl font-black text-slate-800 tracking-tighter">₹{MN(stats.demand)}</p>
+                                    <TrendingUp className="w-6 h-6 text-indigo-500" />
+                                </div>
+                                <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">Assessment Target</p>
+                            </AnalyticsCard>
+                            <AnalyticsCard title="एकूण वसुली">
+                                <div className="flex items-end justify-between">
+                                    <p className="text-2xl font-black text-emerald-600 tracking-tighter">₹{MN(stats.paid)}</p>
+                                    <IndianRupee className="w-6 h-6 text-emerald-500" />
+                                </div>
+                                <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">Realized Revenue</p>
+                            </AnalyticsCard>
+                            <AnalyticsCard title="एकूण थकबाकी">
+                                <div className="flex items-end justify-between">
+                                    <p className="text-2xl font-black text-rose-600 tracking-tighter">₹{MN(stats.balance)}</p>
+                                    <Activity className="w-6 h-6 text-rose-500" />
+                                </div>
+                                <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">Outstanding Balance</p>
+                            </AnalyticsCard>
+                            <AnalyticsCard title="वसुली प्रगती">
                                 <div className="flex items-center gap-4">
-                                    <button 
-                                        onClick={toggleSelectAll}
-                                        className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-indigo-600"
-                                        title={selectedIds.size === unpaidRecords.length ? "Deselect All" : "Select All"}
-                                    >
-                                        {selectedIds.size === unpaidRecords.length && unpaidRecords.length > 0 ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
-                                    </button>
+                                    <ProgressCircle percent={stats.rate} color="text-indigo-600" size="w-12 h-12" />
                                     <div>
-                                        <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">थकबाकीदार यादी (खसरा निहाय)</h3>
-                                        <p className="text-[10px] font-bold text-slate-400 mt-0.5">{MN(unpaidRecords.length)} पैकी {MN(selectedIds.size)} मालमत्ता निवडल्या</p>
+                                        <p className="text-xl font-black text-slate-800 tracking-tighter">{MN(stats.rate.toFixed(1))}%</p>
+                                        <p className="text-[8px] text-indigo-600 font-black uppercase">Growth Rate</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    {selectedIds.size > 0 && (
-                                        <button 
-                                            onClick={handleBulkPrint}
-                                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 animate-in zoom-in duration-300"
-                                        >
-                                            <Printer className="w-3.5 h-3.5" />
-                                            निवडलेले बिल प्रिंट करा ({MN(selectedIds.size)})
-                                        </button>
-                                    )}
-                                    <span className="px-2 py-1 rounded bg-rose-50 text-rose-600 text-[9px] font-black uppercase tracking-widest border border-rose-100">
-                                        Pending Bills Only
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="flex-1 overflow-auto p-4">
-                                {unpaidRecords.length > 0 ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                        {unpaidRecords.map(r => (
-                                            <div 
-                                                key={r.id} 
-                                                onClick={() => toggleSelect(r.id!)}
-                                                className={`bg-white border ${selectedIds.has(r.id!) ? 'border-indigo-500 ring-1 ring-indigo-500' : 'border-slate-200'} rounded-2xl p-4 shadow-sm hover:shadow-md transition-all group cursor-pointer relative overflow-hidden`}
-                                            >
-                                                {selectedIds.has(r.id!) && (
-                                                    <div className="absolute top-0 right-0 p-1.5 bg-indigo-500 text-white rounded-bl-xl shadow-sm">
-                                                        <CheckSquare className="w-3.5 h-3.5" />
-                                                    </div>
-                                                )}
-                                                <div className="flex justify-between items-start mb-3">
-                                                    <div className={`p-2 ${selectedIds.has(r.id!) ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-400'} rounded-lg group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors`}>
-                                                        <FileText className="w-5 h-5" />
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-[9px] font-black text-slate-400 uppercase leading-none mb-1">खसरा क्र.</p>
-                                                        <p className="text-sm font-black text-slate-800">{MN(r.khasraNo)}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-1 mb-4">
-                                                    <h4 className="text-sm font-black text-slate-800 truncate">{r.ownerName}</h4>
-                                                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase">
-                                                        <span className="truncate max-w-[100px]">{r.wastiName}</span>
-                                                        <span className="w-1 h-1 rounded-full bg-slate-300" />
-                                                        <span>मालमत्ता: {MN(r.propertyId || r.srNo)}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="p-3 bg-rose-50/50 rounded-xl border border-rose-100 flex items-center justify-between">
-                                                    <div>
-                                                        <p className="text-[8px] font-black text-rose-400 uppercase leading-none mb-1">एकूण थकीत</p>
-                                                        <p className="text-sm font-black text-rose-600">₹{MN((Number(r.totalTaxAmount) || 0) + (Number(r.arrearsAmount) || 0))}</p>
-                                                    </div>
-                                                    <button 
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setPrintQueue([r]);
-                                                        }}
-                                                        className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 rounded-lg transition-all shadow-sm"
-                                                        title="Download Single Bill"
-                                                    >
-                                                        <Download className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="h-full flex flex-col items-center justify-center py-20 text-center">
-                                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                                            <Search className="w-8 h-8 text-slate-300" />
-                                        </div>
-                                        <h4 className="text-slate-800 font-black text-lg">थकबाकीदार सापडले नाहीत</h4>
-                                        <p className="text-slate-400 font-bold text-xs mt-1">निवडलेल्या फिल्टर नुसार कोणतीही नोंद आढळली नाही.</p>
-                                    </div>
-                                )}
-                            </div>
+                            </AnalyticsCard>
                         </div>
-                    )}
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <AnalyticsCard title="कराचे वर्गीकरण (Tax Breakdown)" className="lg:col-span-1">
+                                <PieChartSVG data={[
+                                    { label: 'घरपट्टी', value: stats.taxBreakdown.property, color: '#6366f1' },
+                                    { label: 'जागा कर', value: stats.taxBreakdown.openSpace, color: '#0ea5e9' },
+                                    { label: 'पाणी कर', value: stats.taxBreakdown.water, color: '#10b981' },
+                                    { label: 'आरोग्य', value: stats.taxBreakdown.health, color: '#f59e0b' },
+                                    { label: 'इतर', value: stats.taxBreakdown.other, color: '#f43f5e' },
+                                ]} />
+                            </AnalyticsCard>
+
+                            <AnalyticsCard title="वस्तीनिहाय वसुली (Top Settlements)" className="lg:col-span-2">
+                                <div className="space-y-4">
+                                    {stats.wastiData.slice(0, 5).map((w, i) => (
+                                        <div key={i} className="space-y-1.5">
+                                            <div className="flex justify-between text-[10px] font-black uppercase tracking-wider">
+                                                <span className="text-slate-500">{w.name}</span>
+                                                <span className="text-slate-800">{MN(w.rate.toFixed(1))}%</span>
+                                            </div>
+                                            <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                                <div 
+                                                    className={`h-full rounded-full transition-all duration-1000 ${i === 0 ? 'bg-indigo-600 shadow-[0_0_10px_rgba(99,102,241,0.3)]' : i === 1 ? 'bg-blue-600' : 'bg-emerald-600'}`} 
+                                                    style={{ width: `${w.rate}%` }} 
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </AnalyticsCard>
+                        </div>
+                    </div>
                 </div>
             </div>
 

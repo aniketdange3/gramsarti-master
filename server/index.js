@@ -27,8 +27,9 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: '200mb' }));
+app.use(express.urlencoded({ limit: '200mb', extended: true }));
+
 
 // २. रिक्वेस्ट लॉगर (Request Logging)
 app.use(logger);
@@ -61,6 +62,10 @@ const startServer = async () => {
         const server = app.listen(PORT, '0.0.0.0', () => {
             console.log(`[SUCCESS] Server is running on: http://localhost:${PORT}`);
         });
+        // Large file import timeout: 10 minutes
+        server.timeout = 10 * 60 * 1000;
+        server.keepAliveTimeout = 10 * 60 * 1000;
+
 
         // सर्व्हर त्रुटी व्यवस्थापन
         server.on('error', (err) => {

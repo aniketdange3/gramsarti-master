@@ -44,13 +44,13 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
     const fyEnd = 26;
 
     return (
-        <div className="namuna9-print-root bg-white min-h-screen flex flex-col items-center print:p-0">
+        <div className="namuna9-print-root bg-white min-h-screen flex flex-col items-center print:p-0 print:bg-white print:min-h-0">
             <style dangerouslySetInnerHTML={{
                 __html: `
                 @media print {
                     @page {
-                        size: legal landscape;
-                        margin: 1.3in 0.40in 0.25in 0.40in;
+                        size: 345mm 215mm;
+                        margin: 1.3in 0.4in 0.25in 0.4in;
                     }
                     body, html {
                         -webkit-print-color-adjust: exact !important;
@@ -138,26 +138,26 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
             {/* 2. Main Register Content */}
             {recordChunks.map((chunk, chunkIdx) => {
                 const pageTotals = chunk.reduce((acc, r) => {
-                const originalArrears = Number(r.arrearsAmount) || 0;
-                // ५% दंड (Penalty): मागील थकबाकीच्या 'घर कर' + 'जमीन कर' वर ५% दंड. तपशील नसल्यास एकूण थकबाकीवर.
-                const prevBase = (Number(r.prev_breakdown?.propertyTax) || 0) + (Number(r.prev_breakdown?.openSpaceTax) || 0);
-                const baseForPenalty = prevBase > 0 ? prevBase : originalArrears;
-                const finalPenalty = (originalArrears > 0 && baseForPenalty > 0) ? Number((baseForPenalty * 0.05).toFixed(2)) : 0;
-                const combinedArrears = originalArrears + finalPenalty;
+                    const originalArrears = Number(r.arrearsAmount) || 0;
+                    // ५% दंड (Penalty): मागील थकबाकीच्या 'घर कर' + 'जमीन कर' वर ५% दंड. तपशील नसल्यास एकूण थकबाकीवर.
+                    const prevBase = (Number(r.prev_breakdown?.propertyTax) || 0) + (Number(r.prev_breakdown?.openSpaceTax) || 0);
+                    const baseForPenalty = prevBase > 0 ? prevBase : originalArrears;
+                    const finalPenalty = (originalArrears > 0 && baseForPenalty > 0) ? Number((baseForPenalty * 0.05).toFixed(2)) : 0;
+                    const combinedArrears = originalArrears + finalPenalty;
 
-                const originalCurrentDemand = Number(r.totalTaxAmount) || 0;
-                const baseForDiscount = (Number(r.propertyTax) || 0) + (Number(r.openSpaceTax) || 0);
-                
-                // ५% सूट (Discount): चालू वर्षाच्या 'घर कर' + 'जमीन कर' वर ३० सप्टेंबरपूर्वी ५% सूट.
-                const today = new Date();
-                const cutoffDate = new Date(fyStart, 8, 30); 
-                const effectivePaymentDate = r.paymentDate ? new Date(r.paymentDate) : today;
-                const isEligible = effectivePaymentDate <= cutoffDate;
-                const finalDiscount = isEligible ? Number((baseForDiscount * 0.05).toFixed(2)) : 0;
-                
-                const grandTotalWithDiscount = (combinedArrears + originalCurrentDemand) - finalDiscount;
-                const paidAmount = Number(r.paidAmount) || 0;
-                const remainingBalance = grandTotalWithDiscount - paidAmount;
+                    const originalCurrentDemand = Number(r.totalTaxAmount) || 0;
+                    const baseForDiscount = (Number(r.propertyTax) || 0) + (Number(r.openSpaceTax) || 0);
+
+                    // ५% सूट (Discount): चालू वर्षाच्या 'घर कर' + 'जमीन कर' वर ३० सप्टेंबरपूर्वी ५% सूट.
+                    const today = new Date();
+                    const cutoffDate = new Date(fyStart, 8, 30);
+                    const effectivePaymentDate = r.paymentDate ? new Date(r.paymentDate) : today;
+                    const isEligible = effectivePaymentDate <= cutoffDate;
+                    const finalDiscount = isEligible ? Number((baseForDiscount * 0.05).toFixed(2)) : 0;
+
+                    const grandTotalWithDiscount = (combinedArrears + originalCurrentDemand) - finalDiscount;
+                    const paidAmount = Number(r.paidAmount) || 0;
+                    const remainingBalance = grandTotalWithDiscount - paidAmount;
 
                     return {
                         magilDemand: acc.magilDemand + combinedArrears,
@@ -218,14 +218,14 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
 
                                     const originalCurrentDemand = Number(r.totalTaxAmount) || 0;
                                     const baseForDiscount = (Number(r.propertyTax) || 0) + (Number(r.openSpaceTax) || 0);
-                                    
+
                                     // ५% सूट (Discount): चालू वर्षाच्या 'घर कर' + 'जमीन कर' वर ३० सप्टेंबरपूर्वी ५% सूट.
                                     const today = new Date();
-                                    const cutoffDate = new Date(fyStart, 8, 30); 
+                                    const cutoffDate = new Date(fyStart, 8, 30);
                                     const effectivePaymentDate = r.paymentDate ? new Date(r.paymentDate) : today;
                                     const isEligible = effectivePaymentDate <= cutoffDate;
                                     const finalDiscount = isEligible ? Number((baseForDiscount * 0.05).toFixed(2)) : 0;
-                                    
+
                                     const grandTotalDemand = combinedArrears + originalCurrentDemand;
                                     const grandTotalWithDiscount = Number((grandTotalDemand - finalDiscount).toFixed(2));
                                     const paidAmount = Number(r.paidAmount) || 0;
@@ -347,7 +347,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
                                                         <td className="pr-1.5 p-0.5">
                                                             <span className="screen-data">{isPenaltyRow ? '' : (hIdx === 0 ? MN(arrearsPaid.toFixed(2)) : '')}</span>
                                                         </td>
-                                                        
+
                                                         {/* Column 13: Chalu (चालू) Recovery */}
                                                         <td className="pr-1.5 p-0.5">
                                                             <span className="screen-data">{isPenaltyRow ? MN(penaltyPaid.toFixed(2)) : (headRecoveryMap[tax.key] > 0 ? MN(headRecoveryMap[tax.key].toFixed(2)) : '')}</span>
@@ -356,12 +356,12 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
                                                         {/* Column 14: Row Total Recovery */}
                                                         <td className="pr-1.5 p-0.5 font-bold">
                                                             <span className="screen-data">
-                                                                {isPenaltyRow 
-                                                                    ? (penaltyPaid > 0 ? MN(penaltyPaid.toFixed(2)) : '') 
-                                                                    : (hIdx === 0 
-                                                                        ? MN((arrearsPaid + (headRecoveryMap[tax.key] || 0)).toFixed(2)) 
+                                                                {isPenaltyRow
+                                                                    ? (penaltyPaid > 0 ? MN(penaltyPaid.toFixed(2)) : '')
+                                                                    : (hIdx === 0
+                                                                        ? MN((arrearsPaid + (headRecoveryMap[tax.key] || 0)).toFixed(2))
                                                                         : (headRecoveryMap[tax.key] > 0 ? MN(headRecoveryMap[tax.key].toFixed(2)) : '')
-                                                                      )
+                                                                    )
                                                                 }
                                                             </span>
                                                         </td>

@@ -30,10 +30,10 @@ import TaxMaster from './pages/TaxMaster';
 import Ferfar from './pages/Ferfar';
 import Sidebar from './components/Sidebar';
 import { UIProvider } from './components/UIProvider';
-import MaganiBillsPage from './pages/MaganiBillsPage';
+
 
 // ── Route map ──────────────────────────────────────────────────────────────
-export type ViewType = 'dashboard' | 'namuna8' | 'namuna9' | 'taxMaster' | 'reports' | 'roleAccess' | 'ferfar' | 'maganiBills';
+export type ViewType = 'dashboard' | 'namuna8' | 'namuna9' | 'taxMaster' | 'reports' | 'roleAccess' | 'ferfar';
 
 export const VIEW_TO_PATH: Record<ViewType, string> = {
   dashboard:  '/dashboard',
@@ -43,7 +43,6 @@ export const VIEW_TO_PATH: Record<ViewType, string> = {
   reports:    '/reports',
   ferfar:     '/ferfar',
   roleAccess: '/role-access',
-  maganiBills: '/magani-bills',
 };
 
 export const PATH_TO_VIEW: Record<string, ViewType> = {
@@ -54,7 +53,6 @@ export const PATH_TO_VIEW: Record<string, ViewType> = {
   '/reports':     'reports',
   '/ferfar':      'ferfar',
   '/role-access': 'roleAccess',
-  '/magani-bills': 'maganiBills',
 };
 
 // ── Inner app (needs router context) ───────────────────────────────────────
@@ -213,7 +211,7 @@ function AppInner() {
     { id: 'dashboard'  as ViewType, label: 'डैशबोर्ड',           sublabel: 'Dashboard',          icon: <LayoutDashboard className="w-5 h-5" />, color: 'from-violet-500 to-indigo-600' },
     { id: 'namuna8'    as ViewType, label: 'नमुना ८',             sublabel: 'Assessment Register', icon: <FileText className="w-5 h-5" />,        color: 'from-sky-500 to-blue-600' },
     { id: 'namuna9'    as ViewType, label: 'नमुना ९',             sublabel: 'Tax Notice',          icon: <Receipt className="w-5 h-5" />,         color: 'from-emerald-500 to-green-600' },
-    { id: 'maganiBills' as ViewType, label: 'मागणी बिलं',          sublabel: 'Magani Bills',        icon: <Printer className="w-5 h-5" />,         color: 'from-indigo-500 to-blue-600' },
+
     { id: 'reports'    as ViewType, label: 'अहवाल',               sublabel: 'Reports',             icon: <BarChart3 className="w-5 h-5" />,       color: 'from-purple-500 to-fuchsia-600', allowedRoles: ['super_admin','gram_sevak','gram_sachiv'] },
     { id: 'ferfar'     as ViewType, label: 'फेरफार नोंदवही',      sublabel: 'Mutation Register',   icon: <FileText className="w-5 h-5" />,        color: 'from-fuchsia-500 to-purple-600', allowedRoles: ['super_admin','gram_sevak','operator'] },
     { id: 'roleAccess' as ViewType, label: 'रोल अ‍ॅक्सेस',        sublabel: 'Role Access',         icon: <Shield className="w-5 h-5" />,          color: 'from-rose-600 to-rose-400',      allowedRoles: ['super_admin','gram_sevak','gram_sachiv'] },
@@ -323,7 +321,7 @@ function AppInner() {
             <Route path="/reports"   element={<Reports    records={records} onAuthError={handleLogout} />} />
             <Route path="/ferfar"    element={<Ferfar     records={records} fetchRecords={fetchRecords} onAuthError={handleLogout} />} />
             <Route path="/taxmaster" element={<TaxMaster  onAuthError={handleLogout} onNavigate={handleNavClick} />} />
-            <Route path="/magani-bills" element={<MaganiBillsPage records={records} onAuthError={handleLogout} />} />
+
             <Route path="*"          element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </div>

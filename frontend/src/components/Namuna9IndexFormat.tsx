@@ -34,12 +34,12 @@ export default function Namuna9IndexFormat({
     }
 
     return (
-        <div className="w-full bg-white no-print-bg">
+        <div className="w-full bg-white no-print-bg print:bg-white print:min-h-0">
             <style dangerouslySetInnerHTML={{
                 __html: `
                 @media print {
                     @page {
-                        size: legal landscape;
+                        size: 345mm 215mm;
                         margin: 1.3in 0.25in 0.25in 0.25in;
                     }
                     body, html {
@@ -54,6 +54,8 @@ export default function Namuna9IndexFormat({
                         page-break-inside: avoid !important;
                         break-inside: avoid !important;
                         background: white !important;
+                        border: none !important;
+                        padding: 0 !important;
                     }
                 }
             `}} />
@@ -65,7 +67,7 @@ export default function Namuna9IndexFormat({
                 const currentWasti = wastiName || records[0]?.wastiName || panchayatConfig.mouza || '';
 
                 return (
-                    <div key={`index-${idxPageIdx}`} className="page-container relative overflow-visible print:shadow-none bg-white p-2 mb-8 print:mb-0" style={{ pageBreakAfter: 'always', breakAfter: 'page' }}>
+                    <div key={`index-${idxPageIdx}`} className="page-container relative overflow-visible print:shadow-none bg-white  mb-8 print:mb-0" style={{ pageBreakAfter: 'always', breakAfter: 'page' }}>
                         {/* Watermark */}
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.15]">
                             <img src="/images/logo.jpeg" className="w-[500px] h-[500px] object-contain" alt="Watermark" />

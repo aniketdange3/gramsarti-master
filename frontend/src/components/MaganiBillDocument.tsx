@@ -34,15 +34,15 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
     const grandTotal = currentTotal + arrearsTotal;
 
     return (
-        <div className="flex-1 p-6 relative h-[210mm] border-r border-dashed border-slate-300 last:border-r-0 overflow-hidden bg-white">
+        <div className="flex-1 p-4 print:p-2 relative h-full border-r border-dashed border-gray-300 last:border-r-0 overflow-hidden bg-white font-bold">
             {/* Watermark Logo */}
             <img
                 src="/images/logo.jpeg"
                 alt="Watermark"
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 opacity-[0.25] pointer-events-none"
+                className="absolute  top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-55 h-55 opacity-[0.3] pointer-events-none p-10"
             />
 
-            {/* Copy Label Badge */}
+            {/* Copy Label Badge (Integrated with border) */}
             <div className="absolute top-[13px] right-6 z-30">
                 <span className="text-[10px] font-black text-white bg-black px-3 py-1 rounded-sm shadow-md border border-gray-600">
                     {copyLabel}
@@ -50,21 +50,23 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
             </div>
 
             {/* Main Outer Border */}
-            <div className="border-2 border-gray-600 p-3 h-full relative z-10 flex flex-col">
+            <div className="border-2 border-gray-600 p-2 h-full relative z-10 flex flex-col">
 
                 {/* Header Section */}
                 <div className="relative text-center border-b border-gray-600 pb-2 mb-4">
+                    {/* Top Left Logo (Aligned with Header) */}
                     <img
                         src="/images/logo.jpeg"
                         alt="Logo"
-                        className="absolute top-0 left-0 w-[60px] h-[60px] object-contain"
+                        className="absolute top-0 left-0 w-[90px] h-[90px] object-contain"
                     />
                     <h1 className="text-xl font-black mt-1 mb-1 leading-none">कर मागणी बिल</h1>
                     <p className="text-[10px] font-bold leading-none">(नमुना नं. ९ "क")</p>
                     <p className="text-[9px] mt-1">[ नियम ३२ (५) पहा ]</p>
-                    <h2 className="text-xs font-bold mt-1 uppercase tracking-tight">कार्यालय गट ग्रामपंचायत {PANCHAYAT_CONFIG.gpName}</h2>
+                    <p className="text-xs font-bold mt-1">कार्यालय  गट ग्रामपंचायत {PANCHAYAT_CONFIG.gpName}</p>
                     <p className="text-[10px] font-bold">तालुका {PANCHAYAT_CONFIG.taluka} जि. {PANCHAYAT_CONFIG.jilha}</p>
-                    <p className="text-[10px] font-black mt-1"><b>[ सन {currYear} ]</b></p>
+
+                    <p className="text-[10px]"><b>[ सन {currYear} ]</b></p>
                 </div>
 
                 {/* Owner Info Section */}
@@ -77,8 +79,10 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
                         <tbody>
                             <tr className="text-[9px]">
                                 <td className="border border-gray-600 p-1"><b>मौजा:</b> {record.wastiName || '-'}</td>
+                                {/* <td className="border border-gray-600 p-1"><b>वार्ड क्र:</b> {MN(record.wardNo)}</td> */}
                                 <td className="border border-gray-600 p-1"><b>खसरा क्र:</b> {(record.khasraNo)}</td>
                                 <td className="border border-gray-600 p-1"><b>प्लॉट क्र:</b> {MN(record.plotNo)}</td>
+                                {/* <td className="border border-gray-600 p-1"><b>मोबाईल:</b> {MN(record.contactNo || '-')}</td> */}
                                 <td className="border border-gray-600 p-1"><b>बिल क्र:</b> {MN(record.srNo)}</td>
                             </tr>
                             <tr className="text-[9px]">
@@ -89,83 +93,83 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
                         </tbody>
                     </table>
                     <div className="mb-1">
-                        <p className="text-[10px] font-bold">गट ग्रामपंचायत {PANCHAYAT_CONFIG.gpName} कडून कळविण्यात येते की आपल्या मालमत्तेचे खालील दिलेल्या तपशिलाप्रमाणे कराची रक्कम वसुली योग्य आहे.</p>
+                        <p className="text-[10px]"><b> गट ग्रामपंचायत {PANCHAYAT_CONFIG.gpName} कडून कळविण्यात येते की आपल्या  मालमत्तेचे खालील दिलेल्या तपशिलाप्रमाणे कराची रक्कम वसुली योग्य आहे
+                        </b></p>
                     </div>
                 </div>
 
                 {/* Main Tax Table */}
-                <div className="flex-1 overflow-hidden">
-                    <table className="w-full border-collapse border-2 border-gray-600 text-[10px] mb-3">
-                        <thead>
-                            <tr className="bg-[#7cdc39] font-bold text-white border-b border-gray-600">
-                                <th className="border-r border-gray-600 p-1 text-left">कराचे प्रकार</th>
-                                <th className="border-r border-gray-600 p-1 text-center w-16">बाकी</th>
-                                <th className="border-r border-gray-600 p-1 text-center w-16">चालू</th>
-                                <th className="p-1 text-center w-14">एकुण</th>
+                <table className="w-full border-collapse border-2 border-gray-600 text-[10px] mb-3 bg-white">
+                    <thead>
+                        <tr className="bg-[#7cdc39] print:bg-[#7cdc39] print:text-black font-bold text-white border-b border-gray-600">
+                            <th className="border-r border-gray-600 p-1 text-left">कराचे प्रकार</th>
+                            <th className="border-r border-gray-600 p-1 text-center w-16"> मागील </th>
+                            <th className="border-r border-gray-600 p-1 text-center w-16">चालू</th>
+                            <th className="p-1 text-center w-14">एकुण</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {taxMapping.map((tax, idx) => (
+                            <tr key={idx} className="border-b border-gray-600">
+                                <td className="border-r border-gray-600 p-1 font-bold">{tax.name}</td>
+                                <td className="border-r border-gray-600 p-1 text-right">{tax.arrears > 0 ? MN(tax.arrears) : '०'}</td>
+                                <td className="border-r border-gray-600 p-1 text-right">{tax.current > 0 ? MN(tax.current) : '०'}</td>
+                                <td className="p-1 text-right font-black">{MN(Number(tax.arrears || 0) + Number(tax.current || 0))}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {taxMapping.map((tax, idx) => (
-                                <tr key={idx} className="border-b border-gray-600">
-                                    <td className="border-r border-gray-600 p-1 font-bold">{tax.name}</td>
-                                    <td className="border-r border-gray-600 p-1 text-right">{tax.arrears > 0 ? MN(tax.arrears) : '०'}</td>
-                                    <td className="border-r border-gray-600 p-1 text-right">{tax.current > 0 ? MN(tax.current) : '०'}</td>
-                                    <td className="p-1 text-right font-black">{MN(Number(tax.arrears || 0) + Number(tax.current || 0))}</td>
-                                </tr>
-                            ))}
-                            <tr className="border-b border-gray-600 font-black">
-                                <td className="border-r border-gray-600 p-1">एकूण</td>
-                                <td className="border-r border-gray-600 p-1 text-right">{MN(arrearsTotal)}</td>
-                                <td className="border-r border-gray-600 p-1 text-right">{MN(currentTotal)}</td>
-                                <td className="p-1 text-right text-[12px]">{MN(grandTotal)}</td>
-                            </tr>
-                            <tr className="border-b border-gray-600 text-gray-800">
-                                <td className="border-r border-gray-600 p-1 font-black text-[9px]">५% सूट (चालू रकमेवर सप्टेंबर पर्यंत)</td>
-                                <td className="border-r border-gray-600 p-1 text-right text-slate-400">-</td>
-                                <td className="border-r border-gray-600 p-1 text-right text-green-700 font-black">({MN((currentTotal * 0.05).toFixed(2))})</td>
-                                <td className="p-1 text-right font-black text-green-700">-{MN((currentTotal * 0.05).toFixed(2))}</td>
-                            </tr>
-                            <tr className="bg-[#7cdc39] text-white font-black">
-                                <td className="border-r border-gray-600 p-1 uppercase">एकुण देय रक्कम</td>
-                                <td className="border-r border-gray-600 p-1 text-right">{MN(arrearsTotal)}</td>
-                                <td className="border-r border-gray-600 p-1 text-right">{MN((currentTotal - currentTotal * 0.05).toFixed(2))}</td>
-                                <td className="p-1 text-right text-[12px]">{MN((grandTotal - currentTotal * 0.05).toFixed(2))}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                        ))}
+                        {/* Total Row */}
+                        <tr className="border-b border-gray-600  font-black">
+                            <td className="border-r border-gray-600 p-1">एकूण</td>
+                            <td className="border-r border-gray-600 p-1 text-right">{MN(arrearsTotal)}</td>
+                            <td className="border-r border-gray-600 p-1 text-right">{MN(currentTotal)}</td>
+                            <td className="p-1 text-right text-[12px]">{MN(grandTotal)}</td>
+                        </tr>
+                        {/* 5% Discount Row */}
+                        <tr className="border-b border-gray-600 text-gray-800">
+                            <td className="border-r border-gray-600 p-1 font-black text-[9px]">५% सूट (चालू रकमेवर सप्टेंबर पर्यंत)</td>
+                            <td className="border-r border-gray-600 p-1 text-right text-slate-400">-</td>
+                            <td className="border-r border-gray-600 p-1 text-right text-green-700 font-black">({MN((currentTotal * 0.05).toFixed(2))})</td>
+                            <td className="p-1 text-right font-black text-green-700">-{MN((currentTotal * 0.05).toFixed(2))}</td>
+                        </tr>
+                        {/* Net Payable Row */}
+                        <tr className=" border-b border-gray-600 bg-[#7cdc39] print:bg-[#7cdc39] print:text-white text-white font-black">
+                            <td className="border-r border-gray-600 p-1">एकूण</td>
+                            <td className="border-r border-gray-600 p-1 text-right">{MN(arrearsTotal)}</td>
+                            <td className="border-r border-gray-600 p-1 text-right">{MN((currentTotal - currentTotal * 0.05).toFixed(2))}</td>
+                            <td className="p-1 text-right text-[12px]">{MN((grandTotal - currentTotal * 0.05).toFixed(2))}</td>
+                        </tr>
+                    </tbody>
+                </table>
 
                 {/* Footer Section */}
-                <div className="mt-auto pt-2 border-t border-gray-600">
-                    <p className="text-[10px] font-black leading-tight mb-2">
+                <div className="mt-auto">
+                    <p className="text-[10px] font-black leading-tight mb-2 ">
                         अक्षरी - <span className="underline text-[12px]">{numberToMarathiWords(Math.round(grandTotal - currentTotal * 0.05))} रु.</span> फक्त.
                     </p>
                     <div className="space-y-1 mb-2">
                         <div className="flex gap-1.5 text-[9px] font-bold leading-tight">
                             <span className="shrink-0 font-black">•</span>
-                            <p>सदर मागणी बिल मिळाल्यापासून १५ दिवसांच्या आत ग्रा.पं कार्यालयात कर भरणा करून कर पावती घ्यावी.</p>
+                            <p>सदर मागणी बिल मिळाल्यापासून १५ दिवसांच्या आत ग्रा.पं कार्यालयात  कर भरणा करून कर पावती घ्यावी .</p>
                         </div>
                         <div className="flex gap-1.5 text-[9px] font-bold leading-tight">
                             <span className="shrink-0 font-black">•</span>
-                            <p>त्याच प्रमाणे सदर कर भरणा न केल्यास महाराष्ट्र ग्रामपंचायत अधिनियम १९५९ च्या कलम १२९ (२) अन्वये पुढील कायदेशीर कार्यवाही करण्यात येईल.</p>
+                            <p>त्याच प्रमाणे सदर कर भरणा न केल्यास महाराष्ट्र ग्रामपंचायत अधिनियम १९५९ च्या कलम १२९ (२) अन्वये पुढील कायदेशीर कार्यवाही करण्यात येईल, याची नोंद घ्यावी.</p>
                         </div>
                     </div>
-                    <p className="text-[9px] font-bold leading-tight">दिनांक: {record.paymentDate ? MN(record.paymentDate) : '____/____/२०____'}</p>
-                    <div className="flex justify-between items-end text-[10px] mt-4">
+                    <p className="text-[9px] font-bold leading-tight">
+                        दिनांक: {record.paymentDate ? MN(record.paymentDate) : '____/____/२०____'}
+                    </p>
+                    <div className="flex justify-between items-end text-[10px] ">
                         <div className="text-center">
-                            {copyLabel !== 'लाभार्थी प्रत' && (
-                                <>
-                                    <div className="w-28 h-10 mb-1"></div>
-                                    <div className="border-t border-gray-600 pt-1">
-                                        <p className="font-black text-[9px]">सही (मालमत्ता धारक)</p>
-                                    </div>
-                                </>
-                            )}
+                            <div className="w-28 h-10 mb-1"></div>
+                            <div className="border-t border-gray-600 pt-1">
+                                <p className="font-black text-[9px]">सही (मालमत्ता धारक )</p>
+                            </div>
                         </div>
                         <div className="text-center">
                             <div className="w-28 h-10 mb-1"></div>
                             <div className="border-t border-gray-600 pt-1">
-                                <p className="font-black text-[9px]">सरपंच / ग्रांमपंचायत अधिकारी</p>
+                                <p className="font-black text-[9px]"> सरपंच / ग्रांमपंचायत  अधिकारी</p>
                                 <p className="text-[8px] text-gray-600">गट ग्रा. पं. {PANCHAYAT_CONFIG.gpName}</p>
                             </div>
                         </div>
@@ -177,8 +181,6 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
 };
 
 export default function MaganiBillDocument({ record, onClose }: Props) {
-    if (!record) return null;
-
     const arrears = Number(record.arrearsAmount) || 0;
     const current = Number(record.totalTaxAmount) || 0;
     const paid = Number(record.paidAmount) || 0;
@@ -187,7 +189,7 @@ export default function MaganiBillDocument({ record, onClose }: Props) {
 
     if (balance <= 0) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-emerald-50 font-sans p-4 no-print">
+            <div className="flex flex-col items-center justify-center min-h-screen bg-emerald-50 font-sans p-4">
                 <div className="bg-white rounded-[32px] p-10 text-center shadow-xl border border-emerald-100 max-w-md w-full animate-in fade-in zoom-in duration-500">
                     <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-8 ring-emerald-50">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -196,7 +198,7 @@ export default function MaganiBillDocument({ record, onClose }: Props) {
                     </div>
                     <h2 className="text-2xl font-black text-gray-800 mb-3 tracking-tight">एकूण बाकी निरंक!</h2>
                     <p className="text-gray-500 text-[15px] font-bold leading-relaxed mb-8">
-                        या मालमत्तेसाठी (मालमत्ता क्र. {MN(record.propertyId || record.plotNo || record.srNo)}) कोणतीही कर मागणी बाकी नाही.
+                        या मालमत्तेसाठी <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">(मालमत्ता क्र. {MN(record.propertyId || record.plotNo || record.srNo)})</span> कोणतीही कर मागणी बाकी नाही. संपूर्ण कर भरणा झाला आहे.
                     </p>
                     <button
                         onClick={() => onClose ? onClose() : window.history.back()}
@@ -210,8 +212,42 @@ export default function MaganiBillDocument({ record, onClose }: Props) {
     }
 
     return (
-        <div className="bg-white text-black font-serif leading-tight print:p-0" style={{ width: '355.6mm', margin: '0 auto' }}>
-            <div className="flex flex-row w-full min-h-[215.9mm] overflow-hidden" style={{ paddingLeft: '1.20in', boxSizing: 'border-box' }}>
+        <div className="bg-slate-100 print:bg-white text-black font-serif font-bold leading-tight min-h-screen w-full flex flex-col items-center p-4 print:p-0 overflow-auto">
+            <style>{`
+                @media print {
+                    @page { 
+                        size: A4 landscape; 
+                        margin: 0 !important; 
+                    }
+                    body, html { 
+                        background: white !important; 
+                        margin: 0 !important; 
+                        padding: 0 !important;
+                        width: 297mm !important;
+                        height: 210mm !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    .no-print { display: none !important; }
+                    .print-container { 
+                        display: flex !important;
+                        flex-direction: row !important;
+                        width: 297mm !important;
+                        height: 210mm !important;
+                        padding: 0.3in 0.3in 0.3in 0.6in !important;
+                        box-sizing: border-box !important;
+                        background: white !important;
+                        box-shadow: none !important;
+                        border: none !important;
+                        margin: 0 !important;
+                        position: fixed !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                    }
+                }
+            `}</style>
+
+            <div className="flex flex-row w-full max-w-[297mm] bg-white shadow-2xl print:shadow-none min-h-[185mm] overflow-hidden print-container">
                 <BillContent record={record} copyLabel="कार्यालयीन प्रत" />
                 <BillContent record={record} copyLabel="लाभार्थी प्रत" />
             </div>

@@ -14,7 +14,7 @@ const MN = (v: number | string | undefined) => {
     return isNaN(val) ? '०' : String(val).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
 };
 
-const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel: string }) => {
+export const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel: string }) => {
     const calc = calculateBill(record.arrearsAmount || 0, record.totalTaxAmount || 0);
     const currYear = PANCHAYAT_CONFIG.financialYear;
 
@@ -101,7 +101,7 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
                 {/* Main Tax Table */}
                 <table className="w-full border-collapse border-2 border-gray-600 text-[10px] mb-3 bg-white">
                     <thead>
-                        <tr className="bg-[#7cdc39] print:bg-[#7cdc39] print:text-black font-bold text-white border-b border-gray-600">
+                        <tr className="bg-[#7cdc39] print:bg-[#7cdc39] print:text-white font-bold text-white border-b border-gray-600">
                             <th className="border-r border-gray-600 p-1 text-left">कराचे प्रकार</th>
                             <th className="border-r border-gray-600 p-1 text-center w-16"> मागील </th>
                             <th className="border-r border-gray-600 p-1 text-center w-16">चालू</th>
@@ -161,10 +161,14 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
                     </p>
                     <div className="flex justify-between items-end text-[10px] ">
                         <div className="text-center">
-                            <div className="w-28 h-10 mb-1"></div>
-                            <div className="border-t border-gray-600 pt-1">
-                                <p className="font-black text-[9px]">सही (मालमत्ता धारक )</p>
-                            </div>
+                            {copyLabel !== 'लाभार्थी प्रत' && (
+                                <>
+                                    <div className="w-28 h-10 mb-1"></div>
+                                    <div className="border-t border-gray-600 pt-1">
+                                        <p className="font-black text-[9px]">सही (मालमत्ता धारक )</p>
+                                    </div>
+                                </>
+                            )}
                         </div>
                         <div className="text-center">
                             <div className="w-28 h-10 mb-1"></div>
@@ -180,35 +184,73 @@ const BillContent = ({ record, copyLabel }: { record: PropertyRecord; copyLabel:
     );
 };
 
-export default function MaganiBillDocument({ record, onClose }: Props) {
-    const arrears = Number(record.arrearsAmount) || 0;
-    const current = Number(record.totalTaxAmount) || 0;
-    const paid = Number(record.paidAmount) || 0;
-    const discount = Number(record.discountAmount) || 0;
-    const balance = (arrears + current) - paid - discount;
+interface Props {
+    record?: PropertyRecord;
+    records?: PropertyRecord[];
+    onClose?: () => void;
+}
 
-    if (balance <= 0) {
+export default function MaganiBillDocument({ record, records, onClose }: Props) {
+    const allRecords = records || (record ? [record] : []);
+
+    if (allRecords.length === 0) return null;
+
+    // Filter out records with no balance if in bulk mode
+    const pendingRecords = records
+        ? allRecords.filter(r => {
+            const arrears = Number(r.arrearsAmount) || 0;
+            const current = Number(r.totalTaxAmount) || 0;
+            const paid = Number(r.paidAmount) || 0;
+            const discount = Number(r.discountAmount) || 0;
+            return (arrears + current) - paid - discount > 0;
+        })
+        : allRecords;
+
+    if (pendingRecords.length === 0 && records) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-emerald-50 font-sans p-4">
-                <div className="bg-white rounded-[32px] p-10 text-center shadow-xl border border-emerald-100 max-w-md w-full animate-in fade-in zoom-in duration-500">
-                    <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-8 ring-emerald-50">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                    </div>
-                    <h2 className="text-2xl font-black text-gray-800 mb-3 tracking-tight">एकूण बाकी निरंक!</h2>
-                    <p className="text-gray-500 text-[15px] font-bold leading-relaxed mb-8">
-                        या मालमत्तेसाठी <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">(मालमत्ता क्र. {MN(record.propertyId || record.plotNo || record.srNo)})</span> कोणतीही कर मागणी बाकी नाही. संपूर्ण कर भरणा झाला आहे.
-                    </p>
-                    <button
-                        onClick={() => onClose ? onClose() : window.history.back()}
-                        className="w-full py-4 bg-gray-900 text-white font-black rounded-2xl hover:bg-gray-800 transition-colors shadow-lg shadow-gray-900/20 active:scale-95"
-                    >
-                        विंडो बंद करा
-                    </button>
+            <div className="flex flex-col items-center justify-center p-20 text-center">
+                <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
                 </div>
+                <h2 className="text-xl font-black text-gray-800">सर्व मागणी भरली आहे!</h2>
+                <p className="text-gray-500 font-bold mt-2">निवडलेल्या फिल्टरमध्ये कोणतीही थकबाकी नाही.</p>
             </div>
         );
+    }
+
+    if (pendingRecords.length === 1 && !records) {
+        const r = pendingRecords[0];
+        const arrears = Number(r.arrearsAmount) || 0;
+        const current = Number(r.totalTaxAmount) || 0;
+        const paid = Number(r.paidAmount) || 0;
+        const discount = Number(r.discountAmount) || 0;
+        const balance = (arrears + current) - paid - discount;
+
+        if (balance <= 0) {
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen bg-emerald-50 font-sans p-4">
+                    <div className="bg-white rounded-[32px] p-10 text-center shadow-xl border border-emerald-100 max-w-md w-full animate-in fade-in zoom-in duration-500">
+                        <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-8 ring-emerald-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <h2 className="text-2xl font-black text-gray-800 mb-3 tracking-tight">एकूण बाकी निरंक!</h2>
+                        <p className="text-gray-500 text-[15px] font-bold leading-relaxed mb-8">
+                            या मालमत्तेसाठी <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">(मालमत्ता क्र. {MN(r.propertyId || r.plotNo || r.srNo)})</span> कोणतीही कर मागणी बाकी नाही. संपूर्ण कर भरणा झाला आहे.
+                        </p>
+                        <button
+                            onClick={() => onClose ? onClose() : window.history.back()}
+                            className="w-full py-4 bg-gray-900 text-white font-black rounded-2xl hover:bg-gray-800 transition-colors shadow-lg shadow-gray-900/20 active:scale-95"
+                        >
+                            विंडो बंद करा
+                        </button>
+                    </div>
+                </div>
+            );
+        }
     }
 
     return (
@@ -233,23 +275,27 @@ export default function MaganiBillDocument({ record, onClose }: Props) {
                         display: flex !important;
                         flex-direction: row !important;
                         width: 297mm !important;
-                        height: 210mm !important;
+                        height: 209mm !important;
                         padding: 0.3in 0.3in 0.3in 0.6in !important;
                         box-sizing: border-box !important;
                         background: white !important;
                         box-shadow: none !important;
                         border: none !important;
                         margin: 0 !important;
-                        position: fixed !important;
-                        top: 0 !important;
-                        left: 0 !important;
+                        position: relative !important;
+                        page-break-after: always !important;
+                        break-after: page !important;
                     }
                 }
             `}</style>
 
-            <div className="flex flex-row w-full max-w-[297mm] bg-white shadow-2xl print:shadow-none min-h-[185mm] overflow-hidden print-container">
-                <BillContent record={record} copyLabel="कार्यालयीन प्रत" />
-                <BillContent record={record} copyLabel="लाभार्थी प्रत" />
+            <div className="flex flex-col w-full max-w-[297mm] print:max-w-none">
+                {pendingRecords.map((r, idx) => (
+                    <div key={r.id || idx} className="flex flex-row w-full bg-white shadow-2xl print:shadow-none min-h-[185mm] overflow-hidden print-container mb-8 print:mb-0">
+                        <BillContent record={r} copyLabel="कार्यालयीन प्रत" />
+                        <BillContent record={r} copyLabel="लाभार्थी प्रत" />
+                    </div>
+                ))}
             </div>
         </div>
     );

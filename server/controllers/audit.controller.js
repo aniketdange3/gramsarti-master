@@ -25,15 +25,18 @@ exports.submitRequest = async (req, res) => {
 
 exports.getPendingRequests = async (req, res) => {
     try {
+        const isPrivileged = ['super_admin', 'gram_sevak', 'sarpanch', 'gram_sachiv'].includes(req.user.role);
+
         const query = `
             SELECT r.*, p.ownerName as old_owner_name, p.srNo, u.name as requester_name 
             FROM property_audit_requests r
             JOIN properties p ON r.property_id = p.id
             JOIN users u ON r.requested_by = u.id
             WHERE r.status = 'PENDING'
+            AND (? = TRUE OR r.requested_by = ?)
             ORDER BY r.created_at DESC
         `;
-        const [requests] = await db.query(query);
+        const [requests] = await db.query(query, [isPrivileged, req.user.id]);
         res.json(requests);
     } catch (err) { res.status(500).json({ error: 'सर्व्हर त्रुटी' }); }
 };
@@ -52,28 +55,58 @@ exports.approveRequest = async (req, res) => {
         const newData = JSON.parse(request.request_data);
         const propId = request.property_id;
 
+        // Whitelist valid columns for the properties table
+        const PROPERTY_COLUMNS = [
+            'srNo', 'wardNo', 'khasraNo', 'layoutName', 'plotNo', 'ownerName', 'occupantName',
+            'hasConstruction', 'openSpace', 'propertyTax', 'openSpaceTax', 'streetLightTax',
+            'healthTax', 'generalWaterTax', 'specialWaterTax', 'wasteCollectionTax',
+            'totalTaxAmount', 'arrearsAmount', 'paidAmount', 'penaltyAmount', 'discountAmount',
+            'wastiName', 'contactNo', 'buildingUsage', 'receiptNo', 'receiptBook', 'paymentDate',
+            'billNo', 'lastBillDate', 'propertyId', 'constructionYear', 'propertyAge',
+            'readyReckonerLand', 'readyReckonerBuilding', 'readyReckonerComposite',
+            'depreciationAmount', 'remarksNotes', 'propertyLength', 'propertyWidth',
+            'totalAreaSqFt', 'totalAreaSqMt', 'status', 'createdAt', 'financial_year', 'created_by'
+        ];
+
         const fields = [];
         const values = [];
         for (const [key, value] of Object.entries(newData)) {
-            if (['id', 'sections', 'payments', 'receipts'].includes(key)) continue;
-            fields.push(`${key} = ?`);
-            values.push(value);
+            // Only include valid database columns and ignore non-updatable fields
+            if (PROPERTY_COLUMNS.includes(key) && key !== 'id') {
+                fields.push(`${key} = ?`);
+                values.push(value);
+            }
         }
+
         if (fields.length > 0) {
             values.push(propId);
-            await connection.query(`UPDATE properties SET ${fields.join(', ')} WHERE id = ?`, values);
+            const sql = `UPDATE properties SET ${fields.join(', ')} WHERE id = ?`;
+            console.log('[AUDIT] Executing SQL:', sql);
+            console.log('[AUDIT] With Values:', values);
+            await connection.query(sql, values);
         }
+
+        // Properly update all section measurements and tax details
         if (newData.sections && Array.isArray(newData.sections)) {
             await connection.query('DELETE FROM property_sections WHERE propertyId = ?', [propId]);
             for (const section of newData.sections) {
+                // Skip empty sections
+                if (!section.propertyType || section.propertyType === 'निवडा') continue;
+                
                 await connection.query(
                     `INSERT INTO property_sections (
-                        propertyId, floorIndex, propertyType, areaSqFt, 
-                        buildingValue, buildingTaxRate
-                    ) VALUES (?, ?, ?, ?, ?, ?)`,
+                        propertyId, floorIndex, propertyType, lengthFt, widthFt, areaSqFt, areaSqMt,
+                        landRate, buildingRate, depreciationRate, weightage, buildingValue, openSpaceValue,
+                        buildingTaxRate, openSpaceTaxRate, buildingFinalValue, openSpaceFinalValue,
+                        description, constructionYear, propertyAge
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
-                        propId, section.floorIndex, section.propertyType, section.areaSqFt,
-                        section.buildingValue || 0, section.buildingTaxRate || 0
+                        propId, section.floorIndex, section.propertyType, section.lengthFt || 0, section.widthFt || 0,
+                        section.areaSqFt || 0, section.areaSqMt || 0, section.landRate || 0, section.buildingRate || 0,
+                        section.depreciationRate || 1.0, section.weightage || 1.0, section.buildingValue || 0,
+                        section.openSpaceValue || 0, section.buildingTaxRate || 0, section.openSpaceTaxRate || 0,
+                        section.buildingFinalValue || 0, section.openSpaceFinalValue || 0,
+                        section.description || null, section.constructionYear || null, section.propertyAge || 0
                     ]
                 );
             }

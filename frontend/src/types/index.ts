@@ -249,21 +249,6 @@ export interface PropertyAuditRequest {
   requester_name?: string;
 }
 
-export interface PropertyAuditRequest {
-  id: number;
-  property_id: string;
-  request_data: string; // JSON string of PropertyRecord
-  requested_by: number;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  admin_remarks?: string;
-  created_at: string;
-  updated_at: string;
-  // Joined fields
-  old_owner_name?: string;
-  srNo?: number;
-  requester_name?: string;
-}
-
 export const BUILDING_USAGE_OPTIONS = []; // This is now managed via Master Data in the database
 
 

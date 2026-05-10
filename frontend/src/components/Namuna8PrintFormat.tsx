@@ -35,7 +35,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                 @media print {
                     @page {
                         size: 345mm 215mm;
-                        margin: 1.3in 0.4in 0.25in 0.4in;
+                        margin: 1.3in 0.45in 0.45in 0.45in;
                     }
                     body, html {
                         -webkit-print-color-adjust: exact !important;
@@ -106,8 +106,8 @@ export default function Namuna8PrintFormat({ records }: Props) {
             {recordChunks.map((chunk, chunkIdx) => (
                 <div key={chunkIdx} className="page-container relative overflow-visible">
                     {/* Watermark */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.15]">
-                        <img src="/logo.png" className="w-[500px] h-[500px] object-contain" alt="Watermark" />
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.1]">
+                        <img src="/images/logo.jpeg" className="w-[500px] h-[500px] object-contain" alt="Watermark" />
                     </div>
 
                     <div className="relative z-10 w-full flex flex-col justify-center items-center">
@@ -116,20 +116,20 @@ export default function Namuna8PrintFormat({ records }: Props) {
                             <div className="relative mb-2 w-full flex justify-between items-start px-0">
                                 {/* Left: Logo */}
                                 <div className="header-logo flex-shrink-0 pt-0">
-                                    <img src="/logo.png" alt="GP Logo" className="w-[150px] h-[150px] object-contain" />
+                                    <img src="/images/logo.jpeg" alt="GP Logo" className="w-[150px] h-[150px] object-contain" />
                                 </div>
 
                                 {/* Center: Titles */}
                                 <div className="flex-1 flex flex-col items-center text-center">
-                                    <h2 className="text-[42px] font-normal tracking-tight leading-none text-[#7A0000] mb-2" style={{ fontFamily: "'Arya', serif" }}>
-                                        गट ग्रामपंचायत वेळा हरिश्चंद्र
+                                    <h2 className="text-[42px] font-bold tracking-tight leading-none text-[#7A0000] mb-2" style={{ fontFamily: "'Arya', serif" }}>
+                                        गट ग्रामपंचायत वेळा (हरिश्चंद्र)
                                     </h2>
                                     <div className="mb-3">
-                                        <span className="text-[28px] font-black px-16 py-1.5 rounded-full text-white bg-[#7A0000] shadow-lg inline-block">नमुना ८</span>
+                                        <span className="text-[15px] font-black px-14 py-1.5 rounded-full text-white bg-[#7A0000] shadow-lg inline-block">नमुना ८</span>
                                     </div>
-                                    <p className="text-[14px] font-bold text-[#7A0000] italic mb-4">नियम ३२ (१) पहा</p>
-                                    <div className="inline-block bg-[#FFF9E5] print:bg-white px-10 py-1.5 rounded-xl border border-[#D4AF37]/30 print:border-[#7A0000] shadow-sm">
-                                        <h1 className="text-[16px] font-black text-gray-900 tracking-wide">
+                                    <p className="text-[14px] font-bold text-[#7A0000] italic   ">नियम ३२ (१) पहा</p>
+                                    <div className="inline-block py-1.5  print:border-[#7A0000] ">
+                                        <h1 className="text-[13px] font-black text-gray-900 tracking-wide">
                                             सन २०{MN(fyStart % 100)} - २०{MN(fyEnd % 100)} या वर्षाची कर आकारणी नोंदवही
                                         </h1>
                                     </div>
@@ -153,7 +153,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                             {/* Main Table - bg-white ensures watermark is hidden behind data */}
                             <table className="w-full text-[10px] border-collapse border border-[#7A0000] leading-tight mt-2 bg-white">
                                 <thead>
-                                    <tr className="text-[#7A0000] bg-[#FDEFB2] print:bg-gray-50">
+                                    <tr className="text-[#7A0000] bg-[#fff9e5] print:bg-gray-50">
                                         <th rowSpan={2} className="p-1 border border-[#7A0000]/30 w-[25px]">अ.क्र.</th>
                                         <th rowSpan={2} className="p-0 border border-[#7A0000]/30 w-[80px]">
                                             <div className="p-1 border-b border-[#7A0000]/20">वस्ती नाव</div>
@@ -164,8 +164,8 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                             <div className="p-1">प्लॉट क्र.</div>
                                         </th>
                                         <th rowSpan={2} className="p-0 border border-[#7A0000]/30 w-[160px]">
-                                            <div className="p-1 border-b border-[#7A0000]/20">मालकाचे नाव</div>
-                                            <div className="p-1">भोगवटादाराचे नाव</div>
+                                            <div className="p-1 border-b border-[#7A0000]/20">मालमत्ता धारकाचे नाव</div>
+                                            <div className="p-1">भोगवटदाराचे नाव</div>
                                         </th>
                                         <th rowSpan={2} className="p-0 border border-[#7A0000]/30 w-[50px]">
                                             <div className="p-1 border-b border-[#7A0000]/20">एकूण</div>
@@ -297,9 +297,9 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                                         <div className="p-1 font-black border-b border-black flex items-center justify-between text-gray-900 uppercase">
                                                                             <OwnerNameDisplay name={r.ownerName || '-'} />
 
-                                                                         
+
                                                                         </div>
-                                                                        <div className="p-1 text-[9px]  font-bold italic border-b border-black/10">भोगवटादार: {r.occupantName || 'स्वतः'}</div>
+                                                                        <div className="p-1 text-[9px]  font-bold italic border-b border-black/10">भोगवटदाराचे नाव: {r.occupantName || 'स्वतः'}</div>
                                                                         <div className="p-1 text-[9px]  font-bold">संपर्क: {r.contactNo ? MN(r.contactNo) : '-'}</div>
                                                                     </td>
                                                                     <td rowSpan={rowCount} className="p-1 justify-center items-center text-center font-black align-middle border border-[#7A0000]/30 text-[10px] bg-[#FDEFB2]/30 print:bg-white leading-tight">
@@ -476,14 +476,20 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                     </tr>
                                 </tfoot>
                             </table>
+                            <center>
+                                <p className="text-[#A80D40]  font-bold text-[11px]  whitespace-nowrap  ">
+                                    नक्कल दिल्याची दिनांक : {MN(currentDate.toLocaleDateString('en-GB'))}
+                                </p>
+                            </center>
+
 
                             {/* Footer Section: Left Tips, Right Signatures */}
-                            <div className="mt-16 flex gap-8 items-end w-full px-0 pb-2">
+                            <div className="mt-10 flex gap-8 items-end w-full px-0 pb-2">
                                 {/* Left Side: Tips */}
-                                <div className="flex-1 text-[13px] font-bold text-[#7A0000] leading-tight border-2 border-[#7A0000] p-5 bg-[#FFF9E5] print:bg-white rounded-2xl shadow-sm relative overflow-hidden">
+                                <div className="flex-1 text-[12px] font-bold text-[#7A0000] leading-tight border-1 border-[#7A0000] p-2 bg-[#FFF9E5]        rounded-xl shadow-sm relative overflow-hidden">
                                     <div className="absolute top-0 left-0 w-2 h-full bg-[#7A0000]"></div>
-                                    <div className="flex flex-col gap-3 ml-2">
-                                        <p className="flex items-start gap-3">
+                                    <div className="flex flex-col gap-2 ml-2">
+                                        <p className="flex items-start gap-2">
                                             <span className="text-[#7A0000] font-black tracking-tighter shrink-0 bg-[#7A0000]/10 px-2 py-0.5 rounded">टीप (१) :</span>
                                             <span className="leading-snug">सदरचा उतारा हा मालकी हक्काचा नसून कर आकारणीचा आहे. सदरचा उताऱ्यावरून खरेदी-विक्रीचा व्यवहार झाल्यास त्यास ग्रामपंचायत जबाबदार राहणार नाही.</span>
                                         </p>
@@ -495,7 +501,8 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                 </div>
 
                                 {/* Right Side: Signatures */}
-                                <div className="flex-shrink-0 w-[450px] flex flex-col gap-20">
+                                <div className="flex-shrink-0 w-[450px] flex flex-col gap-10">
+
                                     <div className="flex justify-between items-end gap-12 px-4">
                                         <div className="text-center flex-1">
                                             <div className="pt-3 border-t-2 border-[#7A0000] text-[#7A0000] uppercase font-black text-[15px] tracking-widest whitespace-nowrap">लिपिक</div>

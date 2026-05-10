@@ -30,6 +30,8 @@ import { ArrowLeft } from 'lucide-react';
 import { CustomDropdown } from '../components/CustomDropdown';
 import { hasModulePermission } from '../utils/permissions';
 import UserManagement from '../components/UserManagement';
+import { exportToExcel } from '../utils/exportUtils';
+
 
 
 // Custom sorter for Khasra numbers: Marathi first, then English, numeric 1 to end
@@ -351,34 +353,11 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
         }
     };
 
-    const exportToExcel = () => {
-        const wsData = records.map((r) => {
-            const row: any[] = [
-                r.srNo, r.wastiName || '', r.wardNo, r.khasraNo, r.layoutName,
-                r.plotNo, r.occupantName, r.ownerName,
-                r.hasConstruction ? 'हो' : 'नाही', r.openSpace
-            ];
-            for (let i = 0; i < 5; i++) {
-                const s = r.sections[i] || { ...DEFAULT_SECTION };
-                row.push(
-                    s.propertyType || '', s.lengthFt || 0, s.widthFt || 0,
-                    s.areaSqFt || 0, s.areaSqMt || 0, s.buildingTaxRate || 0,
-                    s.openSpaceTaxRate || 0, s.landRate || 0, s.buildingRate || 0,
-                    s.depreciationRate || 0, s.weightage || 0, s.buildingValue || 0,
-                    s.openSpaceValue || 0, s.constructionYear || '', s.propertyAge || 0
-                );
-            }
-            row.push(r.propertyTax, r.openSpaceTax, r.streetLightTax, r.healthTax,
-                r.generalWaterTax, r.specialWaterTax, r.receiptNo || '', r.receiptBook || '', r.paymentDate || '',
-                r.totalTaxAmount, r.arrearsAmount || 0, r.paidAmount || 0);
-            return row;
-        });
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet([EXCEL_HEADERS, ...wsData]);
-        XLSX.utils.book_append_sheet(wb, ws, "Property Records");
-        XLSX.writeFile(wb, `GramSarthi_Tax_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
-        addToast('Excel फाइल डाउनलोड झाली!', 'success');
+    const handleExport = () => {
+        exportToExcel(filteredRecords, 'GramSarthi_All_Data');
+        addToast('Excel फाईल यशस्वीरित्या डाउनलोड झाली!', 'success');
     };
+
 
     const importFromExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -441,12 +420,13 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                         healthTax: Number(row[EXCEL_HEADERS[lastIdx + 3]]) || 0,
                         generalWaterTax: Number(row[EXCEL_HEADERS[lastIdx + 4]]) || 0,
                         specialWaterTax: Number(row[EXCEL_HEADERS[lastIdx + 5]]) || 0,
-                        receiptNo: row[EXCEL_HEADERS[lastIdx + 6]] || '',
-                        receiptBook: row[EXCEL_HEADERS[lastIdx + 7]] || '',
-                        paymentDate: row[EXCEL_HEADERS[lastIdx + 8]] || '',
-                        totalTaxAmount: Number(row[EXCEL_HEADERS[lastIdx + 9]]) || 0,
-                        arrearsAmount: Number(row[EXCEL_HEADERS[lastIdx + 10]]) || 0,
-                        paidAmount: Number(row[EXCEL_HEADERS[lastIdx + 11]]) || 0,
+                        wasteCollectionTax: Number(row[EXCEL_HEADERS[lastIdx + 6]]) || 0,
+                        receiptNo: row[EXCEL_HEADERS[lastIdx + 7]] || '',
+                        receiptBook: row[EXCEL_HEADERS[lastIdx + 8]] || '',
+                        paymentDate: row[EXCEL_HEADERS[lastIdx + 9]] || '',
+                        totalTaxAmount: Number(row[EXCEL_HEADERS[lastIdx + 10]]) || 0,
+                        arrearsAmount: Number(row[EXCEL_HEADERS[lastIdx + 11]]) || 0,
+                        paidAmount: Number(row[EXCEL_HEADERS[lastIdx + 12]]) || 0,
                         createdAt: new Date().toISOString()
                     };
                 });
@@ -561,11 +541,18 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                     <input type="file" className="hidden" accept=".xlsx, .xls" onChange={importFromExcel} />
                                 </label>
                                 <button
+                                    onClick={handleExport}
+                                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-all cursor-pointer text-[9px] font-black uppercase tracking-wider shadow-sm active:scale-95"
+                                >
+                                    <FileSpreadsheet size={12} /> एक्सपोर्ट
+                                </button>
+                                <button
                                     onClick={() => { setEditingRecord(null); setVisibleFloorCount(1); setShowForm(true); }}
                                     className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-600 text-white rounded-lg font-black uppercase tracking-wider hover:bg-indigo-700 shadow-lg shadow-indigo-600/10 transition-all text-[9px] active:scale-95"
                                 >
                                     <Plus size={12} /> नवीन नोंद
                                 </button>
+
                             </>
                         )}
                     </div>

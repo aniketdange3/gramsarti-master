@@ -5,12 +5,14 @@ import {
     Search, History, BookOpen, UserCheck, AlertTriangle,
     FileSignature, CheckCircle2, XCircle, ChevronRight, X,
     Loader2, UserPlus, Activity, ArrowRight, UserMinus,
-    Info, Calendar, Hash, User, ExternalLink, Filter, Shield, Edit2
+    Info, Calendar, Hash, User, ExternalLink, Filter, Shield, Edit2,
+    ChevronLeft
 } from 'lucide-react';
-import { PropertyRecord, FerfarRequest } from '../types';
+import { PropertyRecord, LABELS, PropertyAuditRequest } from '../types';
 import { matchesSearch } from '../utils/transliterate';
 import { TransliterationInput } from '../components/TransliterationInput';
 import OwnerNameDisplay from '../components/OwnerNameDisplay';
+import { useFerfarRequests } from '../hooks/useFerfar';
 
 interface Props {
     records: PropertyRecord[];
@@ -21,6 +23,20 @@ interface Props {
 // --- Marathi Numerals Helper ---
 const MN = (v: number | string | undefined) =>
     String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
+
+const TableSkeleton = () => (
+    <>
+        {[...Array(5)].map((_, i) => (
+            <tr key={i} className="border-b border-slate-100 animate-pulse">
+                <td className="px-8 py-6"><div className="h-4 bg-slate-100 rounded w-3/4 mb-2"></div><div className="h-3 bg-slate-50 rounded w-1/2"></div></td>
+                <td className="px-8 py-6"><div className="h-4 bg-slate-100 rounded w-2/3 mb-2"></div><div className="h-3 bg-slate-50 rounded w-1/3"></div></td>
+                <td className="px-8 py-6"><div className="h-4 bg-slate-50 rounded w-1/2"></div></td>
+                <td className="px-8 py-6 text-center"><div className="h-8 bg-slate-50 rounded-2xl w-24 mx-auto"></div></td>
+                <td className="px-8 py-6 text-right"><div className="h-8 bg-slate-50 rounded-xl w-12 ml-auto"></div></td>
+            </tr>
+        ))}
+    </>
+);
 
 export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
     const [activeTab, setActiveTab] = useState<'NEW' | 'MONITOR' | 'HISTORY' | 'AUDIT'>('NEW');
@@ -37,9 +53,17 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
     const [remarkSerialNo, setRemarkSerialNo] = useState('');
     const [loading, setLoading] = useState(false);
     const [processingId, setProcessingId] = useState<number | null>(null);
-    const [requests, setRequests] = useState<FerfarRequest[]>([]);
-    const [auditRequests, setAuditRequests] = useState<any[]>([]);
+    const [auditRequests, setAuditRequests] = useState<PropertyAuditRequest[]>([]);
     const [statusFilter, setStatusFilter] = useState<'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL'>('ALL');
+
+    // Pagination & Filters State
+    const [page, setPage] = useState(1);
+    const limit = 10;
+    const [filterWard, setFilterWard] = useState('');
+    const [filterWasti, setFilterWasti] = useState('');
+
+    const { data: ferfarData, isLoading: ferfarLoading, refetch: refetchFerfar } = useFerfarRequests(page, limit);
+    const requests = ferfarData?.data || [];
 
     const { addToast } = useUI();
     const [rejectionModal, setRejectionModal] = useState<{ id: number, open: boolean }>({ id: 0, open: false });
@@ -51,26 +75,7 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
     const BASE = `${API_BASE_URL}`;
     const token = localStorage.getItem('gp_token') || '';
 
-    const fetchRequests = async () => {
-        try {
-            const res = await fetch(`${BASE}/api/ferfar`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.status === 401) {
-                onAuthError?.();
-                return;
-            }
-            const data = await res.json();
-            setRequests(Array.isArray(data) ? data : []);
-        } catch (e) {
-            console.error('Failed to fetch ferfar requests', e);
-            setRequests([]);
-        }
-    };
-
-
     useEffect(() => {
-        fetchRequests();
         fetchAuditRequests();
     }, []);
 
@@ -90,8 +95,28 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
         return records.filter(r => matchesSearch(r, search));
     }, [records, search]);
 
-    const displayRequests = requests.filter(r => statusFilter === 'ALL' || r.status === statusFilter);
-    const historyRequests = requests.filter(r => r.status === 'APPROVED');
+    const displayRequests = requests.filter(r => {
+        const matchesStatus = statusFilter === 'ALL' || r.status === statusFilter;
+        const matchesWard = !filterWard || String(r.wardNo) === String(filterWard);
+        const matchesWasti = !filterWasti || r.wastiName === filterWasti;
+        return matchesStatus && matchesWard && matchesWasti;
+    });
+    const historyRequests = requests.filter(r => {
+        const matchesStatus = r.status === 'APPROVED';
+        const matchesWard = !filterWard || String(r.wardNo) === String(filterWard);
+        const matchesWasti = !filterWasti || r.wastiName === filterWasti;
+        return matchesStatus && matchesWard && matchesWasti;
+    });
+
+    const displayAuditRequests = useMemo(() => {
+        return auditRequests.filter(r => {
+            try {
+                const newData = JSON.parse(r.request_data);
+                // Ferfar data = changes that involve ownerName
+                return newData.ownerName !== undefined && newData.ownerName !== r.old_owner_name;
+            } catch (e) { return false; }
+        });
+    }, [auditRequests]);
 
     // Find pending request for the selected property
     const existingPending = useMemo(() =>
@@ -117,7 +142,7 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
         const isDuplicateAction = historyRequests.find(r =>
             r.property_id === selectedProp.id &&
             r.new_owner_name === newOwnerName &&
-            (r.approved_date || '').startsWith(today)
+            (r.approved_at || '').startsWith(today)
         );
         if (isDuplicateAction) {
             addToast('या मालकासाठी फेरफार आजच मंजूर झाला आहे.', 'error');
@@ -159,7 +184,7 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
             setRemarkFerfarNo('');
             setRemarkPageNo('');
             setRemarkSerialNo('');
-            fetchRequests();
+            refetchFerfar();
             setActiveTab('MONITOR');
         } catch (err: any) {
             addToast(err.message, 'error');
@@ -182,7 +207,7 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
             }
             if (!res.ok) throw new Error('मंजुरी अयशस्वी.');
             addToast('अभिनंदन! फेरफार मंजूर झाला आणि रेकॉर्ड अपडेट झाले.', 'success');
-            fetchRequests();
+            refetchFerfar();
             fetchRecords();
         } catch (e: any) {
             addToast(e.message, 'error');
@@ -203,6 +228,7 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
             if (!res.ok) throw new Error('Approve failed');
             addToast('बदल यशस्वीरित्या लागू करण्यात आले आहेत.', 'success');
             fetchAuditRequests();
+            refetchFerfar(); // Also refresh mutation list
             fetchRecords();
         } catch (e: any) { addToast(e.message, 'error'); }
         finally { setProcessingId(null); }
@@ -222,6 +248,21 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
         } catch (e: any) { addToast(e.message, 'error'); }
     };
 
+    const handleReject = async () => {
+        const { id } = rejectionModal;
+        try {
+            const res = await fetch(`${BASE}/api/ferfar/reject/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ remarks: rejectionReason })
+            });
+            if (res.status === 401) { onAuthError?.(); return; }
+            if (!res.ok) throw new Error('Reject failed');
+            addToast('फेरफार अर्ज नाकारला.', 'success');
+            refetchFerfar();
+        } catch (e: any) { addToast(e.message, 'error'); }
+    };
+
     return (
         <div className="flex flex-col h-full bg-bg overflow-hidden relative transition-colors duration-300">
 
@@ -237,13 +278,29 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1.5">Mutation Register & Administrative Hub</p>
                         </div>
                     </div>
+                    <button 
+                        onClick={() => {
+                            fetchAuditRequests();
+                            refetchFerfar();
+                            fetchRecords();
+                            addToast('डेटा अद्ययावत केला.', 'success');
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl transition-all border border-slate-200"
+                    >
+                        <Loader2 className={`w-4 h-4 ${(ferfarLoading || loading) ? 'animate-spin' : ''}`} />
+                        <span className="text-[10px] font-black uppercase tracking-widest">रिफ्रेश</span>
+                    </button>
                 </div>
 
                 <div className="flex items-center gap-10 overflow-x-auto no-scrollbar max-w-[1600px] mx-auto">
                     {(['NEW', 'MONITOR', 'AUDIT', 'HISTORY'] as const).map(tab => (
                         <button
                             key={tab}
-                            onClick={() => setActiveTab(tab)}
+                            onClick={() => {
+                                setActiveTab(tab);
+                                if (tab === 'AUDIT') fetchAuditRequests();
+                                if (tab === 'MONITOR' || tab === 'HISTORY') refetchFerfar();
+                            }}
                             className={`pb-3 px-1 text-[11px] font-black uppercase tracking-widest transition-all relative flex items-center gap-2.5
                                 ${activeTab === tab ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-700'}`}
                         >
@@ -303,7 +360,7 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                                         <button
                                             onClick={() => { setSelectedProp(null); setSearch(''); }}
                                             className="absolute -top-2 -right-2 bg-white border border-slate-200 p-1 rounded-full text-slate-400 hover:text-rose-600 shadow-sm transition-all hover:scale-110 active:scale-95 z-30"
-                                            title="Clear Selection"
+                                            title="निवड रद्द करा"
                                         >
                                             <X className="w-3 h-3" />
                                         </button>
@@ -355,8 +412,8 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                                         <div className="bg-rose-50 border-2 border-rose-100 p-6 rounded-3xl flex items-center gap-6 shadow-sm">
                                             <div className="bg-rose-600 text-white p-4 rounded-2xl shadow-lg ring-4 ring-rose-100 animate-pulse"><AlertTriangle className="w-8 h-8" /></div>
                                             <div className="space-y-1">
-                                                <h4 className="text-sm font-black text-rose-800 uppercase tracking-tight">फेरफार करण्यास मज्जाव (Action Restricted)</h4>
-                                                <p className="text-[11px] font-bold text-rose-700">सदर मालमत्ता कर थकीत असल्यामुळे फेरफार नोंदवता येणार नाही. कृपया वसुली विभाग संपर्क साधावा.</p>
+                                                <h4 className="text-sm font-black text-rose-800 uppercase tracking-tight">फेरफार करण्यास मनाई (थकबाकी आहे)</h4>
+                                                <p className="text-[11px] font-bold text-rose-700">सदर मालमत्तेचा कर थकीत असल्यामुळे फेरफार नोंदवता येणार नाही. कृपया कर भरणा करावा.</p>
                                             </div>
                                         </div>
                                     ) : (
@@ -477,9 +534,9 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                 {activeTab === 'AUDIT' && (
                     <div className="h-full flex flex-col animate-in fade-in slide-in-from-right-4 duration-400 p-6 overflow-y-auto no-scrollbar">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-20">
-                            {auditRequests.length === 0 ? (
+                            {displayAuditRequests.length === 0 ? (
                                 <div className="col-span-full py-20 text-center text-slate-300 font-black uppercase tracking-widest">कोणतेही दुरुस्ती प्रस्ताव प्रलंबित नाहीत</div>
-                            ) : auditRequests.map(r => {
+                            ) : displayAuditRequests.map(r => {
                                 const newData = JSON.parse(r.request_data);
                                 return (
                                     <div key={r.id} className="bg-white border-2 border-slate-100 rounded-[2rem] p-8 space-y-6 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all group">
@@ -499,43 +556,91 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                                            <div>
-                                                <p className="text-[9px] font-black text-slate-400 uppercase mb-2">प्रस्तावित बदल (Changes)</p>
-                                                <ul className="space-y-2">
-                                                    {Object.entries(newData).map(([key, val]: [string, any]) => {
-                                                        if (['id', 'sections', 'payments', 'receipts', 'srNo', 'createdAt'].includes(key)) return null;
-                                                        return (
-                                                            <li key={key} className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                                                                <span className="text-indigo-400 opacity-50 uppercase text-[9px] w-20">{key}:</span>
-                                                                <span className="text-indigo-600">{String(val)}</span>
-                                                            </li>
-                                                        );
-                                                    })}
-                                                </ul>
+                                        <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                <Activity className="w-3 h-3 text-indigo-500" /> प्रस्तावित बदल (Requested Changes)
+                                            </p>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                                                {(() => {
+                                                    const current = records.find(p => p.id === r.property_id);
+                                                    const IGNORE = ['id', 'sections', 'payments', 'receipts', 'srNo', 'createdAt', 'financial_year', 'created_by', 'status'];
+                                                    const changes = Object.entries(newData).filter(([key, val]) => {
+                                                        if (IGNORE.includes(key)) return false;
+                                                        if (!current) return true;
+                                                        // Deep compare for numbers/strings
+                                                        return String(val) !== String((current as any)[key]);
+                                                    });
+
+                                                    if (changes.length === 0) return <p className="col-span-full text-xs font-bold text-slate-400 italic">केवळ अंतर्गत माहिती बदलली आहे.</p>;
+
+                                                    return changes.map(([key, val]) => (
+                                                        <div key={key} className="flex flex-col gap-1 py-1.5 border-b border-slate-100/50">
+                                                            <span className="text-[9px] font-black text-indigo-400 uppercase tracking-tighter">
+                                                                {(LABELS as any)[key] || key}
+                                                            </span>
+                                                            <div className="flex items-center gap-2">
+                                                                {current && (current as any)[key] !== undefined && (
+                                                                    <span className="text-[11px] font-bold text-slate-400 line-through">
+                                                                        {String((current as any)[key])}
+                                                                    </span>
+                                                                )}
+                                                                <ArrowRight className="w-2.5 h-2.5 text-slate-300" />
+                                                                <span className="text-xs font-black text-indigo-700 bg-indigo-50/50 px-2 py-0.5 rounded">
+                                                                    {typeof val === 'boolean' ? (val ? 'हो' : 'नाही') : String(val)}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    ));
+                                                })()}
                                             </div>
-                                            {newData.sections && (
-                                                <div className="border-l border-slate-200 pl-4">
-                                                    <p className="text-[9px] font-black text-slate-400 uppercase mb-2">बांधकाम क्षेत्रफळ (Sections)</p>
-                                                    <p className="text-xs font-black text-emerald-600">{MN(newData.sections.length)} मजले / विभाग</p>
-                                                    <p className="text-[10px] font-bold text-slate-500 mt-1">नवीन एकूण कर: ₹ {MN(newData.totalTaxAmount)}</p>
-                                                </div>
-                                            )}
                                         </div>
 
+                                        {newData.sections && (() => {
+                                            const current = records.find(p => p.id === r.property_id);
+                                            // Check if sections actually changed (simplified)
+                                            const sectionsChanged = JSON.stringify(newData.sections) !== JSON.stringify(current?.sections || []);
+                                            
+                                            if (!sectionsChanged) return null;
+
+                                            return (
+                                                <div className="bg-emerald-50/30 p-4 rounded-2xl border border-emerald-100/50">
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <p className="text-[9px] font-black text-emerald-600 uppercase mb-1">बांधकाम क्षेत्रफळ व मजले बदल</p>
+                                                            <p className="text-xs font-black text-slate-700">{MN(newData.sections.length)} मजले / विभाग प्रस्तावित</p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-[9px] font-black text-emerald-600 uppercase mb-1">नवीन अंदाजित कर</p>
+                                                            <p className="text-sm font-black text-emerald-700">₹ {MN(newData.totalTaxAmount)}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+
                                         <div className="flex gap-4 pt-2">
-                                            <button 
-                                                onClick={() => handleApproveAudit(r.id)}
-                                                className="flex-1 h-14 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-100"
-                                            >
-                                                <CheckCircle2 className="w-4 h-4" /> मंजूर करा
-                                            </button>
-                                            <button 
-                                                onClick={() => setRejectionModal({ id: r.id, open: true })}
-                                                className="flex-1 h-14 bg-white border-2 border-slate-100 text-rose-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
-                                            >
-                                                <XCircle className="w-4 h-4" /> नाकारा
-                                            </button>
+                                            {canApprove ? (
+                                                <>
+                                                    <button 
+                                                        onClick={() => handleApproveAudit(r.id)}
+                                                        disabled={processingId === r.id}
+                                                        className="flex-1 h-14 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-100 disabled:opacity-50"
+                                                    >
+                                                        {processingId === r.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} मंजूर करा
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setRejectionModal({ id: r.id, open: true })}
+                                                        className="flex-1 h-14 bg-white border-2 border-slate-100 text-rose-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        <XCircle className="w-4 h-4" /> नाकारा
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <div className="flex-1 py-4 bg-slate-50 rounded-2xl flex items-center justify-center gap-2 text-slate-400">
+                                                    <Shield className="w-4 h-4" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">मंजुरीचा अधिकार नाही</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 );
@@ -555,14 +660,35 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                                         {activeTab === 'MONITOR' ? 'अर्ज स्थिती मॉनिटर' : 'यशस्वी हस्तांतरण इतिहास'}
                                     </div>
                                     {activeTab === 'MONITOR' && (
-                                        <div className="flex gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-inner">
-                                            {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const).map(s => (
-                                                <button key={s} onClick={() => setStatusFilter(s)}
-                                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all tracking-widest
-                                                    ${statusFilter === s ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}>
-                                                    {s === 'PENDING' ? 'प्रलंबित' : s === 'APPROVED' ? 'मंजूर' : s === 'REJECTED' ? 'नामंजूर' : 'सर्व'}
-                                                </button>
-                                            ))}
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex gap-2 p-1 bg-white border border-slate-200 rounded-xl shadow-sm">
+                                                <select 
+                                                    value={filterWard} 
+                                                    onChange={e => setFilterWard(e.target.value)}
+                                                    className="bg-transparent border-none text-[10px] font-black uppercase outline-none px-2 py-1 text-slate-500 focus:text-indigo-600"
+                                                >
+                                                    <option value="">सर्व वॉर्ड</option>
+                                                    {[...new Set(records.map(r => r.wardNo))].sort().map(w => <option key={w} value={w}>वॉर्ड {MN(w)}</option>)}
+                                                </select>
+                                                <div className="w-px h-4 bg-slate-100 self-center"></div>
+                                                <select 
+                                                    value={filterWasti} 
+                                                    onChange={e => setFilterWasti(e.target.value)}
+                                                    className="bg-transparent border-none text-[10px] font-black uppercase outline-none px-2 py-1 text-slate-500 focus:text-indigo-600"
+                                                >
+                                                    <option value="">सर्व वस्ती</option>
+                                                    {[...new Set(records.map(r => r.wastiName))].sort().map(w => <option key={w} value={w}>{w}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="flex gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-inner">
+                                                {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const).map(s => (
+                                                    <button key={s} onClick={() => setStatusFilter(s)}
+                                                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all tracking-widest
+                                                        ${statusFilter === s ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}>
+                                                        {s === 'PENDING' ? 'प्रलंबित' : s === 'APPROVED' ? 'मंजूर' : s === 'REJECTED' ? 'नामंजूर' : 'सर्व'}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -579,7 +705,9 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
-                                            {(activeTab === 'MONITOR' ? displayRequests : historyRequests).length === 0 ? (
+                                            {ferfarLoading ? (
+                                                <TableSkeleton />
+                                            ) : (activeTab === 'MONITOR' ? displayRequests : historyRequests).length === 0 ? (
                                                 <tr><td colSpan={5} className="py-20 text-center text-xs font-black text-slate-300 uppercase tracking-[0.3em] italic">कोणत्याही नोंदी आढळल्या नाहीत</td></tr>
                                             ) : (activeTab === 'MONITOR' ? displayRequests : historyRequests).map(r => (
                                                 <tr key={r.id} className="group hover:bg-slate-50/50 transition-colors">
@@ -607,7 +735,7 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                                                     <td className="px-8 py-6">
                                                         <div className="space-y-1">
                                                             <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-full">{r.ferfar_type}</span>
-                                                            <p className="text-[10px] text-slate-400 font-bold italic ml-1">By: {r.applicant_name || 'N/A'}</p>
+                                                            <p className="text-[10px] text-slate-400 font-bold italic ml-1">अर्जदार: {r.applicant_name || 'उपलब्ध नाही'}</p>
                                                         </div>
                                                     </td>
                                                     <td className="px-8 py-6 text-center">
@@ -635,7 +763,7 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                                                             ) : (
                                                                 <div className="flex items-center justify-end gap-2 text-slate-300">
                                                                     <Shield className="w-4 h-4" />
-                                                                    <span className="text-[10px] font-black uppercase tracking-tighter italic">Approval Restricted</span>
+                                                                    <span className="text-[10px] font-black uppercase tracking-tighter italic">मंजुरीचा अधिकार नाही</span>
                                                                 </div>
                                                             )
                                                         ) : (
@@ -652,6 +780,28 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                                             ))}
                                         </tbody>
                                     </table>
+                                </div>
+
+                                <div className="px-8 py-4 border-t border-slate-100 bg-slate-50/30 flex items-center justify-between shrink-0">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        एकूण नोंदी: {MN(ferfarData?.pagination.total || 0)} | पान {MN(page)} पैकी {MN(ferfarData?.pagination.totalPages || 1)}
+                                    </p>
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                                            disabled={page === 1 || ferfarLoading}
+                                            className="p-2 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-indigo-600 disabled:opacity-30 transition-all shadow-sm hover:shadow-md active:scale-95"
+                                        >
+                                            <ChevronLeft className="w-5 h-5" />
+                                        </button>
+                                        <button 
+                                            onClick={() => setPage(p => Math.min(ferfarData?.pagination.totalPages || 1, p + 1))}
+                                            disabled={page >= (ferfarData?.pagination.totalPages || 1) || ferfarLoading}
+                                            className="p-2 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-indigo-600 disabled:opacity-30 transition-all shadow-sm hover:shadow-md active:scale-95"
+                                        >
+                                            <ChevronRight className="w-5 h-5" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

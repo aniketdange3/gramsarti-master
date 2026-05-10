@@ -117,15 +117,22 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
                             {placeholder}
                         </div>
                         {filteredOptions.length > 0 ? (
-                            filteredOptions.map((opt) => (
-                                <div
-                                    key={opt.value}
-                                    onClick={() => { onChange(opt.value); setIsOpen(false); }}
-                                    className={`px-3 py-2 text-xs font-bold hover:bg-primary/5 cursor-pointer transition-colors ${opt.value === value ? 'text-primary bg-primary/[0.02]' : 'text-gray-700'}`}
-                                >
-                                    {opt.label}
-                                </div>
-                            ))
+                            <>
+                                {filteredOptions.slice(0, 100).map((opt) => (
+                                    <div
+                                        key={opt.value}
+                                        onClick={() => { onChange(opt.value); setIsOpen(false); }}
+                                        className={`px-3 py-2 text-xs font-bold hover:bg-primary/5 cursor-pointer transition-colors ${opt.value === value ? 'text-primary bg-primary/[0.02]' : 'text-gray-700'}`}
+                                    >
+                                        {opt.label}
+                                    </div>
+                                ))}
+                                {filteredOptions.length > 100 && (
+                                    <div className="px-3 py-2 text-[10px] font-black text-slate-400 text-center border-t border-gray-50 bg-slate-50 uppercase tracking-widest">
+                                        अधिक शोधण्यासाठी नाव/क्रमांक टाईप करा...
+                                    </div>
+                                )}
+                            </>
                         ) : (
                             <div className="px-3 py-4 text-[10px] font-bold text-slate-400 text-center uppercase tracking-widest">
                                 काहीही आढळले नाही

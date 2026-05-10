@@ -327,7 +327,7 @@ export default function NamunaTable9({
                                         <div className="text-[15px] font-black text-rose-600">₹{MN(balance.toFixed(2))}</div>
                                     </td>
                                     {showActions && (
-                                        <td className="no-print px-3 py-2 text-center sticky right-0 z-20 bg-white border-l border-slate-200 shadow-[-4px_0_15px_-4px_rgba(0,0,0,0.05)]">
+                                        <td className="no-print px-3 py-2 text-center sticky right-0  bg-white border-l border-slate-200 shadow-[-4px_0_15px_-4px_rgba(0,0,0,0.05)]">
                                             <div className="flex items-center justify-center gap-1">
                                                 {onPrint && (
                                                     <button onClick={() => onPrint(r.id)} className="w-7 h-7 flex items-center justify-center text-indigo-500 bg-indigo-50 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-indigo-100" title="नमुना ९ प्रिंट">
@@ -388,8 +388,8 @@ export default function NamunaTable9({
                             );
                         })}
                         <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
-                            className="px-3 h-8 flex items-center justify-center gap-2 rounded-lg border border-border bg-surface text-text-muted hover:bg-surface-hover disabled:opacity-40 transition-all text-[15px] font-black uppercase tracking-wider">
-                            पुढील (Next) ›
+                            className="px-3 h-8 flex items-center justify-center gap-2 rounded-lg border border-border bg-surface text-text-muted hover:bg-surface-hover disabled:opacity-40 transition-all text-[10px] font-black uppercase tracking-wider">
+                            पुढील ›
                         </button>
 
                         <button onClick={() => setPage(totalPages)} disabled={safePage === totalPages}

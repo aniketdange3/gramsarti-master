@@ -23,7 +23,11 @@ const upload = multer({
 });
 
 // ── Standard Property Routes ──────────────────────────────────────────────────
+router.get('/unique-layouts', authenticate, propertyController.getUniqueLayouts);
 router.get('/',        authenticate, propertyController.getAllProperties);
+router.get('/:id',     authenticate, propertyController.getPropertyById);
+router.put('/bulk-tax-update', authenticate, authorize('super_admin', 'gram_sachiv'), propertyController.bulkUpdateNormalTaxes);
+
 router.post('/',       authenticate, propertyController.saveProperty);
 router.post('/import', authenticate, authorize('super_admin', 'gram_sevak', 'gram_sachiv', 'clerk', 'collection_officer'), propertyController.bulkImport);
 router.delete('/:id',  authenticate, authorize('super_admin'), propertyController.deleteProperty);

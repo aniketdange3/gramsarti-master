@@ -40,7 +40,7 @@ export default function Namuna9IndexFormat({
                 @media print {
                     @page {
                         size: 345mm 215mm;
-                        margin: 1.3in 0.25in 0.25in 0.25in;
+                        margin: 1.3in 0.45in 0.45in 0.45in;
                     }
                     body, html {
                         -webkit-print-color-adjust: exact !important;
@@ -60,7 +60,7 @@ export default function Namuna9IndexFormat({
                 }
             `}} />
             {indexChunks.map((idxChunk, idxPageIdx) => {
-                const midPoint = 15; // 15 items per side
+                const midPoint = 20; // 15 items per side
                 const leftColumn = idxChunk.slice(0, midPoint);
                 const rightColumn = idxChunk.slice(midPoint);
 
@@ -69,14 +69,14 @@ export default function Namuna9IndexFormat({
                 return (
                     <div key={`index-${idxPageIdx}`} className="page-container relative overflow-visible print:shadow-none bg-white  mb-8 print:mb-0" style={{ pageBreakAfter: 'always', breakAfter: 'page' }}>
                         {/* Watermark */}
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.15]">
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.1]">
                             <img src="/images/logo.jpeg" className="w-[500px] h-[500px] object-contain" alt="Watermark" />
                         </div>
 
                         <div className="relative z-10">
                             {/* Header */}
                             <div className="text-center mb-4 border-b-2 border-slate-900 pb-2">
-                                <h1 className="text-4xl font-black">सन २०२६-२७ मौजा {currentWasti} नमुना ९ अनुक्रमाणिक  </h1>
+                                <h1 className="text-4xl font-black">सन २०२६-२७ मौजा {currentWasti} नमुना ९ अनुक्रमणिका  </h1>
 
                             </div>
 
@@ -90,7 +90,7 @@ export default function Namuna9IndexFormat({
                                                     <th className="border border-slate-900 p-1 w-[30px] text-[42px]">अ.क्र.</th>
                                                     <th className="border border-slate-900 p-1 text-left text-[42px]">मालमत्ताधारकाचे नाव</th>
                                                     <th className="border border-slate-900 p-1 w-[60px] text-[42px]">प्लॉट/मालमत्ता क्र.</th>
-                                                    <th className="border border-slate-900 p-1 w-[60px] text-[42px]">खासरा क्र.</th>
+                                                    <th className="border border-slate-900 p-1 w-[100px] text-[42px]">खासरा क्र.</th>
                                                     <th className="border border-slate-900 p-1 w-[60px] text-[42px]">पान क्र.</th>
                                                 </tr>
                                             </thead>
@@ -113,7 +113,7 @@ export default function Namuna9IndexFormat({
                                                     );
                                                 })}
                                                 {/* Fill empty rows to maintain exactly 15 rows per column */}
-                                                {column.length < 15 && Array.from({ length: 15 - column.length }).map((_, i) => (
+                                                {column.length < 20 && Array.from({ length: 20 - column.length }).map((_, i) => (
                                                     <tr key={`empty-${i}`} className="h-auto">
                                                         <td className="border border-slate-100 p-1 text-[58px]">&nbsp;</td>
                                                         <td className="border border-slate-100 p-1 text-[68px]">&nbsp;</td>

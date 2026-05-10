@@ -50,7 +50,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
                 @media print {
                     @page {
                         size: 345mm 215mm;
-                        margin: 1.3in 0.4in 0.25in 0.4in;
+                        margin: 1.3in 0.45in 0.45in 0.45in;
                     }
                     body, html {
                         -webkit-print-color-adjust: exact !important;
@@ -106,7 +106,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
                 }
                 td, th {
                     padding: 1.5px !important;
-                    font-size: 12px !important;
+                    font-size: 11px !important;
                     color: black !important;
                     font-family: 'Inter', 'Noto Sans Devanagari', sans-serif !important;
                     vertical-align: middle !important;
@@ -175,8 +175,13 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
 
                 return (
                     <div key={chunkIdx} className="page-container relative overflow-visible shadow-sm print:shadow-none bg-white mb-8 print:mb-0">
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.25]">
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.1]">
                             <img src="/images/logo.jpeg" className="w-[500px] h-[500px] object-contain" alt="Watermark" />
+                        </div>
+
+                        {/* Top-Right Page Number (Positioned in margin) */}
+                        <div className=" font-bold flex justify-end items-center top-10 right-10 text-[10px] uppercase text-black z-20">
+                            पान क्र. {MN(chunkIdx + 1)}
                         </div>
 
                         <div className="relative z-10">

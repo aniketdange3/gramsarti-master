@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '@/utils/config';
 import React, { useState, useMemo } from 'react';
-import { Search, Printer, ArrowLeft, Eye, Filter, Plus, Edit2, Trash2, RotateCcw, X } from 'lucide-react';
+import { Search, Printer, ArrowLeft, Eye, Filter, Plus, Edit2, Trash2, RotateCcw, X, FileSpreadsheet } from 'lucide-react';
 import { PropertyRecord, WASTI_NAMES, DEFAULT_SECTION } from '../types';
 import { PANCHAYAT_CONFIG } from '../utils/panchayatConfig';
 import NamunaTable8 from '../components/NamunaTable8';
@@ -13,6 +13,8 @@ import { hasModulePermission } from '../utils/permissions';
 import CalculationGuide from '../components/CalculationGuide';
 import { CustomDropdown } from '../components/CustomDropdown';
 import { Calculator, ClipboardList } from 'lucide-react';
+import { exportToExcel } from '../utils/exportUtils';
+
 
 const MN = (v: number | string | undefined) =>
     String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
@@ -45,6 +47,8 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
     const [dynamicPropertyTypes, setDynamicPropertyTypes] = useState<string[]>([]);
     const [printRecord, setPrintRecord] = useState<PropertyRecord | null>(null);
     const [calculationProperty, setCalculationProperty] = useState<PropertyRecord | null>(null);
+    const [fetchedRecord, setFetchedRecord] = useState<PropertyRecord | null>(null);
+    const [isFetchingSingle, setIsFetchingSingle] = useState(false);
 
     const currentUser = useMemo(() => JSON.parse(localStorage.getItem('gp_user') || '{}'), []);
     const isAdmin = currentUser.role === 'super_admin' || currentUser.role === 'gram_sachiv' || currentUser.role === 'gram_sevak';
@@ -82,6 +86,35 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
         loadMasters();
     }, [onAuthError]);
 
+    // Selective Fetching for fast load
+    React.useEffect(() => {
+        if (!selectedId) return;
+        const exists = records.find(r => r.id === selectedId);
+        if (exists) {
+            setFetchedRecord(null);
+            return;
+        }
+
+        const fetchSingle = async () => {
+            setIsFetchingSingle(true);
+            try {
+                const token = localStorage.getItem('gp_token');
+                const res = await fetch(`${API_BASE_URL}/api/properties/${selectedId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setFetchedRecord({
+                        ...data,
+                        sections: (data.sections || []).map((s: any) => ({ ...DEFAULT_SECTION, ...s }))
+                    });
+                }
+            } catch (err) { console.error(err); }
+            finally { setIsFetchingSingle(false); }
+        };
+        fetchSingle();
+    }, [selectedId, records]);
+
     const API_URL = `${API_BASE_URL}/api/properties`;
 
     // Cascading Filter Logic
@@ -111,7 +144,10 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
     const filteredRecords = useMemo(() => {
         // जर एखादा विशिष्ट ID निवडला असेल (उदा. डॅशबोर्डवरून रिडायरेक्ट), तर फक्त तीच नोंद दाखवा
         if (viewId) {
-            return records.filter(r => r.id === viewId);
+            const match = records.find(r => r.id === viewId);
+            if (match) return [match];
+            if (fetchedRecord && fetchedRecord.id === viewId) return [fetchedRecord];
+            return [];
         }
 
         let res = records;
@@ -263,6 +299,14 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
                                 <Plus size={12} /> नवीन नोंद
                             </button>
                         )}
+                        <button
+                            onClick={() => exportToExcel(filteredRecords, 'Namuna8_Data')}
+                            className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg font-black uppercase tracking-wider hover:bg-indigo-600 hover:text-white shadow-sm transition-all text-[9px] active:scale-95"
+                            title="फिल्टर केलेला नमुना ८ एक्सपोर्ट करा"
+                        >
+                            <FileSpreadsheet size={12} /> एक्सपोर्ट (फिल्टर)
+                        </button>
+
                         <button onClick={fetchRecords} className="p-2 hover:bg-slate-50 rounded-lg border border-slate-200 transition-all active:scale-95">
                             <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
                         </button>
@@ -321,6 +365,12 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
                             onChange={setFilterPlotNo}
                             placeholder="प्लॉट निवडा"
                             options={uniquePlots.map(p => ({ value: p, label: p }))}
+                        />
+                        <CustomDropdown
+                            value={filterPropertyType}
+                            onChange={setFilterPropertyType}
+                            placeholder="प्रकार निवडा"
+                            options={dynamicPropertyTypes.map(p => ({ value: p, label: p }))}
                         />
 
                         {(filterWasti || filterLayout || filterKhasra || filterPlotNo || filterPropertyId || filterPropertyType || searchTerm || viewId) && (

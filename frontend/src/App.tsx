@@ -21,19 +21,24 @@ import { X, Save, LayoutDashboard, FileText, Receipt, Settings, BarChart3, Shiel
 import { PropertyRecord, DEFAULT_SECTION } from './types';
 import { API_BASE_URL as BASE } from './utils/config';
 
-import Dashboard from './pages/Dashboard';
-import Namuna8 from './pages/Namuna8';
-import Namuna9 from './pages/Namuna9';
-import Login from './pages/Login';
-import Reports from './pages/Reports';
-import TaxMaster from './pages/TaxMaster';
-import Ferfar from './pages/Ferfar';
 import Sidebar from './components/Sidebar';
 import { UIProvider } from './components/UIProvider';
+import { saveRecordsToDB, loadRecordsFromDB, clearRecordsDB } from './utils/db';
+
+// --- Lazy loaded pages for performance ---
+const Dashboard  = React.lazy(() => import('./pages/Dashboard'));
+const Namuna8    = React.lazy(() => import('./pages/Namuna8'));
+const Namuna9    = React.lazy(() => import('./pages/Namuna9'));
+const Reports    = React.lazy(() => import('./pages/Reports'));
+const TaxMaster  = React.lazy(() => import('./pages/TaxMaster'));
+const Ferfar     = React.lazy(() => import('./pages/Ferfar'));
+const MaganiBill = React.lazy(() => import('./pages/MaganiBill'));
+const Login      = React.lazy(() => import('./pages/Login'));
+
 
 
 // ── Route map ──────────────────────────────────────────────────────────────
-export type ViewType = 'dashboard' | 'namuna8' | 'namuna9' | 'taxMaster' | 'reports' | 'roleAccess' | 'ferfar';
+export type ViewType = 'dashboard' | 'namuna8' | 'namuna9' | 'maganiBill' | 'taxMaster' | 'reports' | 'roleAccess' | 'ferfar';
 
 export const VIEW_TO_PATH: Record<ViewType, string> = {
   dashboard:  '/dashboard',
@@ -42,6 +47,7 @@ export const VIEW_TO_PATH: Record<ViewType, string> = {
   taxMaster:  '/taxmaster',
   reports:    '/reports',
   ferfar:     '/ferfar',
+  maganiBill: '/maganibill',
   roleAccess: '/role-access',
 };
 
@@ -52,6 +58,7 @@ export const PATH_TO_VIEW: Record<string, ViewType> = {
   '/taxmaster':   'taxMaster',
   '/reports':     'reports',
   '/ferfar':      'ferfar',
+  '/maganibill':  'maganiBill',
   '/role-access': 'roleAccess',
 };
 
@@ -86,11 +93,22 @@ function AppInner() {
   const TAX_API_URL = `${BASE}/api/tax-rates`;
 
   useEffect(() => {
-    if (isLoggedIn) {
-      fetchRecords();
-      fetchTaxRates();
-      fetchAttendanceStatus();
-    }
+    const initApp = async () => {
+      if (isLoggedIn) {
+        // 1. Try loading from IndexedDB first for instant UI
+        const cached = await loadRecordsFromDB();
+        if (cached && cached.length > 0) {
+          setRecords(cached);
+          setIsLoading(false);
+        }
+
+        // 2. Fetch fresh data from server
+        fetchRecords(true);
+        fetchTaxRates();
+        fetchAttendanceStatus();
+      }
+    };
+    initApp();
   }, [isLoggedIn]);
 
   const authHeaders = () => ({
@@ -132,6 +150,7 @@ function AppInner() {
     setUser(null);
     localStorage.removeItem('gp_token');
     localStorage.removeItem('gp_user');
+    clearRecordsDB();
     setRecords([]);
     navigate('/login', { replace: true });
   };
@@ -173,20 +192,28 @@ function AppInner() {
     } catch (err) { console.error('Tax rates error:', err); }
   };
 
-  const fetchRecords = async () => {
-    setIsLoading(true);
+  const fetchRecords = async (isInitialLoad = false) => {
+    const hasData = records.length > 0;
+    if (isInitialLoad && !hasData) setIsLoading(true);
+
     try {
       const res = await fetch(API_URL, { headers: authHeaders() });
       if (res.status === 401) { handleLogout(); return; }
+      if (res.status === 304) { setIsLoading(false); return; } // Not modified
+
       const data = await res.json();
       if (!Array.isArray(data)) { setRecords([]); return; }
-      setRecords(data.map((r: any) => ({
+      
+      const processed = data.map((r: any) => ({
         ...r,
         wastiName:     r.wastiName || '',
         arrearsAmount: Number(r.arrearsAmount) || 0,
         paidAmount:    Number(r.paidAmount)    || 0,
         sections: (r.sections || []).map((s: any) => ({ ...DEFAULT_SECTION, ...s })),
-      })));
+      }));
+
+      setRecords(processed);
+      saveRecordsToDB(processed);
     } catch (err) { console.error('Fetch records error:', err); }
     finally { setIsLoading(false); }
   };
@@ -211,6 +238,7 @@ function AppInner() {
     { id: 'dashboard'  as ViewType, label: 'डैशबोर्ड',           sublabel: 'Dashboard',          icon: <LayoutDashboard className="w-5 h-5" />, color: 'from-violet-500 to-indigo-600' },
     { id: 'namuna8'    as ViewType, label: 'नमुना ८',             sublabel: 'Assessment Register', icon: <FileText className="w-5 h-5" />,        color: 'from-sky-500 to-blue-600' },
     { id: 'namuna9'    as ViewType, label: 'नमुना ९',             sublabel: 'Tax Notice',          icon: <Receipt className="w-5 h-5" />,         color: 'from-emerald-500 to-green-600' },
+    { id: 'maganiBill' as ViewType, label: 'मागणी बिल',           sublabel: 'Demand Bill',        icon: <Printer className="w-5 h-5" />,         color: 'from-indigo-500 to-violet-600' },
 
     { id: 'reports'    as ViewType, label: 'अहवाल',               sublabel: 'Reports',             icon: <BarChart3 className="w-5 h-5" />,       color: 'from-purple-500 to-fuchsia-600', allowedRoles: ['super_admin','gram_sevak','gram_sachiv'] },
     { id: 'ferfar'     as ViewType, label: 'फेरफार नोंदवही',      sublabel: 'Mutation Register',   icon: <FileText className="w-5 h-5" />,        color: 'from-fuchsia-500 to-purple-600', allowedRoles: ['super_admin','gram_sevak','operator'] },
@@ -221,8 +249,17 @@ function AppInner() {
   // ── Unauthenticated ──────────────────────────────────────────────────────
   if (!isLoggedIn) {
     if (location.pathname !== '/login') return <Navigate to="/login" replace />;
-    return <Login onLogin={handleLogin} />;
+    return (
+      <React.Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }>
+        <Login onLogin={handleLogin} />
+      </React.Suspense>
+    );
   }
+
 
   // Redirect root & /login → /dashboard when authenticated
   if (location.pathname === '/login' || location.pathname === '/') {
@@ -278,7 +315,14 @@ function AppInner() {
         )}
 
         <div className="flex-1 overflow-auto">
-          <Routes>
+          <React.Suspense fallback={
+            <div className="h-full flex flex-col items-center justify-center bg-slate-50/50 grayscale opacity-40">
+              <div className="w-10 h-10 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin mb-4" />
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">लोड होत आहे...</p>
+            </div>
+          }>
+            <Routes>
+
             <Route path="/dashboard" element={
               <Dashboard
                 records={records} fetchRecords={fetchRecords}
@@ -318,13 +362,16 @@ function AppInner() {
                 taxRates={taxRates} onAuthError={handleLogout}
               />
             } />
+            <Route path="/maganibill" element={<MaganiBill records={records} onAuthError={handleLogout} />} />
             <Route path="/reports"   element={<Reports    records={records} onAuthError={handleLogout} />} />
             <Route path="/ferfar"    element={<Ferfar     records={records} fetchRecords={fetchRecords} onAuthError={handleLogout} />} />
             <Route path="/taxmaster" element={<TaxMaster  onAuthError={handleLogout} onNavigate={handleNavClick} />} />
 
             <Route path="*"          element={<Navigate to="/dashboard" replace />} />
           </Routes>
+          </React.Suspense>
         </div>
+
 
         {/* Edit Profile Modal */}
         {editProfileOpen && editProfile && (

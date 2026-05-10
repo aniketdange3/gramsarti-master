@@ -1,6 +1,7 @@
 import { API_BASE_URL } from '@/utils/config';
 import React, { useMemo } from 'react';
-import { IndianRupee, TrendingUp, Activity, Users } from 'lucide-react';
+import { IndianRupee, TrendingUp, Activity, Users, Printer } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { PropertyRecord } from '../types';
 
 interface ReportsProps {
@@ -37,6 +38,7 @@ function SummaryCard({ label, value, icon, color }: { label: string; value: stri
 }
 
 export default function Reports({ records }: ReportsProps) {
+    const navigate = useNavigate();
     const stats = useMemo(() => {
         const currentTax = records.reduce((s, r) => s + (Number(r.totalTaxAmount) || 0), 0);
         const arrears = records.reduce((s, r) => s + (Number(r.arrearsAmount) || 0), 0);
@@ -54,9 +56,9 @@ export default function Reports({ records }: ReportsProps) {
             other: records.reduce((s, r) => s + (Number((r as any).wasteCollectionTax) || 0), 0),
         };
 
-        const wastiNames = Array.from(new Set(records.map(r => r.wastiName).filter(Boolean)));
+        const wastiNames = Array.from(new Set(records.map(r => String(r.wastiName || '').trim()).filter(Boolean)));
         const wastiData = wastiNames.map(name => {
-            const wr = records.filter(r => r.wastiName === name);
+            const wr = records.filter(r => String(r.wastiName || '').trim() === name);
             const wCurr = wr.reduce((s, r) => s + (Number(r.totalTaxAmount) || 0), 0);
             const wArr = wr.reduce((s, r) => s + (Number(r.arrearsAmount) || 0), 0);
             const wPaid = wr.reduce((s, r) => s + (Number(r.paidAmount) || 0), 0);
@@ -161,39 +163,7 @@ export default function Reports({ records }: ReportsProps) {
             <div className="flex-1 overflow-hidden p-2 flex flex-col min-h-0">
                 <div className="bg-white rounded-t-3xl shadow-sm border border-slate-200 border-b-0 overflow-hidden flex-1 flex flex-col min-h-0">
                     <div className="flex-1 overflow-auto bg-slate-50/30 p-4 lg:p-6 space-y-6 scrollbar-hide">
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                            <AnalyticsCard title="एकूण मागणी">
-                                <div className="flex items-end justify-between">
-                                    <p className="text-2xl font-black text-slate-800 tracking-tighter">₹{MN(stats.demand)}</p>
-                                    <TrendingUp className="w-6 h-6 text-indigo-500" />
-                                </div>
-                                <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">Assessment Target</p>
-                            </AnalyticsCard>
-                            <AnalyticsCard title="एकूण वसुली">
-                                <div className="flex items-end justify-between">
-                                    <p className="text-2xl font-black text-emerald-600 tracking-tighter">₹{MN(stats.paid)}</p>
-                                    <IndianRupee className="w-6 h-6 text-emerald-500" />
-                                </div>
-                                <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">Realized Revenue</p>
-                            </AnalyticsCard>
-                            <AnalyticsCard title="एकूण थकबाकी">
-                                <div className="flex items-end justify-between">
-                                    <p className="text-2xl font-black text-rose-600 tracking-tighter">₹{MN(stats.balance)}</p>
-                                    <Activity className="w-6 h-6 text-rose-500" />
-                                </div>
-                                <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">Outstanding Balance</p>
-                            </AnalyticsCard>
-                            <AnalyticsCard title="वसुली प्रगती">
-                                <div className="flex items-center gap-4">
-                                    <ProgressCircle percent={stats.rate} color="text-indigo-600" size="w-12 h-12" />
-                                    <div>
-                                        <p className="text-xl font-black text-slate-800 tracking-tighter">{MN(stats.rate.toFixed(1))}%</p>
-                                        <p className="text-[8px] text-indigo-600 font-black uppercase">Growth Rate</p>
-                                    </div>
-                                </div>
-                            </AnalyticsCard>
-                        </div>
-
+        
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <AnalyticsCard title="कराचे वर्गीकरण (Tax Breakdown)" className="lg:col-span-1">
                                 <PieChartSVG data={[
@@ -210,10 +180,16 @@ export default function Reports({ records }: ReportsProps) {
                                     {stats.wastiData.slice(0, 5).map((w, i) => (
                                         <div key={i} className="space-y-1.5">
                                             <div className="flex justify-between text-[10px] font-black uppercase tracking-wider">
-                                                <span className="text-slate-500">{w.name}</span>
-                                                <span className="text-slate-800">{MN(w.rate.toFixed(1))}%</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-slate-400">#{MN(i + 1)}</span>
+                                                    <span className="text-slate-800">{w.name}</span>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-slate-400">मागणी: ₹{MN(w.demand)}</span>
+                                                    <span className="text-indigo-600">{MN(w.rate.toFixed(1))}%</span>
+                                                </div>
                                             </div>
-                                            <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                                                 <div 
                                                     className={`h-full rounded-full transition-all duration-1000 ${i === 0 ? 'bg-indigo-600 shadow-[0_0_10px_rgba(99,102,241,0.3)]' : i === 1 ? 'bg-blue-600' : 'bg-emerald-600'}`} 
                                                     style={{ width: `${w.rate}%` }} 
@@ -223,6 +199,59 @@ export default function Reports({ records }: ReportsProps) {
                                     ))}
                                 </div>
                             </AnalyticsCard>
+                        </div>
+
+                        {/* Detailed Wasti Table */}
+                        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                    वस्तीनिहाय सविस्तर माहिती (Settlement Details)
+                                </h4>
+                                <span className="text-[10px] font-black text-slate-400 bg-white px-2 py-1 rounded border border-slate-200">
+                                    एकूण वस्त्या: {MN(stats.wastiData.length)}
+                                </span>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-white border-b border-slate-100">
+                                            <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">वस्तीचे नाव</th>
+                                            <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">मालमत्ता</th>
+                                            <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">एकूण मागणी</th>
+                                            <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">वसूल रक्कम</th>
+                                            <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">थकबाकी</th>
+                                            <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">प्रगती %</th>
+                                            <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">कृती</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {stats.wastiData.map((w, i) => (
+                                            <tr key={i} className="hover:bg-slate-50/80 transition-colors">
+                                                <td className="px-6 py-4 text-xs font-black text-slate-800">{w.name}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-slate-500 text-center">{MN(w.count)}</td>
+                                                <td className="px-6 py-4 text-xs font-black text-slate-800 text-right">₹{MN(w.demand)}</td>
+                                                <td className="px-6 py-4 text-xs font-black text-emerald-600 text-right">₹{MN(w.paid)}</td>
+                                                <td className="px-6 py-4 text-xs font-black text-rose-600 text-right">₹{MN(w.balance)}</td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className={`px-2 py-1 rounded-md text-[10px] font-black ${w.rate > 75 ? 'bg-emerald-50 text-emerald-600' : w.rate > 40 ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'}`}>
+                                                        {MN(w.rate.toFixed(1))}%
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <button 
+                                                        onClick={() => navigate(`/maganibill?wasti=${encodeURIComponent(w.name)}`)}
+                                                        className="p-2 text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-indigo-100"
+                                                        title="या वस्तीची बिले प्रिंट करा"
+                                                    >
+                                                        <Printer size={14} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

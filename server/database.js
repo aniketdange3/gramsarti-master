@@ -230,6 +230,11 @@ const initializeDatabase = async () => {
         await addColumnIfNotExists(connection, 'property_sections', 'constructionYear', 'VARCHAR(50) DEFAULT NULL');
         await addColumnIfNotExists(connection, 'property_sections', 'propertyAge', 'INT DEFAULT 0');
 
+        // Migration: Fix precision for rate columns to prevent out-of-range errors
+        await connection.query('ALTER TABLE property_sections MODIFY COLUMN depreciationRate DECIMAL(12,2) DEFAULT 1.0').catch(() => {});
+        await connection.query('ALTER TABLE property_sections MODIFY COLUMN weightage DECIMAL(12,2) DEFAULT 1.0').catch(() => {});
+        await connection.query('ALTER TABLE properties MODIFY COLUMN wasteCollectionTax DECIMAL(12,2) DEFAULT 0').catch(() => {});
+
         // 4. PAYMENTS TABLE - कर भरणा नोंदी
         await connection.query(`CREATE TABLE IF NOT EXISTS payments (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -427,6 +432,7 @@ const initializeDatabase = async () => {
         await connection.query(`CREATE TABLE IF NOT EXISTS ferfar_requests (
             id INT AUTO_INCREMENT PRIMARY KEY,
             property_id VARCHAR(255) NOT NULL,
+            village_id INT DEFAULT NULL,
             old_owner_name VARCHAR(500) NOT NULL,
             new_owner_name VARCHAR(500) NOT NULL,
             applicant_name VARCHAR(255) DEFAULT '',
@@ -443,6 +449,12 @@ const initializeDatabase = async () => {
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             FOREIGN KEY(property_id) REFERENCES properties(id) ON DELETE CASCADE
         ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+
+        // Migration for ferfar_requests
+        await addColumnIfNotExists(connection, 'ferfar_requests', 'village_id', 'INT DEFAULT NULL');
+        await addIndexIfNotExists(connection, 'ferfar_requests', 'idx_ferfar_village', 'village_id');
+        await addIndexIfNotExists(connection, 'ferfar_requests', 'idx_ferfar_status', 'status');
+        await addIndexIfNotExists(connection, 'ferfar_requests', 'idx_ferfar_created', 'created_at');
 
         // 11. MAGANI BILLS - मागणी बिल (Demand Notices)
         await connection.query(`CREATE TABLE IF NOT EXISTS magani_bills (

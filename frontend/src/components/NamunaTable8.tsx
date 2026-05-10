@@ -111,19 +111,6 @@ export default function NamunaTable8({
                 </div>
             </div>
 
-            {/* ── Screen-Only Table Controls ──
-            <div className="no-print bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-end gap-3 flex-none">
-                <button
-                    onClick={() => setShowAll(!showAll)}
-                    className={`text-[12px] font-black px-3 py-1 rounded-lg border transition-all ${showAll
-                        ? 'bg-slate-800 text-white border-slate-800 shadow-sm'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                        }`}
-                >
-                    {showAll ? 'पृष्ठानुसार पहा' : 'सर्व नोंदी पहा'}
-                </button>
-            </div> */}
-
             {/* ── Table Container with Watermark ── */}
             <div className="w-full flex-1 overflow-auto relative print:mt-4 print:overflow-visible">
                 {/* Print Watermark */}
@@ -138,7 +125,7 @@ export default function NamunaTable8({
                             <th rowSpan={2} className="border border-black p-1">अ.क्र.</th>
                             <th rowSpan={2} className="border border-black p-1">वस्ती नाव <br /> खासरा क्र.</th>
                             <th rowSpan={2} className="border border-black p-1">मालमत्ता / <br /> प्लॉट क्र.</th>
-                            <th rowSpan={2} className="border border-black p-1 text-left">मालकाचे नाव <br /> भोगवटादाराचे नाव</th>
+                            <th rowSpan={2} className="border border-black p-1 text-left">मालमत्ता धारकाचे नाव <br /> भोगवटादाराचे नाव</th>
                             <th rowSpan={2} className="border border-black p-1 text-left">मालमत्तेचे वर्णन <br /> मालमत्तेचे क्षेत्रफळ</th>
                             <th rowSpan={2} className="border border-black p-1">बांधकामाचे वर्ष <br /> इमारतीचे वय</th>
                             <th colSpan={2} className="border border-black p-1">रेडी रेकनर प्रति चौ.मी.</th>
@@ -186,7 +173,7 @@ export default function NamunaTable8({
                             <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[90px]">एकूण कर</th>
                             <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[110px]">शेरा</th>
                             {showActions && (
-                                <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center sticky right-0 z-20 bg-slate-50/80 backdrop-blur-md border-l border-slate-200 w-[120px]">
+                                <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center  z-100 right-0  bg-slate-50/80 backdrop-blur-md border-l border-slate-200 w-[120px]">
                                     कृती
                                 </th>
                             )}
@@ -320,7 +307,7 @@ export default function NamunaTable8({
                                     <td className="no-print px-3 py-2 text-center font-black text-indigo-700 text-[12px] bg-indigo-50/30">₹{MN(dTotal)}</td>
                                     <td className="no-print px-3 py-2 text-center text-[9px] text-slate-500 font-bold max-w-[150px] leading-tight whitespace-pre-wrap">{(r.remarksNotes || '-').replace(/फेरफार क्र:/g, 'फेरफार बुक क्र:') || '-'}</td>
                                     {showActions && (
-                                        <td className="no-print px-3 py-2 text-center sticky right-0 z-20 bg-white border-l border-slate-200 shadow-[-4px_0_12px_-4px_rgba(0,0,0,0.05)]">
+                                        <td className="no-print px-3 py-2 text-center sticky right-0  bg-white border-l border-slate-200 shadow-[-4px_0_12px_-4px_rgba(0,0,0,0.05)]">
                                             <div className="flex items-center justify-center gap-1">
                                                 {onPrint && (
                                                     <button onClick={() => onPrint(r.id)} className="w-7 h-7 flex items-center justify-center text-indigo-500 bg-indigo-50 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-indigo-100" title="प्रिंट करा">

@@ -1,47 +1,37 @@
 /**
  * PROPERTY ROUTES - मालमत्ता राऊट्स (Property API Endpoints)
+ * 
+ * या फाईलमध्ये मालमत्तांशी संबंधित सर्व API रस्ते (Endpoints) 
+ * आणि त्यांचे कंट्रोलर फंक्शन्स जोडले आहेत.
  */
 
-const express    = require('express');
-const router     = express.Router();
-const multer     = require('multer');
-const path       = require('path');
-const os         = require('os');
-const propertyController       = require('../controllers/property.controller');
-const receiptImportController  = require('../controllers/receiptImport.controller');
+const express = require('express');
+const router = express.Router();
+const propertyController = require('../controllers/property.controller');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 
-// Multer: store uploaded Excel in OS temp dir
-const upload = multer({
-    dest: os.tmpdir(),
-    limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
-    fileFilter: (req, file, cb) => {
-        const ext = path.extname(file.originalname).toLowerCase();
-        if (['.xlsx', '.xls', '.csv'].includes(ext)) cb(null, true);
-        else cb(new Error('फक्त .xlsx / .xls / .csv files allowed'), false);
-    }
-});
+// सर्व खसरा क्रमांक मिळवणे (Public access for selection)
+router.get('/khasras', propertyController.getKhasras);
 
-// ── Standard Property Routes ──────────────────────────────────────────────────
+// सर्व मालमत्तांची यादी मिळवणे (Authenticated View)
+router.get('/', authenticate, propertyController.getAllProperties);
+
+// नवीन मालमत्ता जतन करणे किंवा अपडेट करणे (Authenticated Edit)
+router.post('/', authenticate, propertyController.saveProperty);
+
+// मोठ्या प्रमाणात डेटा इंपोर्ट (Admin Only)
+router.post('/import', authenticate, authorize('super_admin', 'gram_sevak'), propertyController.bulkImport);
+
+// युनिक लेआउट्स मिळवणे
 router.get('/unique-layouts', authenticate, propertyController.getUniqueLayouts);
-router.get('/',        authenticate, propertyController.getAllProperties);
-router.get('/:id',     authenticate, propertyController.getPropertyById);
-router.put('/bulk-tax-update', authenticate, authorize('super_admin', 'gram_sachiv'), propertyController.bulkUpdateNormalTaxes);
 
-router.post('/',       authenticate, propertyController.saveProperty);
-router.post('/import', authenticate, authorize('super_admin', 'gram_sevak', 'gram_sachiv', 'clerk', 'collection_officer'), propertyController.bulkImport);
-router.delete('/:id',  authenticate, authorize('super_admin'), propertyController.deleteProperty);
+// विशिष्ट मालमत्ता आयडीने मिळवणे
+router.get('/:id', authenticate, propertyController.getPropertyById);
 
-// ── Receipt Import Routes ─────────────────────────────────────────────────────
-// Download blank template
-router.get('/import-receipts/template', authenticate, receiptImportController.downloadTemplate);
+// मालमत्ता हटवणे (Admin Only)
+router.delete('/:id', authenticate, authorize('super_admin'), propertyController.deleteProperty);
 
-// Upload & process Excel with receipt data
-router.post('/import-receipts',
-    authenticate,
-    authorize('super_admin', 'gram_sevak', 'gram_sachiv', 'clerk', 'collection_officer'),
-    upload.single('file'),
-    receiptImportController.importReceipts
-);
+// हुबेहूब जुळणाऱ्या नोंदी साफ करणे (Maintenance - Admin Only)
+router.post('/cleanup-duplicates', authenticate, authorize('super_admin'), propertyController.cleanupDuplicates);
 
 module.exports = router;

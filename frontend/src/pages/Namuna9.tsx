@@ -9,6 +9,7 @@ import PropertyForm from '../components/PropertyForm';
 import { matchesSearch } from '../utils/transliterate';
 import { TransliterationInput } from '../components/TransliterationInput';
 import Namuna9PrintFormat from '../components/Namuna9PrintFormat';
+import Namuna9IndexFormat from '../components/Namuna9IndexFormat';
 import { hasModulePermission } from '../utils/permissions';
 import { CustomDropdown } from '../components/CustomDropdown';
 import { FileCheck } from 'lucide-react';
@@ -258,6 +259,12 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
 
     // ─── PRINT SELECTED RECORDS VIEW ──────────────────────────────────────────
     if (printRecords && printRecords.length > 0) {
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth();
+        // Financial year starts in April
+        const fyStart = currentMonth < 3 ? currentYear - 1 : currentYear;
+        const fyEnd = fyStart + 1;
+
         return (
             <div className="flex flex-col h-full bg-white no-print-bg">
                 <style>{`
@@ -282,7 +289,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
 
                     <div className="flex-1 flex justify-center">
                         <div className="text-[12px] font-black text-slate-500 uppercase tracking-widest bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
-                            लीगल साईझ प्रिंट (Legal Size Print)
+                            नमुना ९: अनुक्रमणिका + नोंदवही प्रिंट
                         </div>
                     </div>
 
@@ -291,9 +298,27 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                         <Printer className="w-4 h-4" /> प्रिंट करा
                     </button>
                 </div>
-                <div className="flex-1 overflow-auto p-4 flex justify-center no-print-bg print-parent">
-                    <div className="w-full">
-                        <Namuna9PrintFormat records={printRecords} pageSize={printRecords.length} />
+                <div className="flex-1 overflow-auto p-4 flex flex-col items-center no-print-bg print-parent">
+                    <div className="w-full max-w-[1350px]">
+                        {/* 1. Index Page(s) */}
+                        <Namuna9IndexFormat 
+                            records={printRecords} 
+                            panchayatConfig={PANCHAYAT_CONFIG}
+                            fyStart={fyStart}
+                            fyEnd={fyEnd}
+                            wastiName={filterWasti || undefined}
+                            effectivePageSize={3}
+                        />
+                        
+                        {/* 2. Detailed Register Pages */}
+                        <Namuna9PrintFormat 
+                            records={printRecords} 
+                            pageSize={3} 
+                            panchayatConfig={PANCHAYAT_CONFIG}
+                            fyStart={fyStart}
+                            fyEnd={fyEnd}
+                            wastiName={filterWasti || undefined}
+                        />
                     </div>
                 </div>
             </div>

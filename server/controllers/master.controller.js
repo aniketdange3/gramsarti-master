@@ -261,7 +261,7 @@ exports.resetAndSeed = async (req, res) => {
 
         console.log('[SYSTEM] Resetting all transaction data...');
         const tables = [
-            'property_sections', 'properties', 'payments', 
+            'property_sections', 'properties', 'payments',
             'tax_head_allocations', 'magani_bills', 'notices', 'property_audit_log'
         ];
         for (const table of tables) await connection.query(`TRUNCATE TABLE ${table}`);

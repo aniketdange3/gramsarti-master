@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
-import { FileUp, FileSpreadsheet, CheckCircle2, Download } from 'lucide-react';
+import { FileUp, FileSpreadsheet, CheckCircle2 } from 'lucide-react';
 import { PropertyRecord, DEFAULT_SECTION } from '../types';
 import { EXCEL_HEADERS } from '../utils/constants';
 import { API_BASE_URL } from '../utils/config';
@@ -34,7 +34,7 @@ export default function ExcelActions({ records, onImportSuccess, type }: ExcelAc
             row[EXCEL_HEADERS[8]] = r.hasConstruction ? 'हो' : 'नाही';
             row[EXCEL_HEADERS[9]] = r.openSpace;
 
-            // Mapping 5 sections (floors)
+            // Mapping 5 sections (floors) - 15 columns each
             for (let i = 0; i < 5; i++) {
                 const s = r.sections[i] || DEFAULT_SECTION;
                 const baseIdx = 10 + (i * 15);
@@ -69,7 +69,6 @@ export default function ExcelActions({ records, onImportSuccess, type }: ExcelAc
             row[EXCEL_HEADERS[lastIdx + 10]] = r.totalTaxAmount;
             row[EXCEL_HEADERS[lastIdx + 11]] = r.arrearsAmount;
             row[EXCEL_HEADERS[lastIdx + 12]] = r.paidAmount;
-
             
             return row;
         });
@@ -91,6 +90,7 @@ export default function ExcelActions({ records, onImportSuccess, type }: ExcelAc
                 const ws = wb.Sheets[wb.SheetNames[0]];
                 const data = XLSX.utils.sheet_to_json(ws);
 
+                // Helper to normalize Marathi numbers to English
                 const h2e = (str: any) => {
                     if (typeof str !== 'string') return str;
                     return str.replace(/[०-९]/g, d => '0123456789'['०१२३४५६७८९'.indexOf(d)]);
@@ -105,22 +105,20 @@ export default function ExcelActions({ records, onImportSuccess, type }: ExcelAc
 
                 const findCol = (row: any, aliases: string[], defaultHeader: string) => {
                     const rowKeys = Object.keys(row);
-                    // Try exact match first (trimmed)
+                    const clean = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
+                    const target = clean(defaultHeader);
+                    
                     for (const k of rowKeys) {
-                        if (k.trim() === defaultHeader.trim()) return row[k];
+                        if (clean(k) === target) return row[k];
                     }
-                    // Try aliases
                     for (const alias of aliases) {
-                        const found = rowKeys.find(k => k.trim().toLowerCase().includes(alias.trim().toLowerCase()));
+                        const found = rowKeys.find(k => clean(k).includes(clean(alias)));
                         if (found) return row[found];
                     }
-                    // Try fallback to defaultHeader even if not exact (case insensitive, trimmed)
-                    const fallback = rowKeys.find(k => k.trim().toLowerCase() === defaultHeader.trim().toLowerCase());
-                    return fallback ? row[fallback] : row[defaultHeader];
+                    return row[defaultHeader];
                 };
 
                 const mappedRecords: PropertyRecord[] = data.map((row: any) => {
-                    // Normalize keys to trim spaces
                     const r: any = {};
                     Object.keys(row).forEach(k => r[k.trim()] = row[k]);
 
@@ -129,50 +127,50 @@ export default function ExcelActions({ records, onImportSuccess, type }: ExcelAc
                         const baseIdx = 10 + (i * 15);
                         sections.push({
                             ...DEFAULT_SECTION,
-                            propertyType: (findCol(r, [], EXCEL_HEADERS[baseIdx]) || '').toString(),
-                            lengthFt: parseNum(findCol(r, [], EXCEL_HEADERS[baseIdx + 1])),
-                            widthFt: parseNum(findCol(r, [], EXCEL_HEADERS[baseIdx + 2])),
-                            areaSqFt: parseNum(findCol(r, [], EXCEL_HEADERS[baseIdx + 3])),
-                            areaSqMt: parseNum(findCol(r, [], EXCEL_HEADERS[baseIdx + 4])),
-                            buildingTaxRate: parseNum(findCol(r, [], EXCEL_HEADERS[baseIdx + 5])),
-                            openSpaceTaxRate: parseNum(findCol(r, [], EXCEL_HEADERS[baseIdx + 6])),
-                            landRate: parseNum(findCol(r, [], EXCEL_HEADERS[baseIdx + 7])),
-                            buildingRate: parseNum(findCol(r, [], EXCEL_HEADERS[baseIdx + 8])),
-                            depreciationRate: parseNum(findCol(r, [], EXCEL_HEADERS[baseIdx + 9])),
-                            weightage: parseNum(findCol(r, [], EXCEL_HEADERS[baseIdx + 10])),
-                            buildingValue: parseNum(findCol(r, [], EXCEL_HEADERS[baseIdx + 11])),
-                            openSpaceValue: parseNum(findCol(r, [], EXCEL_HEADERS[baseIdx + 12])),
-                            constructionYear: (findCol(r, [], EXCEL_HEADERS[baseIdx + 13]) || '').toString(),
-                            propertyAge: parseNum(findCol(r, [], EXCEL_HEADERS[baseIdx + 14])),
+                            propertyType: (findCol(r, ['प्रकार', 'Type'], EXCEL_HEADERS[baseIdx]) || '').toString(),
+                            lengthFt: parseNum(findCol(r, ['लांबी'], EXCEL_HEADERS[baseIdx + 1])),
+                            widthFt: parseNum(findCol(r, ['रुंदी'], EXCEL_HEADERS[baseIdx + 2])),
+                            areaSqFt: parseNum(findCol(r, ['चौरस फूट'], EXCEL_HEADERS[baseIdx + 3])),
+                            areaSqMt: parseNum(findCol(r, ['चौरस मीटर'], EXCEL_HEADERS[baseIdx + 4])),
+                            buildingTaxRate: parseNum(findCol(r, ['इमारत कराचा दर'], EXCEL_HEADERS[baseIdx + 5])),
+                            openSpaceTaxRate: parseNum(findCol(r, ['जमीन कराचा दर'], EXCEL_HEADERS[baseIdx + 6])),
+                            landRate: parseNum(findCol(r, ['जमीन दर'], EXCEL_HEADERS[baseIdx + 7])),
+                            buildingRate: parseNum(findCol(r, ['इमारत दर'], EXCEL_HEADERS[baseIdx + 8])),
+                            depreciationRate: parseNum(findCol(r, ['घसारा दर'], EXCEL_HEADERS[baseIdx + 9])),
+                            weightage: parseNum(findCol(r, ['भारांक'], EXCEL_HEADERS[baseIdx + 10])),
+                            buildingValue: parseNum(findCol(r, ['इमारत मूल्य'], EXCEL_HEADERS[baseIdx + 11])),
+                            openSpaceValue: parseNum(findCol(r, ['जमीन मूल्य'], EXCEL_HEADERS[baseIdx + 12])),
+                            constructionYear: (findCol(r, ['बांधकाम वर्ष'], EXCEL_HEADERS[baseIdx + 13]) || '').toString(),
+                            propertyAge: parseNum(findCol(r, ['वय'], EXCEL_HEADERS[baseIdx + 14])),
                         });
                     }
                     const lastIdx = 10 + (5 * 15);
                     return {
-                        id: '',
-                        srNo: parseNum(findCol(r, [], EXCEL_HEADERS[0])),
-                        wastiName: (findCol(r, [], EXCEL_HEADERS[1]) || '').toString(),
-                        wardNo: (findCol(r, [], EXCEL_HEADERS[2]) || '').toString(),
-                        khasraNo: (findCol(r, [], EXCEL_HEADERS[3]) || '').toString(),
-                        layoutName: (findCol(r, [], EXCEL_HEADERS[4]) || '').toString(),
-                        plotNo: (findCol(r, ['plot', 'प्लॉट', 'मालमत्ता क्र'], EXCEL_HEADERS[5]) || '').toString().trim(),
-                        occupantName: (findCol(r, [], EXCEL_HEADERS[6]) || '').toString(),
-                        ownerName: (findCol(r, [], EXCEL_HEADERS[7]) || '').toString(),
-                        hasConstruction: (findCol(r, [], EXCEL_HEADERS[8]) || '').toString().includes('हो'),
-                        openSpace: parseNum(findCol(r, [], EXCEL_HEADERS[9])),
+                        id: '', 
+                        srNo: parseNum(findCol(r, ['अनुक्रम'], EXCEL_HEADERS[0])),
+                        wastiName: (findCol(r, ['वस्ती'], EXCEL_HEADERS[1]) || '').toString(), 
+                        wardNo: (findCol(r, ['वॉर्ड'], EXCEL_HEADERS[2]) || '').toString(),
+                        khasraNo: (findCol(r, ['खसरा'], EXCEL_HEADERS[3]) || '').toString(), 
+                        layoutName: (findCol(r, ['लेआउट'], EXCEL_HEADERS[4]) || '').toString(),
+                        plotNo: String(findCol(r, ['plot', 'प्लॉट', 'मालमत्ता क्र'], EXCEL_HEADERS[5]) || '').trim(), 
+                        occupantName: (findCol(r, ['भोगवटाधारक'], EXCEL_HEADERS[6]) || '').toString(),
+                        ownerName: (findCol(r, ['मालकाचे नाव'], EXCEL_HEADERS[7]) || '').toString(),
+                        hasConstruction: (findCol(r, ['बांधकाम'], EXCEL_HEADERS[8]) || '').toString().includes('हो'),
+                        openSpace: parseNum(findCol(r, ['खाली जागा'], EXCEL_HEADERS[9])), 
                         sections,
-                        propertyTax: parseNum(findCol(r, [], EXCEL_HEADERS[lastIdx])),
-                        openSpaceTax: parseNum(findCol(r, [], EXCEL_HEADERS[lastIdx + 1])),
-                        streetLightTax: parseNum(findCol(r, [], EXCEL_HEADERS[lastIdx + 2])),
-                        healthTax: parseNum(findCol(r, [], EXCEL_HEADERS[lastIdx + 3])),
-                        generalWaterTax: parseNum(findCol(r, [], EXCEL_HEADERS[lastIdx + 4])),
-                        specialWaterTax: parseNum(findCol(r, [], EXCEL_HEADERS[lastIdx + 5])),
-                        wasteCollectionTax: parseNum(findCol(r, [], EXCEL_HEADERS[lastIdx + 6])),
-                        receiptNo: (findCol(r, [], EXCEL_HEADERS[lastIdx + 7]) || '').toString(),
-                        receiptBook: (findCol(r, [], EXCEL_HEADERS[lastIdx + 8]) || '').toString(),
-                        paymentDate: (findCol(r, [], EXCEL_HEADERS[lastIdx + 9]) || '').toString(),
-                        totalTaxAmount: parseNum(findCol(r, [], EXCEL_HEADERS[lastIdx + 10])),
-                        arrearsAmount: parseNum(findCol(r, [], EXCEL_HEADERS[lastIdx + 11])),
-                        paidAmount: parseNum(findCol(r, [], EXCEL_HEADERS[lastIdx + 12])),
+                        propertyTax: parseNum(findCol(r, ['घरपट्टी'], EXCEL_HEADERS[lastIdx])),
+                        openSpaceTax: parseNum(findCol(r, ['जमीन कर'], EXCEL_HEADERS[lastIdx + 1])),
+                        streetLightTax: parseNum(findCol(r, ['दिवाबत्ती'], EXCEL_HEADERS[lastIdx + 2])),
+                        healthTax: parseNum(findCol(r, ['आरोग्य'], EXCEL_HEADERS[lastIdx + 3])),
+                        generalWaterTax: parseNum(findCol(r, ['सामान्य पाणी'], EXCEL_HEADERS[lastIdx + 4])),
+                        specialWaterTax: parseNum(findCol(r, ['विशेष पाणी'], EXCEL_HEADERS[lastIdx + 5])),
+                        wasteCollectionTax: parseNum(findCol(r, ['कचरागाडी'], EXCEL_HEADERS[lastIdx + 6])),
+                        receiptNo: (findCol(r, ['पावती क्र'], EXCEL_HEADERS[lastIdx + 7]) || '').toString(),
+                        receiptBook: (findCol(r, ['पावती बुक'], EXCEL_HEADERS[lastIdx + 8]) || '').toString(),
+                        paymentDate: (findCol(r, ['दिनांक'], EXCEL_HEADERS[lastIdx + 9]) || '').toString(),
+                        totalTaxAmount: parseNum(findCol(r, ['एकूण कर'], EXCEL_HEADERS[lastIdx + 10])),
+                        arrearsAmount: parseNum(findCol(r, ['थकबाकी'], EXCEL_HEADERS[lastIdx + 11])),
+                        paidAmount: parseNum(findCol(r, ['भरलेली रक्कम'], EXCEL_HEADERS[lastIdx + 12])),
                         createdAt: new Date().toISOString()
                     };
                 });

@@ -74,7 +74,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
 
                 const wastis = await wRes.json();
                 const types = await pRes.json();
-                
+
                 if (Array.isArray(wastis)) {
                     setDynamicWastis(wastis.map((i: any) => i.item_value_mr));
                 }
@@ -179,7 +179,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
             const token = localStorage.getItem('gp_token');
             const res = await fetch(API_URL, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
@@ -210,7 +210,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
 
         try {
             const token = localStorage.getItem('gp_token');
-            const res = await fetch(`${API_URL}/${id}`, { 
+            const res = await fetch(`${API_URL}/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -375,14 +375,14 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
 
                         {(filterWasti || filterLayout || filterKhasra || filterPlotNo || filterPropertyId || filterPropertyType || searchTerm || viewId) && (
                             <button
-                                onClick={() => { 
-                                    setFilterWasti(''); 
-                                    setFilterLayout(''); 
-                                    setFilterKhasra(''); 
-                                    setFilterPlotNo(''); 
-                                    setFilterPropertyId(''); 
-                                    setFilterPropertyType(''); 
-                                    setSearchTerm(''); 
+                                onClick={() => {
+                                    setFilterWasti('');
+                                    setFilterLayout('');
+                                    setFilterKhasra('');
+                                    setFilterPlotNo('');
+                                    setFilterPropertyId('');
+                                    setFilterPropertyType('');
+                                    setSearchTerm('');
                                     setViewId(null);
                                     onClearSelected();
                                 }}

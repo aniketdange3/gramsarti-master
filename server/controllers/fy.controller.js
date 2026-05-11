@@ -42,16 +42,23 @@ exports.analyzeMigration = async (req, res) => {
 };
 
 /**
- * Execute migration
+ * Execute migration - Final process to shift years
  */
 exports.executeMigration = async (req, res) => {
     const { newFY } = req.body;
+    if (!newFY) {
+        return res.status(400).json({ error: "नवीन आर्थिक वर्ष निवडणे आवश्यक आहे." });
+    }
+
     const connection = await db.getConnection();
     try {
         await connection.beginTransaction();
         
-        await connection.query("INSERT INTO system_config (config_key, config_value) VALUES ('current_fy', ?) ON DUPLICATE KEY UPDATE config_value = ?", [newFY, newFY]);
+        // 1. Update the current FY in system configuration
+        await connection.query("UPDATE system_config SET config_value = ? WHERE config_key = 'current_fy'", [newFY]);
         
+        // 2. Roll over balances and RESET RECEIPT DETAILS (पावती तपशील रीसेट)
+        // New Arrears = (Old Arrears + Current Demand + Penalty) - Paid Amount
         await connection.query(`
             UPDATE properties 
             SET 
@@ -65,12 +72,16 @@ exports.executeMigration = async (req, res) => {
         `);
         
         await connection.commit();
-        res.json({ success: true, message: 'स्थलांतर यशस्वी झाले' });
+        res.json({ 
+            success: true, 
+            message: `सन ${newFY} मध्ये स्थलांतर यशस्वी झाले. पावती तपशील रीसेट करण्यात आला आहे.` 
+        });
     } catch (err) {
-        await connection.rollback();
+        if (connection) await connection.rollback();
+        console.error('[FY_MIGRATE] Error:', err);
         res.status(500).json({ error: err.message });
     } finally {
-        connection.release();
+        if (connection) connection.release();
     }
 };
 

@@ -1,8 +1,10 @@
 import React from 'react';
 
 // Marathi Number Helper (MN)
-const MN = (v: number | string | undefined) =>
-    String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
+const MN = (v: number | string | undefined) => {
+    if (v === undefined || v === null || v === '') return '०';
+    return String(v).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
+};
 
 interface Namuna9IndexFormatProps {
     records: any[];
@@ -25,23 +27,44 @@ export default function Namuna9IndexFormat({
     fyEnd,
     wastiName
 }: Namuna9IndexFormatProps) {
-    // Index page logic (Register Index / अनुक्रमणिका)
-    const indexPageSize = 30; // 30 records per page (15 on left, 15 on right) to match the image density
+    // Index Density: 15 left, 15 right (30 total per page)
+    const rowsPerColumn = 15;
+    const indexPageSize = rowsPerColumn * 2;
     const registerPageSize = 3; // properties per register page
 
+    // Sort records by khasraNo and then plotNo naturally
+    const sortedRecords = [...records].sort((a, b) => {
+        const kA = String(a.khasraNo || '');
+        const kB = String(b.khasraNo || '');
+        const kComp = kA.localeCompare(kB, undefined, { numeric: true, sensitivity: 'base' });
+        if (kComp !== 0) return kComp;
+        const pA = String(a.plotNo || '');
+        const pB = String(b.plotNo || '');
+        return pA.localeCompare(pB, undefined, { numeric: true, sensitivity: 'base' });
+    });
+
     const indexChunks = [];
-    for (let i = 0; i < records.length; i += indexPageSize) {
-        indexChunks.push(records.slice(i, i + indexPageSize));
+    if (sortedRecords && sortedRecords.length > 0) {
+        for (let i = 0; i < sortedRecords.length; i += indexPageSize) {
+            indexChunks.push(sortedRecords.slice(i, i + indexPageSize));
+        }
+    } else {
+        // If no records, show at least one empty page
+        indexChunks.push([]);
     }
 
     return (
-        <div className="namuna9-index-root bg-white p-0">
+        <div className="namuna9-index-root bg-white p-0" style={{ fontFamily: "'Kokila', 'Mangal', serif" }}>
             <style dangerouslySetInnerHTML={{
                 __html: `
+                @font-face {
+                    font-family: 'Kokila';
+                    src: local('Kokila');
+                }
                 @media print {
                     @page {
-                           size: legal landscape;
-                        margin: 1.3in 0.40in 0.25in 0.40in;
+                        size: legal landscape;
+                        margin: 1.30in 0.3in 0.3in 0.3in;
                     }
                     body {
                         -webkit-print-color-adjust: exact !important;
@@ -52,85 +75,121 @@ export default function Namuna9IndexFormat({
                         page-break-after: always !important;
                         break-after: page !important;
                         page-break-inside: avoid !important;
+                        position: relative;
+                        width: 100% !important;
+                        height: 6.8in !important;
+                        background: white !important;
                     }
                 }
                 .text-Marathi {
                     font-family: 'Poppins', 'Inter', 'Noto Sans Devanagari', sans-serif !important;
                 }
+                .index-table {
+                    border: 1px solid #000 !important;
+                    table-layout: fixed;
+                    width: 100%;
+                }
                 .index-table th {
-                    background-color: #f8fafc;
-                    color: #0f172a;
-                    border: 1.5px solid #0f172a !important;
+                    background-color: #ffffff;
+                    color: #000;
+                    height: 42px;
+                    font-weight: 600;
+                    font-size: 13.5px;
+                    padding: 1px;
                 }
                 .index-table td {
-                    border: 1.2px solid #0f172a !important;
+                    border: 1px solid #000 !important;
+                    height: 35px;
+                    font-size: 16px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    font-weight: 600;
+                    color: #000;
+                    max-width: 0; /* Critical for text-overflow in fixed tables */
                 }
+                .col-sr { width: 35px; }
+                .col-plot { width: 85px; }
+                .col-khasra { width: 100px; }
+                .col-page { width: 50px; }
             `}} />
 
             {indexChunks.map((chunk, chunkIdx) => {
-                const leftCol = chunk.slice(0, 15);
-                const rightCol = chunk.slice(15, 30);
-                const currentWasti = wastiName || panchayatConfig.mouza || '';
+                const leftCol = chunk.slice(0, rowsPerColumn);
+                const rightCol = chunk.slice(rowsPerColumn, indexPageSize);
+                const currentWasti = wastiName || panchayatConfig?.mouza || '';
 
                 return (
-                    <div key={chunkIdx} className="page-container p-5 min-h-screen text-Marathi relative overflow-hidden">
-                        {/* Watermark Logo */}
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.1] z-0">
-                            <img src="/images/logo.png" className="w-[500px] h-[500px] object-contain" alt="Watermark" />
+                    <div key={chunkIdx} className="page-container p-2 text-Marathi relative">
+                        {/* High Fidelity Watermark Logo */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.15] z-0">
+                            <img src="/images/logo.jpeg" className="w-[550px] h-[550px] object-contain" alt="Watermark" />
                         </div>
 
                         <div className="relative z-10">
-                            <div className="flex flex-col items-center mb-2">
-                                <div className="text-center">
-                                    <h1 className="text-3xl font-black  pb-2 text-slate-900">
-                                        सन {MN(fyStart)}-{MN(fyEnd % 100)} मौजा {currentWasti} नमुना ९ अनुक्रमणिका
-                                    </h1>
-                                </div>
+                            <div className="text-center mb-4">
+                                <h1 className="text-[32px] font-black text-black tracking-tight">
+                                    सन {MN(fyStart)}-{MN(fyEnd % 100)} मौजा {currentWasti} नमुना ९ अनुक्रमणिका
+                                </h1>
+                                <div className="w-full border-b-[2.5px] border-black mt-1"></div>
                             </div>
 
-                            <div className="flex gap-6 justify-center">
+                            <div className="flex gap-2 justify-between">
                                 {[leftCol, rightCol].map((column, colIdx) => (
-                                    <div key={colIdx} className="w-[48%]">
-                                        <table className="index-table w-full border-collapse bg-white/90 ">
+                                    <div key={colIdx} className="w-[49%] overflow-hidden">
+                                        <table className="index-table">
                                             <thead>
-                                                <tr className="font-black">
-                                                    <th className="p-2 w-[55px] text-[14px]">अ.क्र.</th>
-                                                    <th className="p-2 text-left text-[14px] text-left">मालमत्ताधारकाचे नाव</th>
-                                                    <th className="p-2 w-[130px] text-[14px]">प्लॉट/मालमत्ता क्र.</th>
-                                                    <th className="p-2 w-[110px] text-[14px]">खासरा क्र.</th>
-                                                    <th className="p-2 w-[70px] text-[14px]">पान क्र.</th>
+                                                <tr>
+                                                    <th className="col-sr">अ.क्र.</th>
+                                                    <th className="text-left">मालमत्ताधारकाचे नाव</th>
+                                                    <th className="col-plot">प्लॉट क्र/<br />मालमत्ता क्र.</th>
+                                                    <th className="col-khasra">खसरा क्र.</th>
+                                                    <th className="col-page">पान क्र.</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {column.map((r, rIdx) => {
-                                                    const globalIdx = (chunkIdx * indexPageSize) + (colIdx * 15) + rIdx;
+                                                {Array.from({ length: rowsPerColumn }).map((_, rIdx) => {
+                                                    const r = column[rIdx];
+                                                    const globalIdx = (chunkIdx * indexPageSize) + (colIdx * rowsPerColumn) + rIdx;
                                                     const regPageNum = Math.floor(globalIdx / registerPageSize) + 1;
+
+                                                    if (!r) {
+                                                        return (
+                                                            <tr key={`empty-${rIdx}`}>
+                                                                <td className="text-center">&nbsp;</td>
+                                                                <td>&nbsp;</td>
+                                                                <td className="text-center">&nbsp;</td>
+                                                                <td className="text-center">&nbsp;</td>
+                                                                <td className="text-center">&nbsp;</td>
+                                                            </tr>
+                                                        );
+                                                    }
+
                                                     return (
-                                                        <tr key={r.id || globalIdx} className="h-[38px] hover:bg-slate-50 transition-colors">
-                                                            <td className="p-1 text-center font-bold text-[14px] text-slate-400">{MN(globalIdx + 1)}</td>
-                                                            <td className="p-1 px-3 font-black uppercase tracking-tight text-left text-[14px] text-slate-900 truncate max-w-[320px]">{r.ownerName}</td>
-                                                            <td className="p-1 text-center font-bold text-[14px] text-slate-700">{r.propertyId || (r.plotNo ? MN(r.plotNo) : '-')}</td>
-                                                            <td className="p-1 text-center font-bold text-[14px] text-slate-700">{r.khasraNo ? r.khasraNo.split(',').map(k => MN(k.trim())).join(', ') : '-'}</td>
-                                                            <td className="p-1 text-center font-black text-[14px] text-indigo-700">{MN(regPageNum)}</td>
+                                                        <tr key={r.id || globalIdx}>
+                                                            <td className="text-center">{MN(globalIdx + 1)}</td>
+                                                            <td className="text-left font-bold uppercase truncate">
+                                                                <span style={{ fontSize: '13px' }}>
+                                                                    {(() => {
+                                                                        const parts = r.ownerName?.split(' ') || [];
+                                                                        if (parts.length > 5) {
+                                                                            return parts.slice(0, 6).join(' ') + '...';
+                                                                        }
+                                                                        return r.ownerName;
+                                                                    })()}
+                                                                </span>
+                                                            </td>
+                                                            <td className="text-center">{r.propertyId || (r.plotNo ? MN(r.plotNo) : '-')}</td>
+                                                            <td className="text-center">{r.khasraNo ? r.khasraNo.split(',').map(k => MN(k.trim())).join(', ') : '-'}</td>
+                                                            <td className="text-center">{MN(regPageNum)}</td>
                                                         </tr>
                                                     );
                                                 })}
-                                                {column.length < 15 && Array.from({ length: 15 - column.length }).map((_, i) => (
-                                                    <tr key={`empty-${i}`} className="h-[38px]">
-                                                        <td className="p-1">&nbsp;</td>
-                                                        <td className="p-1">&nbsp;</td>
-                                                        <td className="p-1">&nbsp;</td>
-                                                        <td className="p-1">&nbsp;</td>
-                                                        <td className="p-1">&nbsp;</td>
-                                                    </tr>
-                                                ))}
                                             </tbody>
                                         </table>
                                     </div>
                                 ))}
                             </div>
-
-
                         </div>
                     </div>
                 );

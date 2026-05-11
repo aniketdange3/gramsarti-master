@@ -121,7 +121,13 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
                 return total - paid > 0;
             });
         }
-        return res;
+
+        // Sort by Khasra then Plot naturally
+        return [...res].sort((a, b) => {
+            const kComp = sortKhasra(a.khasraNo || '', b.khasraNo || '');
+            if (kComp !== 0) return kComp;
+            return sortKhasra(a.plotNo || '', b.plotNo || '');
+        });
     }, [records, searchTerm, filterWasti, filterKhasra, showOnlyUnpaid]);
 
     const totalPages = Math.ceil(filteredRecords.length / pageSize);

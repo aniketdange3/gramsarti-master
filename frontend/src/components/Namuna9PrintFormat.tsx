@@ -2,8 +2,10 @@ import React from 'react';
 import Namuna9IndexFormat from './Namuna9IndexFormat';
 
 // Marathi Number Helper (MN)
-const MN = (v: number | string | undefined) =>
-    String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
+const MN = (v: number | string | undefined) => {
+    if (v === undefined || v === null || v === '') return '०';
+    return String(v).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
+};
 
 const PANCHAYAT_CONFIG = {
     gpName: 'वेळा हरिश्चंद्र',
@@ -33,13 +35,28 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
     // Force pageSize to 3 for audit consistency as requested
     const effectivePageSize = 3;
 
+    // Sort records by khasraNo and then plotNo naturally
+    const sortedRecords = [...records].sort((a, b) => {
+        const kA = String(a.khasraNo || '');
+        const kB = String(b.khasraNo || '');
+
+        // Natural sort for khasra
+        const kComp = kA.localeCompare(kB, undefined, { numeric: true, sensitivity: 'base' });
+        if (kComp !== 0) return kComp;
+
+        // If same khasra, sort by plotNo naturally
+        const pA = String(a.plotNo || '');
+        const pB = String(b.plotNo || '');
+        return pA.localeCompare(pB, undefined, { numeric: true, sensitivity: 'base' });
+    });
+
     // Group records by effectivePageSize for better fit on legal landscape
     const recordChunks = [];
-    for (let i = 0; i < records.length; i += effectivePageSize) {
-        recordChunks.push(records.slice(i, i + effectivePageSize));
+    for (let i = 0; i < sortedRecords.length; i += effectivePageSize) {
+        recordChunks.push(sortedRecords.slice(i, i + effectivePageSize));
     }
 
-    // Financial year set to 2026-27 as per user request
+    // Financial year set to 2025-26 as per current data request
     const fyStart = 2025;
     const fyEnd = 26;
 
@@ -87,7 +104,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
                         page-break-after: auto !important;
                         break-after: auto !important;
                     }
-                    .no-print { display: none !important; }
+                    .no-print, .screen-data { display: none !important; }
                     .namuna9-print-root {
                         padding: 0 !important;
                         margin: 0 !important;
@@ -186,7 +203,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
                                     <tr>
                                         <th className="p-0.5 w-[20px] text-center" rowSpan={2}>अ.क्र.</th>
                                         <th className="p-1 w-[100px] text-center" rowSpan={2}> मालमत्ता धारकाचे नाव </th>
-                                        <th className="p-0.5 w-[40px] text-center" rowSpan={2}>प्लॉट नं.<br />मालमत्ता क्र.</th>
+                                        <th className="p-0.5 w-[40px] text-center" rowSpan={2}>प्लॉट नक्र.<br />मालमत्ता क्र.</th>
                                         <th className="p-0.5 w-[40px] text-center" rowSpan={2}>खसरा क्र.</th>
                                         <th className="p-0.5 w-[100px] text-left" rowSpan={2}>कराचे प्रकार </th>
                                         <th className="p-0.5 text-center" colSpan={3}>मागणी </th>
@@ -194,7 +211,13 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
                                         <th className="p-0.5 w-[60px] text-center" rowSpan={2}>दिनांक</th>
                                         <th className="p-0.5 w-[100px] text-left" rowSpan={2}>कराचे प्रकार</th>
                                         <th className="p-0.5 text-center" colSpan={3}>वसुली </th>
-                                        <th className="p-0.5 w-[75px] text-center" rowSpan={2}>बाकी</th>
+                                        <th className="p-0.5 w-[85px] text-center border-l border-slate-900" rowSpan={2}>
+                                            <div className="p-1 text-[12px] font-bold border-b  border-black uppercase tracking-tighter">
+                                                पान क्र: {MN(chunkIdx + 1)}
+                                            </div>
+                                            <div className="pt-1">बाकी</div>
+
+                                        </th>
                                     </tr>
                                     <tr className="bg-transparent text-center">
                                         <th className="p-0.5 border-l border-slate-900 w-[45px]">मागील</th>
@@ -203,6 +226,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
                                         <th className="p-0.5 border-l border-slate-900 w-[65px]">मागील</th>
                                         <th className="p-0.5 border-l border-slate-900 w-[65px]">चालू</th>
                                         <th className="p-0.5 border-l border-slate-900 w-[65px]">एकूण वसुली</th>
+
                                     </tr>
                                 </thead>
 
@@ -220,10 +244,13 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
                                     const baseForDiscount = (Number(r.propertyTax) || 0) + (Number(r.openSpaceTax) || 0);
 
                                     // ५% सूट (Discount): चालू वर्षाच्या 'घर कर' + 'जमीन कर' वर ३० सप्टेंबरपूर्वी ५% सूट.
+                                    // Financial year logic: Must be paid between April 1st and Sep 30th of the current FY
                                     const today = new Date();
-                                    const cutoffDate = new Date(fyStart, 8, 30);
+                                    const fyStartDate = new Date(fyStart, 3, 1); // April 1st
+                                    const cutoffDate = new Date(fyStart, 8, 30); // September 30th
                                     const effectivePaymentDate = r.paymentDate ? new Date(r.paymentDate) : today;
-                                    const isEligible = effectivePaymentDate <= cutoffDate;
+
+                                    const isEligible = effectivePaymentDate >= fyStartDate && effectivePaymentDate <= cutoffDate;
                                     const finalDiscount = isEligible ? Number((baseForDiscount * 0.05).toFixed(2)) : 0;
 
                                     const grandTotalDemand = combinedArrears + originalCurrentDemand;
@@ -358,18 +385,20 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
                                                             <span className="screen-data">
                                                                 {isPenaltyRow
                                                                     ? (penaltyPaid > 0 ? MN(penaltyPaid.toFixed(2)) : '')
-                                                                    : (hIdx === 0
-                                                                        ? MN((arrearsPaid + (headRecoveryMap[tax.key] || 0)).toFixed(2))
-                                                                        : (headRecoveryMap[tax.key] > 0 ? MN(headRecoveryMap[tax.key].toFixed(2)) : '')
-                                                                    )
+                                                                    : isDiscountRow
+                                                                        ? (finalDiscount > 0 ? MN(finalDiscount.toFixed(2)) : '')
+                                                                        : (hIdx === 0
+                                                                            ? MN((arrearsPaid + (headRecoveryMap[tax.key] || 0)).toFixed(2))
+                                                                            : (headRecoveryMap[tax.key] > 0 ? MN(headRecoveryMap[tax.key].toFixed(2)) : '')
+                                                                        )
                                                                 }
                                                             </span>
                                                         </td>
 
                                                         {hIdx === 0 && (
-                                                            /* Column 15: Balance (बाकी) */
-                                                            <td className="pr-2 font-black bg-transparent" rowSpan={11}>
-                                                                <span className="screen-data">₹ {MN(remainingBalance.toFixed(2))}</span>
+                                                            /* Column 15: Balance (बाकी) - Blank in print */
+                                                            <td className="pr-2 font-black bg-transparent border-l border-slate-900 text-center" rowSpan={11}>
+                                                                <span className="screen-data text-[14px]">₹ {MN(remainingBalance.toFixed(2))}</span>
                                                             </td>
                                                         )}
                                                     </tr>

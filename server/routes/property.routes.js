@@ -31,6 +31,9 @@ router.get('/:id', authenticate, propertyController.getPropertyById);
 // मालमत्ता हटवणे (Admin Only)
 router.delete('/:id', authenticate, authorize('super_admin'), propertyController.deleteProperty);
 
+// मोठ्या प्रमाणात करांचे दर अपडेट करणे (Bulk Update)
+router.put('/bulk-tax-update', authenticate, authorize('super_admin', 'gram_sevak'), propertyController.bulkUpdateNormalTaxes);
+
 // हुबेहूब जुळणाऱ्या नोंदी साफ करणे (Maintenance - Admin Only)
 router.post('/cleanup-duplicates', authenticate, authorize('super_admin'), propertyController.cleanupDuplicates);
 

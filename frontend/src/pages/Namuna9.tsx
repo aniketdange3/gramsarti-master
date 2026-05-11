@@ -300,21 +300,10 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                 </div>
                 <div className="flex-1 overflow-auto p-4 flex flex-col items-center no-print-bg print-parent">
                     <div className="w-full max-w-[1350px]">
-                        {/* 1. Index Page(s) */}
-                        <Namuna9IndexFormat 
-                            records={printRecords} 
-                            panchayatConfig={PANCHAYAT_CONFIG}
-                            fyStart={fyStart}
-                            fyEnd={fyEnd}
-                            wastiName={filterWasti || undefined}
-                            effectivePageSize={3}
-                        />
-                        
-                        {/* 2. Detailed Register Pages */}
-                        <Namuna9PrintFormat 
-                            records={printRecords} 
-                            pageSize={3} 
-                            panchayatConfig={PANCHAYAT_CONFIG}
+                        {/* Register Pages (Index is already inside Namuna9PrintFormat) */}
+                        <Namuna9PrintFormat
+                            records={printRecords}
+                            pageSize={3}
                             fyStart={fyStart}
                             fyEnd={fyEnd}
                             wastiName={filterWasti || undefined}
@@ -408,20 +397,20 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                                 <Plus size={12} /> नवीन नोंद
                             </button>
                         )}
-                            <button
-                                onClick={() => setPrintRecords(filteredRecords)}
-                                className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg font-black uppercase tracking-wider hover:bg-indigo-600 hover:text-white shadow-sm transition-all text-[9px] active:scale-95"
-                                title="फिल्टर केलेला नमुना ९ प्रिंट करा"
-                            >
-                                <Printer size={12} /> प्रिंट (फिल्टर)
-                            </button>
-                            <button
-                                onClick={() => exportToExcel(filteredRecords, 'Namuna9_Data')}
-                                className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg font-black uppercase tracking-wider hover:bg-indigo-600 hover:text-white shadow-sm transition-all text-[9px] active:scale-95"
-                                title="फिल्टर केलेला नमुना ९ एक्सपोर्ट करा"
-                            >
-                                <FileSpreadsheet size={12} /> एक्सपोर्ट (फिल्टर)
-                            </button>
+                        <button
+                            onClick={() => setPrintRecords(filteredRecords)}
+                            className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg font-black uppercase tracking-wider hover:bg-indigo-600 hover:text-white shadow-sm transition-all text-[9px] active:scale-95"
+                            title="फिल्टर केलेला नमुना ९ प्रिंट करा"
+                        >
+                            <Printer size={12} /> प्रिंट (फिल्टर)
+                        </button>
+                        <button
+                            onClick={() => exportToExcel(filteredRecords, 'Namuna9_Data')}
+                            className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg font-black uppercase tracking-wider hover:bg-indigo-600 hover:text-white shadow-sm transition-all text-[9px] active:scale-95"
+                            title="फिल्टर केलेला नमुना ९ एक्सपोर्ट करा"
+                        >
+                            <FileSpreadsheet size={12} /> एक्सपोर्ट (फिल्टर)
+                        </button>
 
                         <button onClick={fetchRecords} className="p-2 hover:bg-slate-50 rounded-lg border border-slate-200 transition-all active:scale-95">
                             <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
@@ -432,105 +421,105 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
 
             {/* Main Content Area */}
             <div className="flex-1 overflow-hidden flex flex-col px-2 py-2 gap-2">
-                    {/* Unified Search & Filter Bar */}
-                    <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-xl no-print flex-wrap lg:flex-nowrap shrink-0 shadow-sm">
-                        {/* Search Component */}
-                        <div className="relative flex-1 min-w-[200px]">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10" />
-                            <TransliterationInput
-                                placeholder="शोधा..."
-                                className="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400"
-                                value={searchTerm}
-                                onChangeText={setSearchTerm}
-                            />
-                            {searchTerm && (
-                                <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-1 hover:bg-rose-50 rounded-lg transition-colors">
-                                    <X className="w-4 h-4 text-slate-400 hover:text-rose-500" />
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Filters Group */}
-                        <div className="flex items-center gap-2 flex-wrap flex-1 justify-end">
-                            <CustomDropdown
-                                value={filterWasti}
-                                onChange={handleWastiChange}
-                                placeholder="वस्ती निवडा"
-                                options={uniqueWastis.map(w => ({ value: w, label: w }))}
-                            />
-                            <CustomDropdown
-                                value={filterLayout}
-                                onChange={handleLayoutChange}
-                                placeholder="लेआउट निवडा"
-                                options={uniqueLayouts.map(l => ({ value: l, label: l }))}
-                            />
-                            <CustomDropdown
-                                value={filterKhasra}
-                                onChange={handleKhasraChange}
-                                placeholder="खसरा निवडा"
-                                options={uniqueKhasras.map(k => ({ value: k, label: k }))}
-                            />
-                            <CustomDropdown
-                                value={filterPropertyId}
-                                onChange={setFilterPropertyId}
-                                placeholder="आयडी निवडा"
-                                options={records.map(r => ({ value: r.propertyId || '', label: r.propertyId || '' })).filter(o => o.value).sort((a, b) => a.value.localeCompare(b.value, undefined, { numeric: true }))}
-                            />
-                            <CustomDropdown
-                                value={filterPlotNo}
-                                onChange={setFilterPlotNo}
-                                placeholder="प्लॉट निवडा"
-                                options={uniquePlots.map(p => ({ value: p, label: p }))}
-                            />
-                            <CustomDropdown
-                                value={filterPropertyType}
-                                onChange={setFilterPropertyType}
-                                placeholder="प्रकार निवडा"
-                                options={dynamicPropertyTypes.map(p => ({ value: p, label: p }))}
-                            />
-
-                            {(filterWasti || filterLayout || filterKhasra || filterPlotNo || filterPropertyId || filterPropertyType || searchTerm || viewId) && (
-                                <button
-                                    onClick={() => { 
-                                        setFilterWasti(''); 
-                                        setFilterLayout(''); 
-                                        setFilterKhasra(''); 
-                                        setFilterPlotNo(''); 
-                                        setFilterPropertyId(''); 
-                                        setFilterPropertyType(''); 
-                                        setSearchTerm(''); 
-                                        setViewId(null);
-                                    }}
-                                    className="flex items-center gap-1.5 px-3 py-2 text-[9px] font-black text-rose-600 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100 transition-all flex-shrink-0"
-                                >
-                                    <RotateCcw className="w-3 h-3" /> सर्व नोंदी पहा
-                                </button>
-                            )}
-
-                            {/* Stats Counter */}
-                            <div className="hidden lg:flex items-center gap-1.5 bg-indigo-50/50 px-3 py-2 rounded-lg border border-indigo-100 shrink-0">
-                                <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-                                <span className="text-[9px] text-slate-600 font-black uppercase tracking-tight whitespace-nowrap">
-                                    नोंदी: <span className="text-indigo-600 font-black ml-1">{MN(filteredRecords.length)}</span>
-                                </span>
-                            </div>
-                        </div>
+                {/* Unified Search & Filter Bar */}
+                <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-xl no-print flex-wrap lg:flex-nowrap shrink-0 shadow-sm">
+                    {/* Search Component */}
+                    <div className="relative flex-1 min-w-[200px]">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10" />
+                        <TransliterationInput
+                            placeholder="शोधा..."
+                            className="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400"
+                            value={searchTerm}
+                            onChangeText={setSearchTerm}
+                        />
+                        {searchTerm && (
+                            <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-1 hover:bg-rose-50 rounded-lg transition-colors">
+                                <X className="w-4 h-4 text-slate-400 hover:text-rose-500" />
+                            </button>
+                        )}
                     </div>
 
-                    {/* Table Area */}
-                    <div className="flex-1 overflow-auto bg-white rounded-xl shadow-sm border border-gray-100">
-                        <NamunaTable9
-                            records={filteredRecords}
-                            filterWasti={filterWasti}
-                            onEdit={canEdit ? handleEdit : undefined}
-                            onDelete={canDelete ? handleDelete : undefined}
-                            onPrint={handlePrint}
-                            onPrintBill={handlePrintBill}
-                            onPrintMultiple={handlePrintMultiple}
-                            showActions={true}
+                    {/* Filters Group */}
+                    <div className="flex items-center gap-2 flex-wrap flex-1 justify-end">
+                        <CustomDropdown
+                            value={filterWasti}
+                            onChange={handleWastiChange}
+                            placeholder="वस्ती निवडा"
+                            options={uniqueWastis.map(w => ({ value: w, label: w }))}
                         />
+                        <CustomDropdown
+                            value={filterLayout}
+                            onChange={handleLayoutChange}
+                            placeholder="लेआउट निवडा"
+                            options={uniqueLayouts.map(l => ({ value: l, label: l }))}
+                        />
+                        <CustomDropdown
+                            value={filterKhasra}
+                            onChange={handleKhasraChange}
+                            placeholder="खसरा निवडा"
+                            options={uniqueKhasras.map(k => ({ value: k, label: k }))}
+                        />
+                        <CustomDropdown
+                            value={filterPropertyId}
+                            onChange={setFilterPropertyId}
+                            placeholder="आयडी निवडा"
+                            options={records.map(r => ({ value: r.propertyId || '', label: r.propertyId || '' })).filter(o => o.value).sort((a, b) => a.value.localeCompare(b.value, undefined, { numeric: true }))}
+                        />
+                        <CustomDropdown
+                            value={filterPlotNo}
+                            onChange={setFilterPlotNo}
+                            placeholder="प्लॉट निवडा"
+                            options={uniquePlots.map(p => ({ value: p, label: p }))}
+                        />
+                        <CustomDropdown
+                            value={filterPropertyType}
+                            onChange={setFilterPropertyType}
+                            placeholder="प्रकार निवडा"
+                            options={dynamicPropertyTypes.map(p => ({ value: p, label: p }))}
+                        />
+
+                        {(filterWasti || filterLayout || filterKhasra || filterPlotNo || filterPropertyId || filterPropertyType || searchTerm || viewId) && (
+                            <button
+                                onClick={() => {
+                                    setFilterWasti('');
+                                    setFilterLayout('');
+                                    setFilterKhasra('');
+                                    setFilterPlotNo('');
+                                    setFilterPropertyId('');
+                                    setFilterPropertyType('');
+                                    setSearchTerm('');
+                                    setViewId(null);
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-2 text-[9px] font-black text-rose-600 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100 transition-all flex-shrink-0"
+                            >
+                                <RotateCcw className="w-3 h-3" /> सर्व नोंदी पहा
+                            </button>
+                        )}
+
+                        {/* Stats Counter */}
+                        <div className="hidden lg:flex items-center gap-1.5 bg-indigo-50/50 px-3 py-2 rounded-lg border border-indigo-100 shrink-0">
+                            <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+                            <span className="text-[9px] text-slate-600 font-black uppercase tracking-tight whitespace-nowrap">
+                                नोंदी: <span className="text-indigo-600 font-black ml-1">{MN(filteredRecords.length)}</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
+
+                {/* Table Area */}
+                <div className="flex-1 overflow-auto bg-white rounded-xl shadow-sm border border-gray-100">
+                    <NamunaTable9
+                        records={filteredRecords}
+                        filterWasti={filterWasti}
+                        onEdit={canEdit ? handleEdit : undefined}
+                        onDelete={canDelete ? handleDelete : undefined}
+                        onPrint={handlePrint}
+                        onPrintBill={handlePrintBill}
+                        onPrintMultiple={handlePrintMultiple}
+                        showActions={true}
+                    />
+                </div>
+            </div>
 
             {/* Property Form Modal */}
             {showForm && (

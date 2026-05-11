@@ -67,7 +67,7 @@ export default function FYMigrationWizard({ currentFY, onClose, onDone, addToast
             const res = await fetch(`${API_BASE_URL}/api/fy/migrate`, {
                 method: 'POST',
                 headers: headers(),
-                body: JSON.stringify({}),
+                body: JSON.stringify({ newFY: selectedFY }),
             });
             if (res.status === 401) { onAuthError?.(); return; }
             const data = await res.json();

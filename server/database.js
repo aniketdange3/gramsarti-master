@@ -437,21 +437,25 @@ const initializeDatabase = async () => {
             new_owner_name VARCHAR(500) NOT NULL,
             applicant_name VARCHAR(255) DEFAULT '',
             applicant_mobile VARCHAR(20) DEFAULT '',
-            ferfar_type VARCHAR(100) DEFAULT 'خरेदीخत',
+            ferfar_type VARCHAR(100) DEFAULT 'खरेदीखत',
             remarks TEXT DEFAULT NULL,
             status ENUM('PENDING', 'APPROVED', 'REJECTED') DEFAULT 'PENDING',
             srNo INT DEFAULT NULL,
             wardNo VARCHAR(255) DEFAULT NULL,
             wastiName VARCHAR(255) DEFAULT NULL,
             plotNo VARCHAR(255) DEFAULT NULL,
+            requested_by INT DEFAULT NULL,
             approved_at TIMESTAMP NULL DEFAULT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            FOREIGN KEY(property_id) REFERENCES properties(id) ON DELETE CASCADE
+            FOREIGN KEY(property_id) REFERENCES properties(id) ON DELETE CASCADE,
+            FOREIGN KEY(requested_by) REFERENCES users(id) ON DELETE SET NULL
         ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
 
         // Migration for ferfar_requests
         await addColumnIfNotExists(connection, 'ferfar_requests', 'village_id', 'INT DEFAULT NULL');
+        await addColumnIfNotExists(connection, 'ferfar_requests', 'requested_by', 'INT DEFAULT NULL');
+        await connection.query('ALTER TABLE ferfar_requests ADD CONSTRAINT fk_ferfar_requested_by FOREIGN KEY IF NOT EXISTS (requested_by) REFERENCES users(id) ON DELETE SET NULL').catch(() => {});
         await addIndexIfNotExists(connection, 'ferfar_requests', 'idx_ferfar_village', 'village_id');
         await addIndexIfNotExists(connection, 'ferfar_requests', 'idx_ferfar_status', 'status');
         await addIndexIfNotExists(connection, 'ferfar_requests', 'idx_ferfar_created', 'created_at');

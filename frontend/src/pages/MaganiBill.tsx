@@ -98,6 +98,7 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
     const wastiFiltered = useMemo(() => filterWasti ? records.filter(r => r.wastiName === filterWasti) : records, [records, filterWasti]);
     
     const uniqueKhasras = useMemo(() => {
+        if (!filterWasti) return [];
         const set = new Set<string>();
         for (const r of wastiFiltered) if (r.khasraNo) set.add(r.khasraNo);
         const arr = Array.from(set);
@@ -105,7 +106,7 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
         return arr.map(k => ({ orig: k, eng: toEng(k) }))
             .sort((a, b) => a.eng.localeCompare(b.eng, undefined, { numeric: true, sensitivity: 'base' }))
             .map(k => k.orig);
-    }, [wastiFiltered]);
+    }, [wastiFiltered, filterWasti]);
 
     const filteredRecords = useMemo(() => {
         let res = records;
@@ -230,8 +231,9 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
                 <CustomDropdown
                     value={filterKhasra}
                     onChange={setFilterKhasra}
-                    placeholder="खसरा निवडा"
+                    placeholder={filterWasti ? "खसरा निवडा" : "प्रथम वस्ती निवडा"}
                     options={uniqueKhasras.map(k => ({ value: k, label: k }))}
+                    disabled={!filterWasti}
                 />
 
                 <div className="flex items-center gap-3 ml-auto">

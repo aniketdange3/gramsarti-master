@@ -42,8 +42,23 @@ export default function Reports({ records }: ReportsProps) {
     const stats = useMemo(() => {
         const currentTax = records.reduce((s, r) => s + (Number(r.totalTaxAmount) || 0), 0);
         const arrears = records.reduce((s, r) => s + (Number(r.arrearsAmount) || 0), 0);
+        
+        // Calculate dynamic discount (5% of base current: property + openSpace)
+        const totalCalculatedDiscount = records.reduce((s, r) => {
+            const base = (Number(r.propertyTax) || 0) + (Number(r.openSpaceTax) || 0);
+            return s + (base * 0.05);
+        }, 0);
+
+        // Calculate dynamic penalty (5% of base arrears if available, otherwise total arrears)
+        const totalCalculatedPenalty = records.reduce((s, r) => {
+            const originalArrears = Number(r.arrearsAmount) || 0;
+            const prevBase = (Number(r.prev_breakdown?.propertyTax) || 0) + (Number(r.prev_breakdown?.openSpaceTax) || 0);
+            const baseForPenalty = prevBase > 0 ? prevBase : originalArrears;
+            return s + (baseForPenalty * 0.05);
+        }, 0);
+        
         const paid = records.reduce((s, r) => s + (Number(r.paidAmount) || 0), 0);
-        const demand = currentTax + arrears;
+        const demand = currentTax + arrears + totalCalculatedPenalty - totalCalculatedDiscount;
         const balance = demand - paid;
         const rate = demand > 0 ? (paid / demand * 100) : 0;
 
@@ -61,9 +76,36 @@ export default function Reports({ records }: ReportsProps) {
             const wr = records.filter(r => String(r.wastiName || '').trim() === name);
             const wCurr = wr.reduce((s, r) => s + (Number(r.totalTaxAmount) || 0), 0);
             const wArr = wr.reduce((s, r) => s + (Number(r.arrearsAmount) || 0), 0);
+            
+            // Per-wasti calculations
+            const wDisc = wr.reduce((s, r) => {
+                const base = (Number(r.propertyTax) || 0) + (Number(r.openSpaceTax) || 0);
+                return s + (base * 0.05);
+            }, 0);
+            const wPen = wr.reduce((s, r) => {
+                const originalArrears = Number(r.arrearsAmount) || 0;
+                const prevBase = (Number(r.prev_breakdown?.propertyTax) || 0) + (Number(r.prev_breakdown?.openSpaceTax) || 0);
+                const baseForPenalty = prevBase > 0 ? prevBase : originalArrears;
+                return s + (baseForPenalty * 0.05);
+            }, 0);
+            
             const wPaid = wr.reduce((s, r) => s + (Number(r.paidAmount) || 0), 0);
-            const wDemand = wCurr + wArr;
-            return { name, count: wr.length, demand: wDemand, paid: wPaid, balance: wDemand - wPaid, rate: wDemand > 0 ? (wPaid / wDemand * 100) : 0 };
+            
+            const wDemand = wCurr + wArr + wPen - wDisc;
+            const wBalance = wDemand - wPaid;
+
+            return { 
+                name, 
+                count: wr.length, 
+                arrears: wArr,
+                current: wCurr,
+                penalty: wPen,
+                discount: wDisc,
+                demand: wDemand, 
+                paid: wPaid, 
+                balance: wBalance, 
+                rate: wDemand > 0 ? (wPaid / wDemand * 100) : 0 
+            };
         }).sort((a, b) => b.demand - a.demand);
 
         return { currentTax, arrears, paid, demand, balance, rate, wastiData, taxBreakdown };
@@ -218,8 +260,12 @@ export default function Reports({ records }: ReportsProps) {
                                         <tr className="bg-white border-b border-slate-100">
                                             <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">वस्तीचे नाव</th>
                                             <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">मालमत्ता</th>
+                                            <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">मागील</th>
+                                            <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">चालू</th>
+                                            <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">सूट</th>
+                                            <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">दंड</th>
                                             <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">एकूण मागणी</th>
-                                            <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">वसूल रक्कम</th>
+                                            <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">वसूल</th>
                                             <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">थकबाकी</th>
                                             <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">प्रगती %</th>
                                             <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">कृती</th>
@@ -230,6 +276,10 @@ export default function Reports({ records }: ReportsProps) {
                                             <tr key={i} className="hover:bg-slate-50/80 transition-colors">
                                                 <td className="px-6 py-4 text-xs font-black text-slate-800">{w.name}</td>
                                                 <td className="px-6 py-4 text-xs font-bold text-slate-500 text-center">{MN(w.count)}</td>
+                                                <td className="px-6 py-4 text-xs font-black text-slate-600 text-right">₹{MN(w.arrears)}</td>
+                                                <td className="px-6 py-4 text-xs font-black text-indigo-600 text-right">₹{MN(w.current)}</td>
+                                                <td className="px-6 py-4 text-xs font-black text-amber-600 text-right">₹{MN(w.discount)}</td>
+                                                <td className="px-6 py-4 text-xs font-black text-rose-500 text-right">₹{MN(w.penalty)}</td>
                                                 <td className="px-6 py-4 text-xs font-black text-slate-800 text-right">₹{MN(w.demand)}</td>
                                                 <td className="px-6 py-4 text-xs font-black text-emerald-600 text-right">₹{MN(w.paid)}</td>
                                                 <td className="px-6 py-4 text-xs font-black text-rose-600 text-right">₹{MN(w.balance)}</td>

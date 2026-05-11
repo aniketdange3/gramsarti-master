@@ -27,6 +27,28 @@ export default function Namuna9IndexFormat({
     fyEnd,
     wastiName
 }: Namuna9IndexFormatProps) {
+    // Current User Logic for Mauje fetching
+    const currentUser = React.useMemo(() => {
+        try {
+            return JSON.parse(localStorage.getItem('gp_user') || '{}');
+        } catch (e) {
+            return {};
+        }
+    }, []);
+
+    const displayMauje = React.useMemo(() => {
+        // 1. Current selected wasti (if not "सर्व")
+        if (wastiName && wastiName !== 'सर्व' && wastiName !== 'All') {
+            return wastiName;
+        }
+        // 2. User's assigned wasti (if available)
+        if (currentUser.wasti && currentUser.wasti !== 'सर्व') {
+            return currentUser.wasti;
+        }
+        // 3. Fallback to panchayatConfig.mouza
+        return panchayatConfig.mouza || 'वेळाहरी';
+    }, [wastiName, currentUser, panchayatConfig]);
+
     // Index Density: 15 left, 15 right (30 total per page)
     const rowsPerColumn = 15;
     const indexPageSize = rowsPerColumn * 2;
@@ -94,7 +116,7 @@ export default function Namuna9IndexFormat({
                     color: #000;
                     height: 42px;
                     font-weight: 600;
-                    font-size: 13.5px;
+                    font-size: 16px;
                     padding: 1px;
                 }
                 .index-table td {
@@ -117,7 +139,6 @@ export default function Namuna9IndexFormat({
             {indexChunks.map((chunk, chunkIdx) => {
                 const leftCol = chunk.slice(0, rowsPerColumn);
                 const rightCol = chunk.slice(rowsPerColumn, indexPageSize);
-                const currentWasti = wastiName || panchayatConfig?.mouza || '';
 
                 return (
                     <div key={chunkIdx} className="page-container p-2 text-Marathi relative">
@@ -128,16 +149,15 @@ export default function Namuna9IndexFormat({
 
                         <div className="relative z-10">
                             <div className="text-center mb-4">
-                                <h1 className="text-[32px] font-black text-black tracking-tight">
-                                    सन {MN(fyStart)}-{MN(fyEnd % 100)} मौजा {currentWasti} नमुना ९ अनुक्रमणिका
+                                <h1 className="text-[28px] font-black text-black tracking-tight">
+                                    सन {MN(fyStart)}-{MN(fyEnd % 100)} मौजा {displayMauje} नमुना ९ अनुक्रमणिका
                                 </h1>
-                                <div className="w-full border-b-[2.5px] border-black mt-1"></div>
                             </div>
 
                             <div className="flex gap-2 justify-between">
                                 {[leftCol, rightCol].map((column, colIdx) => (
                                     <div key={colIdx} className="w-[49%] overflow-hidden">
-                                        <table className="index-table">
+                                        <table className="index-table ">
                                             <thead>
                                                 <tr>
                                                     <th className="col-sr">अ.क्र.</th>
@@ -169,11 +189,11 @@ export default function Namuna9IndexFormat({
                                                         <tr key={r.id || globalIdx}>
                                                             <td className="text-center">{MN(globalIdx + 1)}</td>
                                                             <td className="text-left font-bold uppercase truncate">
-                                                                <span style={{ fontSize: '13px' }}>
+                                                                <span style={{ fontSize: '15px' }}>
                                                                     {(() => {
                                                                         const parts = r.ownerName?.split(' ') || [];
-                                                                        if (parts.length > 5) {
-                                                                            return parts.slice(0, 6).join(' ') + '...';
+                                                                        if (parts.length > 7) {
+                                                                            return parts.slice(0, 7).join(' ') + '...';
                                                                         }
                                                                         return r.ownerName;
                                                                     })()}

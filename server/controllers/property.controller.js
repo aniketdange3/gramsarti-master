@@ -486,9 +486,31 @@ exports.bulkUpdateNormalTaxes = async (req, res) => {
             subquery += ` WHERE 1=1`;
         }
 
+        const { wastiName, khasraNo, plotNo, khasraNos } = req.body;
+
+        if (wastiName && wastiName !== 'सर्व' && wastiName !== 'All') {
+            subquery += ' AND p.wastiName = ?';
+            subparams.push(wastiName);
+        }
+
         if (layoutName && layoutName !== 'सर्व' && layoutName !== 'All') {
-            subquery += ' AND p.layoutName LIKE ?';
-            subparams.push(`%${layoutName}%`);
+            subquery += ' AND p.layoutName = ?';
+            subparams.push(layoutName);
+        }
+
+        if (khasraNo && khasraNo !== 'सर्व' && khasraNo !== 'All') {
+            subquery += ' AND p.khasraNo = ?';
+            subparams.push(khasraNo);
+        }
+
+        if (plotNo && plotNo !== 'सर्व' && plotNo !== 'All') {
+            subquery += ' AND p.plotNo = ?';
+            subparams.push(plotNo);
+        }
+
+        if (khasraNos && Array.isArray(khasraNos) && khasraNos.length > 0) {
+            subquery += ' AND p.khasraNo IN (?)';
+            subparams.push(khasraNos);
         }
 
         const [targetRows] = await connection.query(subquery, subparams);

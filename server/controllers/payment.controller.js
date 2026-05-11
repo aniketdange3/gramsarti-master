@@ -14,10 +14,10 @@ const { clearPropertiesCache } = require('../utils/cache.util');
  */
 exports.createPayment = async (req, res) => {
     try {
-        const { 
-            property_id, amount, payment_mode, payment_date, 
-            cheque_no, cheque_bank, upi_ref, remarks, 
-            financial_year, receipt_book, discount_applied, penalty_applied 
+        const {
+            property_id, amount, payment_mode, payment_date,
+            cheque_no, cheque_bank, upi_ref, remarks,
+            financial_year, receipt_book, discount_applied, penalty_applied
         } = req.body;
 
         if (!property_id || !amount || !payment_mode || !payment_date) {
@@ -39,15 +39,15 @@ exports.createPayment = async (req, res) => {
                 remarks, financial_year, receipt_book
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                receipt_no, property_id, amount, payment_mode, payment_date, 
-                req.user.id, cheque_no || null, cheque_bank || null, chequeStatus, 
+                receipt_no, property_id, amount, payment_mode, payment_date,
+                req.user.id, cheque_no || null, cheque_bank || null, chequeStatus,
                 upi_ref || null, remarks || null, financial_year || '2025-26', receipt_book || null
             ]
         );
 
         // मालमत्तेचा भरलेला कर, सूट, आणि पावती तपशील अपडेट करणे
         const disc = Number(discount_applied) || 0;
-        const pen  = Number(penalty_applied)  || 0;
+        const pen = Number(penalty_applied) || 0;
 
         await db.query(
             `UPDATE properties
@@ -64,12 +64,12 @@ exports.createPayment = async (req, res) => {
         // Cache साफ करा जेणेकरून frontend ला नवीन data मिळेल
         clearPropertiesCache();
 
-        res.status(201).json({ 
-            id: result.insertId, 
-            receipt_no, 
-            amount, 
+        res.status(201).json({
+            id: result.insertId,
+            receipt_no,
+            amount,
             payment_mode,
-            message: 'पेमेंट यशस्वीरित्या नोंदवले गेले' 
+            message: 'पेमेंट यशस्वीरित्या नोंदवले गेले'
         });
     } catch (err) {
         console.error('[PAYMENT] Create error:', err);
@@ -154,13 +154,13 @@ exports.updateChequeStatus = async (req, res) => {
     try {
         const { status } = req.body; // Pending, Cleared, Bounced
         await db.query('UPDATE payments SET cheque_status = ? WHERE id = ? AND payment_mode = ?', [status, req.params.id, 'Cheque']);
-        
+
         if (status === 'Bounced') {
             // रिव्हर्स एन्ट्री: मालमत्तेचा भरलेला कर कमी करणे (Reverse paidAmount)
             const [payment] = await db.query('SELECT property_id, amount FROM payments WHERE id = ?', [req.params.id]);
             if (payment.length > 0) {
                 await db.query(
-                    'UPDATE properties SET paidAmount = GREATEST(COALESCE(paidAmount, 0) - ?, 0) WHERE id = ?', 
+                    'UPDATE properties SET paidAmount = GREATEST(COALESCE(paidAmount, 0) - ?, 0) WHERE id = ?',
                     [payment[0].amount, payment[0].property_id]
                 );
             }

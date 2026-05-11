@@ -4,7 +4,7 @@ export const PANCHAYAT_CONFIG = {
     mouza: 'वेळाहरी',          // मौजा
     taluka: 'नागपूर (ग्रामीण)',     // तालुका
     jilha: 'नागपूर',               // जिल्हा
-    financialYear: '२०२५-२६',      // सध्याचे आर्थिक वर्ष
-    financialYearEn: '2025-26',
+    financialYear: '२०२६-२७',      // सध्याचे आर्थिक वर्ष
+    financialYearEn: '2026-27',
 };
 

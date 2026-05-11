@@ -29,9 +29,10 @@ const TAX_MAPPING = [
 interface Namuna9PrintFormatProps {
     records: any[];
     pageSize?: number;
+    wastiName?: string;
 }
 
-export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9PrintFormatProps) {
+export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName }: Namuna9PrintFormatProps) {
     // Force pageSize to 3 for audit consistency as requested
     const effectivePageSize = 3;
 
@@ -56,9 +57,9 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
         recordChunks.push(sortedRecords.slice(i, i + effectivePageSize));
     }
 
-    // Financial year set to 2025-26 as per current data request
-    const fyStart = 2025;
-    const fyEnd = 26;
+    // Financial year set to 2026-27 as requested
+    const fyStart = 2026;
+    const fyEnd = 27;
 
     return (
         <div className="namuna9-print-root bg-white min-h-screen flex flex-col items-center print:p-0">
@@ -150,6 +151,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 3 }: Namuna9Pri
                 panchayatConfig={PANCHAYAT_CONFIG}
                 fyStart={fyStart}
                 fyEnd={fyEnd}
+                wastiName={wastiName}
             />
 
             {/* 2. Main Register Content */}

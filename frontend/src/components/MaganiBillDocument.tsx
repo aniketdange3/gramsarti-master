@@ -34,12 +34,12 @@ export const BillContent = ({ record, copyLabel }: BillContentProps) => {
     const grandTotal = currentTotal + arrearsTotal;
 
     return (
-        <div className="flex-1 p-4 print:p-2 relative h-full border-r border-dashed border-gray-300 last:border-r-0 overflow-hidden bg-white font-bold">
+        <div className="flex-1 p-4 print:p-2 relative h-full font-bold border-r border-dashed border-gray-300 last:border-r-0 overflow-hidden bg-white font-bold">
             {/* Watermark Logo */}
             <img
                 src="/images/logo.jpeg"
                 alt="Watermark"
-                className="absolute  top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-55 h-55 opacity-[0.3] pointer-events-none p-10"
+                className="absolute  bg-transparent top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-55 h-55 opacity-[0.3] pointer-events-none p-10"
             />
 
             {/* Copy Label Badge (Integrated with border) */}
@@ -80,7 +80,7 @@ export const BillContent = ({ record, copyLabel }: BillContentProps) => {
                             <tr className="text-[9px]">
                                 <td className="border border-gray-600 p-1"><b>मौजा:</b> {record.wastiName || '-'}</td>
                                 {/* <td className="border border-gray-600 p-1"><b>वार्ड क्र:</b> {MN(record.wardNo)}</td> */}
-                                <td className="border border-gray-600 p-1"><b>खसरा क्र:</b> {(record.khasraNo)}</td>
+                                <td className="border border-gray-600 p-1"><b>खसरा क्र:</b> {MN(record.khasraNo)}</td>
                                 <td className="border border-gray-600 p-1 "><b>मालमत्ता क्र.:</b> {MN(record.plotNo)}</td>
                                 {/* <td className="border border-gray-600 p-1"><b>मोबाईल:</b> {MN(record.contactNo || '-')}</td> */}
                                 <td className="border border-gray-600 p-1"><b>बिल क्र:</b> {MN(record.srNo)}</td>
@@ -149,7 +149,7 @@ export const BillContent = ({ record, copyLabel }: BillContentProps) => {
 
                     <div className="flex justify-between items-end gap-2">
                         {/* Left Side: Notes & Date */}
-                        <div className="w-[70%] space-y-2">
+                        <div className="w-[70%] ">
                             <div className="">
                                 <div className="flex text-[9px] font-bold leading-tight">
                                     <span className="shrink-0 font-black">•</span>
@@ -160,7 +160,7 @@ export const BillContent = ({ record, copyLabel }: BillContentProps) => {
                                     <p>त्याच प्रमाणे सदर कर भरणा न केल्यास महाराष्ट्र ग्रामपंचायत अधिनियम १९५९ च्या कलम १२९ (२) अन्वये पुढील कायदेशीर कार्यवाही करण्यात येईल, याची नोंद घ्यावी.</p>
                                 </div>
                             </div>
-                            <p className="text-[10px] font-bold">
+                            <p className="text-[10px] font-bold mt-2">
                                 दिनांक: {record.paymentDate ? MN(record.paymentDate) : '____/____/२०____'}
                             </p>
                             <div className="items-center">
@@ -176,14 +176,9 @@ export const BillContent = ({ record, copyLabel }: BillContentProps) => {
                                 )}
                             </div>
                         </div>
-
-                        {/* Middle: Owner Signature (Conditional) */}
-
-
                         {/* Right Side: Official Signature */}
                         <div className="w-[30%] text-center flex flex-col items-center">
-                            <div className="w-28 h-10 mb-1"></div>
-                            <div className="border-t border-black w-full pt-5">
+                            <div className="border-t border-black w-full pt-10">
                                 <p className="font-black text-[10px] leading-tight">सरपंच / ग्रांमपंचायत अधिकारी</p>
                                 <p className="text-[9px] font-bold mt-0.5 text-gray-700">गट ग्रा. पं. {PANCHAYAT_CONFIG.gpName}</p>
                             </div>
@@ -267,10 +262,7 @@ export default function MaganiBillDocument({ record, records, onClose }: Props) 
     return (
         <div className="bg-slate-100 min-h-screen w-full flex flex-col items-center p-4 print:p-0 overflow-auto" style={{ fontFamily: "'Kokila', 'Mangal', serif" }}>
             <style>{`
-                @font-face {
-                    font-family: 'Kokila';
-                    src: local('Kokila');
-                }
+              
                 @media print {
                     @page { 
                         size: A4 landscape; 

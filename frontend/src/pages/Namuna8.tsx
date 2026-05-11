@@ -317,18 +317,18 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
             {/* Main Content Area */}
             <div className="flex-1 overflow-hidden flex flex-col px-2 py-2 gap-2">
                 {/* Unified Search & Filter Bar */}
-                <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-xl no-print flex-wrap lg:flex-nowrap shrink-0 shadow-sm">
+                <div className="flex items-center gap-2  no-print flex-wrap lg:flex-nowrap shrink-0 shadow-sm">
                     {/* Search Component */}
-                    <div className="relative flex-1 min-w-[200px]">
+                    <div className="relative w-[550px] shrink-0">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10" />
                         <TransliterationInput
                             placeholder="शोधा..."
-                            className="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400"
+                            className="w-full pl-9 pr-10 py-2 pb-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400"
                             value={searchTerm}
                             onChangeText={setSearchTerm}
                         />
                         {searchTerm && (
-                            <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-1 hover:bg-rose-50 rounded-lg transition-colors">
+                            <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-2 hover:bg-rose-50 rounded-lg transition-colors">
                                 <X className="w-4 h-4 text-slate-400 hover:text-rose-500" />
                             </button>
                         )}
@@ -354,12 +354,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
                             placeholder="खसरा निवडा"
                             options={uniqueKhasras.map(k => ({ value: k, label: k }))}
                         />
-                        <CustomDropdown
-                            value={filterPropertyId}
-                            onChange={setFilterPropertyId}
-                            placeholder="आयडी निवडा"
-                            options={records.map(r => ({ value: r.propertyId || '', label: r.propertyId || '' })).filter(o => o.value).sort((a, b) => a.value.localeCompare(b.value, undefined, { numeric: true }))}
-                        />
+
                         <CustomDropdown
                             value={filterPlotNo}
                             onChange={setFilterPlotNo}

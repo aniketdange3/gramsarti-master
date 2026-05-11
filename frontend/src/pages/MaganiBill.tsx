@@ -94,9 +94,9 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
         for (const r of records) if (r.wastiName) set.add(r.wastiName);
         return Array.from(set).sort();
     }, [records]);
-    
+
     const wastiFiltered = useMemo(() => filterWasti ? records.filter(r => r.wastiName === filterWasti) : records, [records, filterWasti]);
-    
+
     const uniqueKhasras = useMemo(() => {
         if (!filterWasti) return [];
         const set = new Set<string>();
@@ -113,7 +113,7 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
         if (filterWasti) res = res.filter(r => r.wastiName === filterWasti);
         if (filterKhasra) res = res.filter(r => r.khasraNo === filterKhasra);
         if (searchTerm.trim()) res = res.filter(r => matchesSearch(r, searchTerm));
-        
+
         if (showOnlyUnpaid) {
             res = res.filter(r => {
                 const total = (Number(r.totalTaxAmount) || 0) + (Number(r.arrearsAmount) || 0);
@@ -238,18 +238,21 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
                     value={filterKhasra}
                     onChange={setFilterKhasra}
                     placeholder={filterWasti ? "खसरा निवडा" : "प्रथम वस्ती निवडा"}
-                    options={uniqueKhasras.map(k => ({ value: k, label: k }))}
+                    options={uniqueKhasras.map(k => {
+                        const eng = String(k).replace(/[०-९]/g, (d: string) => '0123456789'['०१२३४५६७८९'.indexOf(d)] || d);
+                        const mar = String(k).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
+                        return { value: k, label: mar === eng ? mar : `${mar} (${eng})` };
+                    })}
                     disabled={!filterWasti}
                 />
 
                 <div className="flex items-center gap-3 ml-auto">
                     <button
                         onClick={() => setShowOnlyUnpaid(!showOnlyUnpaid)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all border ${
-                            showOnlyUnpaid 
-                            ? 'bg-rose-50 border-rose-200 text-rose-600 shadow-sm' 
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all border ${showOnlyUnpaid
+                            ? 'bg-rose-50 border-rose-200 text-rose-600 shadow-sm'
                             : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                        }`}
+                            }`}
                     >
                         <div className={`w-2 h-2 rounded-full ${showOnlyUnpaid ? 'bg-rose-600 animate-pulse' : 'bg-slate-300'}`} />
                         केवळ थकबाकी
@@ -290,7 +293,7 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
                                                 <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{r.wastiName || '-'}</span>
-                                                <span className="text-[10px] font-bold text-slate-400">खसरा: {r.khasraNo || '-'}</span>
+                                                <span className="text-[10px] font-bold text-slate-400">खसरा: {MN(r.khasraNo)}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -309,7 +312,7 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex justify-center">
-                                                <button 
+                                                <button
                                                     onClick={() => setActiveBillRecord(r)}
                                                     className="w-10 h-10 flex items-center justify-center text-indigo-600 bg-indigo-50 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-indigo-100 group-hover:scale-110"
                                                     title="मागणी बिल प्रिंट करा"

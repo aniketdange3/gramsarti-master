@@ -181,7 +181,7 @@ const initializeDatabase = async () => {
         await addColumnIfNotExists(connection, 'properties', 'buildingUsage', "VARCHAR(100) DEFAULT 'निवास'");
         await addColumnIfNotExists(connection, 'properties', 'financial_year', "VARCHAR(10) DEFAULT NULL COMMENT 'आर्थिक वर्ष e.g. 2024-25'");
         await addColumnIfNotExists(connection, 'properties', 'created_by', 'INT DEFAULT NULL');
-        await connection.query('ALTER TABLE properties ADD CONSTRAINT fk_properties_created_by FOREIGN KEY IF NOT EXISTS (created_by) REFERENCES users(id) ON DELETE SET NULL').catch(() => {});
+        await connection.query('ALTER TABLE properties ADD CONSTRAINT fk_properties_created_by FOREIGN KEY IF NOT EXISTS (created_by) REFERENCES users(id) ON DELETE SET NULL').catch(() => { });
 
         // Performance Indexes
         await addIndexIfNotExists(connection, 'properties', 'idx_prop_srNo', 'srNo');
@@ -231,9 +231,9 @@ const initializeDatabase = async () => {
         await addColumnIfNotExists(connection, 'property_sections', 'propertyAge', 'INT DEFAULT 0');
 
         // Migration: Fix precision for rate columns to prevent out-of-range errors
-        await connection.query('ALTER TABLE property_sections MODIFY COLUMN depreciationRate DECIMAL(12,2) DEFAULT 1.0').catch(() => {});
-        await connection.query('ALTER TABLE property_sections MODIFY COLUMN weightage DECIMAL(12,2) DEFAULT 1.0').catch(() => {});
-        await connection.query('ALTER TABLE properties MODIFY COLUMN wasteCollectionTax DECIMAL(12,2) DEFAULT 0').catch(() => {});
+        await connection.query('ALTER TABLE property_sections MODIFY COLUMN depreciationRate DECIMAL(12,2) DEFAULT 1.0').catch(() => { });
+        await connection.query('ALTER TABLE property_sections MODIFY COLUMN weightage DECIMAL(12,2) DEFAULT 1.0').catch(() => { });
+        await connection.query('ALTER TABLE properties MODIFY COLUMN wasteCollectionTax DECIMAL(12,2) DEFAULT 0').catch(() => { });
 
         // 4. PAYMENTS TABLE - कर भरणा नोंदी
         await connection.query(`CREATE TABLE IF NOT EXISTS payments (
@@ -256,15 +256,15 @@ const initializeDatabase = async () => {
         ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
 
         // Migration: add missing columns to existing payments table
-        await addColumnIfNotExists(connection, 'payments', 'receipt_book',   'VARCHAR(100) DEFAULT NULL');
-        await addColumnIfNotExists(connection, 'payments', 'cheque_no',      'VARCHAR(100) DEFAULT NULL');
-        await addColumnIfNotExists(connection, 'payments', 'cheque_bank',    'VARCHAR(255) DEFAULT NULL');
-        await addColumnIfNotExists(connection, 'payments', 'cheque_status',  "ENUM('Pending','Cleared','Bounced') DEFAULT NULL");
-        await addColumnIfNotExists(connection, 'payments', 'upi_ref',        'VARCHAR(255) DEFAULT NULL');
-        await addColumnIfNotExists(connection, 'payments', 'remarks',        'TEXT DEFAULT NULL');
+        await addColumnIfNotExists(connection, 'payments', 'receipt_book', 'VARCHAR(100) DEFAULT NULL');
+        await addColumnIfNotExists(connection, 'payments', 'cheque_no', 'VARCHAR(100) DEFAULT NULL');
+        await addColumnIfNotExists(connection, 'payments', 'cheque_bank', 'VARCHAR(255) DEFAULT NULL');
+        await addColumnIfNotExists(connection, 'payments', 'cheque_status', "ENUM('Pending','Cleared','Bounced') DEFAULT NULL");
+        await addColumnIfNotExists(connection, 'payments', 'upi_ref', 'VARCHAR(255) DEFAULT NULL');
+        await addColumnIfNotExists(connection, 'payments', 'remarks', 'TEXT DEFAULT NULL');
         await addColumnIfNotExists(connection, 'payments', 'financial_year', 'VARCHAR(10) DEFAULT NULL');
         await addColumnIfNotExists(connection, 'payments', 'created_by', 'INT DEFAULT NULL');
-        await connection.query('ALTER TABLE payments ADD CONSTRAINT fk_payments_created_by FOREIGN KEY IF NOT EXISTS (created_by) REFERENCES users(id) ON DELETE SET NULL').catch(() => {});
+        await connection.query('ALTER TABLE payments ADD CONSTRAINT fk_payments_created_by FOREIGN KEY IF NOT EXISTS (created_by) REFERENCES users(id) ON DELETE SET NULL').catch(() => { });
 
         // 5. TAX RATES - कर दर संरचना
         await connection.query(`CREATE TABLE IF NOT EXISTS tax_rates (
@@ -377,15 +377,15 @@ const initializeDatabase = async () => {
         ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
 
         // Migration: Add breakdown columns to property_fy_records
-        await addColumnIfNotExists(connection, 'property_fy_records', 'property_tax',          'DECIMAL(10,2) DEFAULT 0');
-        await addColumnIfNotExists(connection, 'property_fy_records', 'open_space_tax',       'DECIMAL(10,2) DEFAULT 0');
-        await addColumnIfNotExists(connection, 'property_fy_records', 'street_light_tax',     'DECIMAL(10,2) DEFAULT 0');
-        await addColumnIfNotExists(connection, 'property_fy_records', 'health_tax',           'DECIMAL(10,2) DEFAULT 0');
-        await addColumnIfNotExists(connection, 'property_fy_records', 'general_water_tax',    'DECIMAL(10,2) DEFAULT 0');
-        await addColumnIfNotExists(connection, 'property_fy_records', 'special_water_tax',    'DECIMAL(10,2) DEFAULT 0');
+        await addColumnIfNotExists(connection, 'property_fy_records', 'property_tax', 'DECIMAL(10,2) DEFAULT 0');
+        await addColumnIfNotExists(connection, 'property_fy_records', 'open_space_tax', 'DECIMAL(10,2) DEFAULT 0');
+        await addColumnIfNotExists(connection, 'property_fy_records', 'street_light_tax', 'DECIMAL(10,2) DEFAULT 0');
+        await addColumnIfNotExists(connection, 'property_fy_records', 'health_tax', 'DECIMAL(10,2) DEFAULT 0');
+        await addColumnIfNotExists(connection, 'property_fy_records', 'general_water_tax', 'DECIMAL(10,2) DEFAULT 0');
+        await addColumnIfNotExists(connection, 'property_fy_records', 'special_water_tax', 'DECIMAL(10,2) DEFAULT 0');
         await addColumnIfNotExists(connection, 'property_fy_records', 'waste_collection_tax', 'DECIMAL(10,2) DEFAULT 0');
-        await addColumnIfNotExists(connection, 'property_fy_records', 'penalty_amount',       'DECIMAL(10,2) DEFAULT 0');
-        await addColumnIfNotExists(connection, 'property_fy_records', 'arrears_amount',       'DECIMAL(12,2) DEFAULT 0');
+        await addColumnIfNotExists(connection, 'property_fy_records', 'penalty_amount', 'DECIMAL(10,2) DEFAULT 0');
+        await addColumnIfNotExists(connection, 'property_fy_records', 'arrears_amount', 'DECIMAL(12,2) DEFAULT 0');
 
         // Seed current financial year in system_config if not present
         const [fyConfig] = await connection.query(
@@ -455,7 +455,7 @@ const initializeDatabase = async () => {
         // Migration for ferfar_requests
         await addColumnIfNotExists(connection, 'ferfar_requests', 'village_id', 'INT DEFAULT NULL');
         await addColumnIfNotExists(connection, 'ferfar_requests', 'requested_by', 'INT DEFAULT NULL');
-        await connection.query('ALTER TABLE ferfar_requests ADD CONSTRAINT fk_ferfar_requested_by FOREIGN KEY IF NOT EXISTS (requested_by) REFERENCES users(id) ON DELETE SET NULL').catch(() => {});
+        await connection.query('ALTER TABLE ferfar_requests ADD CONSTRAINT fk_ferfar_requested_by FOREIGN KEY IF NOT EXISTS (requested_by) REFERENCES users(id) ON DELETE SET NULL').catch(() => { });
         await addIndexIfNotExists(connection, 'ferfar_requests', 'idx_ferfar_village', 'village_id');
         await addIndexIfNotExists(connection, 'ferfar_requests', 'idx_ferfar_status', 'status');
         await addIndexIfNotExists(connection, 'ferfar_requests', 'idx_ferfar_created', 'created_at');

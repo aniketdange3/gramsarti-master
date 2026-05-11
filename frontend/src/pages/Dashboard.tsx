@@ -565,9 +565,9 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                 ) : (
                     <>
                         {/* Search & Filter Bar — Namuna 8 Style */}
-                        <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-xl no-print flex-wrap lg:flex-nowrap shrink-0 shadow-sm text-Marathi">
+                        <div className="flex items-center gap-2  no-print flex-wrap lg:flex-nowrap shrink-0  text-Marathi">
                             {/* Search */}
-                            <div className="relative w-[300px] shrink-0">
+                            <div className="relative w-[500px] shrink-0">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10" />
                                 <TransliterationInput
                                     placeholder="शोधा..."
@@ -668,6 +668,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                             <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[100px] text-right">थकबाकी</th>
                                             <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[100px] text-right">मागणी</th>
                                             <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[100px] text-right">वसूल</th>
+                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[80px] text-right">सूट</th>
                                             <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[100px] text-right">बाकी</th>
                                             <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[120px] text-center">कृती</th>
                                         </tr>
@@ -719,8 +720,28 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                                         <span className="text-xs font-bold text-emerald-600">{MN(Number(record.paidAmount || 0))}</span>
                                                     </td>
                                                     <td className="px-4 py-3 text-right">
+                                                        <span className="text-xs font-bold text-amber-600">
+                                                            {(() => {
+                                                                const base = (Number(record.propertyTax) || 0) + (Number(record.openSpaceTax) || 0);
+                                                                return MN(Number(record.discountAmount || (base * 0.05)));
+                                                            })()}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right">
                                                         <span className="text-xs font-bold text-slate-900">
-                                                            {MN(Number(record.totalTaxAmount || 0) + Number(record.arrearsAmount || 0) + (Number(record.penaltyAmount) || 0) - Number(record.paidAmount || 0) - (Number(record.discountAmount) || 0))}
+                                                            {(() => {
+                                                                const curr = Number(record.totalTaxAmount || 0);
+                                                                const arr = Number(record.arrearsAmount || 0);
+                                                                const baseCurr = (Number(record.propertyTax) || 0) + (Number(record.openSpaceTax) || 0);
+                                                                const disc = Number(record.discountAmount || (baseCurr * 0.05));
+
+                                                                const prevBase = (Number(record.prev_breakdown?.propertyTax) || 0) + (Number(record.prev_breakdown?.openSpaceTax) || 0);
+                                                                const baseForPenalty = prevBase > 0 ? prevBase : arr;
+                                                                const pen = Number(record.penaltyAmount || (baseForPenalty * 0.05));
+
+                                                                const paid = Number(record.paidAmount || 0);
+                                                                return MN(curr + arr + pen - paid - disc);
+                                                            })()}
                                                         </span>
                                                     </td>
                                                     <td className="px-4 py-3">
@@ -760,7 +781,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                             );
                                         }) : (
                                             <tr>
-                                                <td colSpan={11} className="py-20 text-center text-Marathi">
+                                                <td colSpan={12} className="py-20 text-center text-Marathi">
                                                     <div className="flex flex-col items-center gap-4">
                                                         <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100">
                                                             <Search className="w-6 h-6 text-slate-200" />

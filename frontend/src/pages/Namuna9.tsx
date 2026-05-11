@@ -422,9 +422,9 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
             {/* Main Content Area */}
             <div className="flex-1 overflow-hidden flex flex-col px-2 py-2 gap-2">
                 {/* Unified Search & Filter Bar */}
-                <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-xl no-print flex-wrap lg:flex-nowrap shrink-0 shadow-sm">
+                <div className="flex items-center gap-2 no-print flex-wrap lg:flex-nowrap shrink-0 ">
                     {/* Search Component */}
-                    <div className="relative flex-1 min-w-[200px]">
+                    <div className="relative w-[550px]">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10" />
                         <TransliterationInput
                             placeholder="शोधा..."
@@ -459,12 +459,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                             placeholder="खसरा निवडा"
                             options={uniqueKhasras.map(k => ({ value: k, label: k }))}
                         />
-                        <CustomDropdown
-                            value={filterPropertyId}
-                            onChange={setFilterPropertyId}
-                            placeholder="आयडी निवडा"
-                            options={records.map(r => ({ value: r.propertyId || '', label: r.propertyId || '' })).filter(o => o.value).sort((a, b) => a.value.localeCompare(b.value, undefined, { numeric: true }))}
-                        />
+
                         <CustomDropdown
                             value={filterPlotNo}
                             onChange={setFilterPlotNo}

@@ -100,17 +100,19 @@ export default function NamunaTable9({
         return pageRecords.reduce((acc, r) => {
             const arrears = Number(r.arrearsAmount) || 0;
             const current = Number(r.totalTaxAmount) || 0;
-            const demand = current + arrears;
+            const discount = Number(r.discountAmount || (current * 0.05));
+            const penalty = Number(r.penaltyAmount || (arrears * 0.05));
+            const demand = current + arrears + penalty - discount;
             const paid = Number(r.paidAmount) || 0;
-            const discount = Number(r.discountAmount) || 0;
             return {
                 prev: acc.prev + arrears,
                 curr: acc.curr + current,
+                penalty: acc.penalty + penalty,
+                discount: acc.discount + discount,
                 demand: acc.demand + demand,
-                paid: acc.paid + paid,
-                discount: acc.discount + discount
+                paid: acc.paid + paid
             };
-        }, { prev: 0, curr: 0, demand: 0, paid: 0, discount: 0 });
+        }, { prev: 0, curr: 0, penalty: 0, discount: 0, demand: 0, paid: 0 });
     }, [pageRecords]);
 
     const { prev: gPrev, curr: gCurr, demand: gDemand, paid: gPaid, discount: gDiscount } = totals;
@@ -204,10 +206,11 @@ export default function NamunaTable9({
                         {pageRecords.map((r, rIdx) => {
                             const arrears = Number(r.arrearsAmount) || 0;
                             const current = Number(r.totalTaxAmount) || 0;
-                            const demand = current + arrears;
+                            const discount = Number(r.discountAmount || (current * 0.05));
+                            const penalty = Number(r.penaltyAmount || (arrears * 0.05));
+                            const demand = current + arrears + penalty - discount;
                             const paid = Number(r.paidAmount) || 0;
-                            const discount = Number(r.discountAmount) || 0;
-                            const balance = demand - paid - discount;
+                            const balance = demand - paid;
 
                             let remPScr = paid;
                             const mWScreen = Math.min(remPScr, arrears); remPScr -= mWScreen;

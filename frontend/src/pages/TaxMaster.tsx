@@ -79,22 +79,22 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
 
     // --- Bulk Update State ---
     const [bulkForm, setBulkForm] = useState({
-        propertyType: '',
+        propertyType: 'सर्व',
         layoutName: 'सर्व',
+        selectedKhasras: [] as string[],
         enabledFields: [] as string[],
         taxes: {
-            streetLightTax: 0,
-            healthTax: 0,
-            wasteCollectionTax: 0,
-            generalWaterTax: 0,
-            specialWaterTax: 0,
-            buildingRate: 0,
-            landRate: 0
+            streetLightTax: '' as any,
+            healthTax: '' as any,
+            wasteCollectionTax: '' as any,
+            generalWaterTax: '' as any,
+            specialWaterTax: '' as any
         }
     });
 
     const [layouts, setLayouts] = useState<MasterItem[]>([]);
     const [propertyTypes, setPropertyTypes] = useState<MasterItem[]>([]);
+    const [allKhasras, setAllKhasras] = useState<string[]>([]);
 
     const authHeaders = () => ({
         'Content-Type': 'application/json',
@@ -113,7 +113,8 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
                 fetch(`${API_BASE_URL}/api/auth/users`, { headers: authHeaders() }),
                 fetch(`${API_BASE_URL}/api/master/config`, { headers: authHeaders() }),
                 fetch(`${API_BASE_URL}/api/properties/unique-layouts`, { headers: authHeaders() }),
-                fetch(`${API_BASE_URL}/api/master/items/PROPERTY_TYPE`, { headers: authHeaders() })
+                fetch(`${API_BASE_URL}/api/master/items/PROPERTY_TYPE`, { headers: authHeaders() }),
+                fetch(`${API_BASE_URL}/api/properties/khasras`, { headers: authHeaders() })
             ]);
 
             if (taxRes.status === 401 || catRes.status === 401 || depRes.status === 401 || buRes.status === 401 || rrRes.status === 401 || userRes.status === 401 || configRes.status === 401) {
@@ -128,13 +129,10 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
             if (userRes.ok) setUsers(await userRes.json());
             if (configRes.ok) setConfig(await configRes.json());
             if (layRes.ok) setLayouts(await layRes.json());
-            if (typeRes.ok) {
-                const types = await typeRes.json();
-                setPropertyTypes(types);
-                // Set default type if not already set or still at initial
-                if (types.length > 0 && !bulkForm.propertyType) {
-                    setBulkForm(prev => ({ ...prev, propertyType: types[0].item_value_mr }));
-                }
+            if (typeRes.ok) setPropertyTypes(await typeRes.json());
+            if (typeRes.status === 200) {
+                const khasras = await (await fetch(`${API_BASE_URL}/api/properties/khasras`, { headers: authHeaders() })).json();
+                setAllKhasras(khasras);
             }
 
         } catch (err) {
@@ -225,22 +223,24 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
     };
 
     const handleBulkUpdate = async () => {
-        if (!window.confirm(`${bulkForm.propertyType} प्रकारच्या मालमत्तांचे कर अपडेट करायचे आहेत का? ही क्रिया बदलता येणार नाही.`)) return;
+        const filteredTaxes: any = {};
+        bulkUpdateFields.forEach(field => {
+            const val = (bulkForm.taxes as any)[field.key];
+            // Only include if user has entered a value (not empty string)
+            if (val !== undefined && val !== null && val !== '') {
+                filteredTaxes[field.key] = Number(val);
+            }
+        });
+
+        if (Object.keys(filteredTaxes).length === 0) {
+            addToast('कृपया किमान एका कराची रक्कम प्रविष्ट करा.', 'warning');
+            return;
+        }
+
+        if (!window.confirm(`${bulkForm.layoutName} मधील मालमत्तांचे कर अपडेट करायचे आहेत का?`)) return;
 
         setLoading(true);
         try {
-            // Filter only enabled fields
-            const filteredTaxes: any = {};
-            bulkForm.enabledFields.forEach(f => {
-                filteredTaxes[f] = (bulkForm.taxes as any)[f];
-            });
-
-            if (Object.keys(filteredTaxes).length === 0) {
-                addToast('कृपया कमीत कमी एक कर निवडा.', 'warning');
-                setLoading(false);
-                return;
-            }
-
             const res = await fetch(`${API_BASE_URL}/api/properties/bulk-tax-update`, {
                 method: 'PUT',
                 headers: authHeaders(),
@@ -305,8 +305,7 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
         { key: 'wasteCollectionTax', label: 'कचरा गाडी कर (Waste Collection Tax)' },
         { key: 'generalWaterTax', label: 'सामान्य पाणी कर (General Water Tax)' },
         { key: 'specialWaterTax', label: 'विशेष पाणी कर (Special Water Tax)' },
-        { key: 'buildingRate', label: 'इमारत दर (Building Rate)' },
-        { key: 'landRate', label: 'जमीन दर (Land Rate)' }
+
     ];
 
     return (
@@ -760,49 +759,45 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
                                 )}
 
                                 {activeTab === 'bulk-tax' && (
-                                    <div className="space-y-8 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
-                                        <div className="bg-indigo-50/50 border border-indigo-100 rounded-[2.5rem] p-8">
-                                            <div className="flex items-center gap-4 mb-8">
-                                                <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-                                                    <IndianRupee className="w-6 h-6" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">एकत्रित कर बदल (Bulk Tax Update)</h3>
-                                                    <p className="text-xs text-indigo-500 font-bold uppercase mt-1 tracking-wider">Apply taxes to specific layouts</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-6 mb-8">
-                                                <div className="space-y-4">
-                                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block ml-1">१. लेआउट निवडा (Select Layout)</label>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        <button
-                                                            onClick={() => setBulkForm({ ...bulkForm, layoutName: 'सर्व' })}
-                                                            className={`px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border-2 ${bulkForm.layoutName === 'सर्व' ? 'bg-slate-900 border-slate-900 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}`}
-                                                        >
-                                                            सर्व लेआउट (ALL)
-                                                        </button>
-                                                        {layouts.map(l => (
-                                                            <button
-                                                                key={l.id}
-                                                                onClick={() => setBulkForm({ ...bulkForm, layoutName: l.item_value_mr })}
-                                                                className={`px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border-2 ${bulkForm.layoutName === l.item_value_mr ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-400 hover:border-indigo-600 hover:text-indigo-600'}`}
-                                                            >
-                                                                {l.item_value_mr} ({(l as any).propertyCount || 0})
-                                                            </button>
-                                                        ))}
+                                    <div className="space-y-6 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+                                        <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-xl overflow-hidden">
+                                            {/* Selection Section */}
+                                            <div className="bg-slate-50/50 border-b border-slate-100 p-8">
+                                                <div className="flex items-center gap-4 mb-8">
+                                                    <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                                                        <IndianRupee className="w-6 h-6" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">एकत्रित कर बदल (Bulk Tax Update)</h3>
+                                                        <p className="text-[10px] text-indigo-500 font-bold uppercase mt-1 tracking-[0.2em]">Select Layout, Type, or Khasra for update</p>
                                                     </div>
                                                 </div>
 
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                    <div className="space-y-4">
-                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block ml-1">२. मालमत्ता प्रकार निवडा (Select Property Type)</label>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:w-1/2">
+                                                    {/* Layout Selection */}
+                                                    <div className="space-y-2">
+                                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">१. लेआउट (Layout)</label>
+                                                        <select
+                                                            value={bulkForm.layoutName}
+                                                            onChange={e => setBulkForm({ ...bulkForm, layoutName: e.target.value })}
+                                                            className="w-full bg-white border border-slate-200 rounded-xl px-4 h-12 text-xs font-bold text-slate-700 shadow-sm focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                                                        >
+                                                            <option value="सर्व">सर्व लेआउट (ALL)</option>
+                                                            {layouts.map(l => (
+                                                                <option key={l.id} value={l.item_value_mr} className="w-1/2">{l.item_value_mr} ({(l as any).propertyCount || 0})</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+
+                                                    {/* Property Type Selection */}
+                                                    <div className="space-y-2">
+                                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">२. मालमत्ता प्रकार (Property Type)</label>
                                                         <select
                                                             value={bulkForm.propertyType}
                                                             onChange={e => setBulkForm({ ...bulkForm, propertyType: e.target.value })}
-                                                            className="w-full bg-white border border-slate-200 rounded-2xl p-4 font-bold text-slate-700 shadow-sm focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                                                            className="w-full bg-white border border-slate-200 rounded-xl px-4 h-12 text-xs font-bold text-slate-700 shadow-sm focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
                                                         >
-                                                            <option value="सर्व">सर्व मालमत्ता प्रकार (All Types)</option>
+                                                            <option value="सर्व">सर्व मालमत्ता प्रकार (All)</option>
                                                             {propertyTypes.map(t => (
                                                                 <option key={t.id} value={t.item_value_mr}>{t.item_value_mr}</option>
                                                             ))}
@@ -811,56 +806,55 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
                                                 </div>
                                             </div>
 
-                                            <div className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm space-y-6">
-                                                <div className="flex items-center justify-between border-b border-slate-50 pb-4">
-                                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">३. कर आणि दर निश्चित करा (Tax Values)</h4>
+                                            {/* Tight Tax Grid */}
+                                            <div className="p-8 space-y-6">
+                                                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                                                    <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">३. कर आणि दर प्रविष्ट करा (Insert Tax Values)</h4>
                                                     <button
                                                         onClick={() => {
-                                                            const allKeys = bulkUpdateFields.map(f => f.key);
                                                             setBulkForm(prev => ({
                                                                 ...prev,
-                                                                enabledFields: prev.enabledFields.length === allKeys.length ? [] : allKeys
+                                                                taxes: {
+                                                                    streetLightTax: '' as any,
+                                                                    healthTax: '' as any,
+                                                                    wasteCollectionTax: '' as any,
+                                                                    generalWaterTax: '' as any,
+                                                                    specialWaterTax: '' as any
+                                                                }
                                                             }));
                                                         }}
-                                                        className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline"
+                                                        className="text-[9px] font-black text-rose-500 uppercase tracking-widest hover:underline"
                                                     >
-                                                        {bulkForm.enabledFields.length === bulkUpdateFields.length ? 'सर्व काढा' : 'सर्व निवडा'}
+                                                        सर्व साफ करा
                                                     </button>
                                                 </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                                     {bulkUpdateFields.map(field => {
-                                                        const isEnabled = bulkForm.enabledFields.includes(field.key);
+                                                        const val = (bulkForm.taxes as any)[field.key];
+                                                        const isFilled = val !== undefined && val !== null && val !== '';
                                                         return (
-                                                            <div key={field.key} className={`p-4 rounded-2xl border-2 transition-all ${isEnabled ? 'border-indigo-100 bg-indigo-50/20' : 'border-slate-50 bg-white opacity-60'}`}>
-                                                                <div className="flex items-center gap-3 mb-3">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={isEnabled}
-                                                                        onChange={() => {
-                                                                            setBulkForm(prev => ({
-                                                                                ...prev,
-                                                                                enabledFields: isEnabled
-                                                                                    ? prev.enabledFields.filter(f => f !== field.key)
-                                                                                    : [...prev.enabledFields, field.key]
-                                                                            }));
-                                                                        }}
-                                                                        className="w-4 h-4 rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                                                    />
-                                                                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-tight">{field.label}</label>
+                                                            <div
+                                                                key={field.key}
+                                                                className={`group relative flex flex-col p-3 rounded-2xl border-2 transition-all ${isFilled ? 'border-indigo-600 bg-indigo-50/20 shadow-md' : 'border-slate-100 bg-white'}`}
+                                                            >
+                                                                <div className="flex items-center justify-between mb-1.5">
+                                                                    <span className={`text-[9px] font-black uppercase tracking-tight ${isFilled ? 'text-indigo-600' : 'text-slate-400'}`}>
+                                                                        {field.label.split('(')[0]}
+                                                                    </span>
                                                                 </div>
                                                                 <div className="relative">
-                                                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₹</div>
+                                                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 font-black text-xs">₹</span>
                                                                     <input
                                                                         type="number"
-                                                                        disabled={!isEnabled}
-                                                                        value={(bulkForm.taxes as any)[field.key] || ''}
+                                                                        value={val === 0 ? '0' : (val || '')}
                                                                         onChange={e => {
                                                                             setBulkForm({
                                                                                 ...bulkForm,
-                                                                                taxes: { ...bulkForm.taxes, [field.key]: Number(e.target.value) }
+                                                                                taxes: { ...bulkForm.taxes, [field.key]: e.target.value }
                                                                             });
                                                                         }}
-                                                                        className={`w-full bg-white border rounded-xl py-3 pl-10 pr-4 font-black text-slate-700 outline-none transition-all ${isEnabled ? 'border-indigo-200 shadow-sm focus:border-indigo-500' : 'border-slate-100 cursor-not-allowed opacity-50'}`}
+                                                                        className={`w-full bg-white border-b-2 rounded-lg py-1.5 pl-6 pr-2 font-black text-xs text-slate-700 outline-none transition-all ${isFilled ? 'border-indigo-600' : 'border-slate-100 focus:border-indigo-300'}`}
                                                                         placeholder="0"
                                                                     />
                                                                 </div>
@@ -868,22 +862,21 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
                                                         );
                                                     })}
                                                 </div>
-                                            </div>
 
-                                            <div className="mt-10 flex flex-col items-center gap-6">
-                                                <button
-                                                    onClick={handleBulkUpdate}
-                                                    disabled={bulkForm.enabledFields.length === 0}
-                                                    className={`w-full md:w-auto px-12 py-4 rounded-2xl font-black uppercase tracking-[0.2em] transition-all text-xs shadow-xl ${bulkForm.enabledFields.length > 0 ? 'bg-indigo-600 text-white shadow-indigo-600/20 hover:bg-indigo-700 hover:-translate-y-1 active:scale-95' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
-                                                >
-                                                    {bulkForm.layoutName} साठी लागू करा (Apply to {bulkForm.layoutName})
-                                                </button>
+                                                <div className="pt-6 border-t border-slate-50 flex flex-col items-center gap-6">
+                                                    <button
+                                                        onClick={handleBulkUpdate}
+                                                        className="w-full md:w-auto px-16 py-4 rounded-2xl font-black uppercase tracking-[0.2em] transition-all text-xs shadow-xl bg-indigo-600 text-white shadow-indigo-600/30 hover:bg-indigo-700 hover:-translate-y-1 active:scale-95"
+                                                    >
+                                                        {bulkForm.layoutName === 'सर्व' ? 'सर्व मालमत्तांवर लागू करा' : 'निवडलेल्या लेआउटवर लागू करा'} (Apply Now)
+                                                    </button>
 
-                                                <div className="flex items-start gap-3 bg-amber-50/50 border border-amber-100 rounded-2xl p-4 max-w-xl">
-                                                    <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                                                    <p className="text-[10px] font-bold text-amber-700 leading-relaxed uppercase tracking-wide">
-                                                        टीप: वरील बदल केल्यावर निवडलेल्या लेआउटमधील ({bulkForm.layoutName}) सर्व मालमत्तांचे कर अपडेट होतील.
-                                                    </p>
+                                                    <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 flex gap-3 max-w-2xl">
+                                                        <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                                                        <p className="text-[10px] font-bold text-amber-800 leading-tight uppercase">
+                                                            टीप: वरील बदल केल्यावर निवडलेल्या {bulkForm.layoutName} मधील {bulkForm.propertyType === 'सर्व' ? 'सर्व' : bulkForm.propertyType} मालमत्तांचे कर अपडेट होतील.
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

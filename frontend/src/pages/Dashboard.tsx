@@ -21,7 +21,7 @@ import { ROLES } from './Login';
 import { EXCEL_HEADERS, PLACEHOLDERS } from '../utils/constants';
 import { LABELS } from "../types";
 import * as XLSX from 'xlsx';
-import { matchesSearch } from '../utils/transliterate';
+import { matchesSearch, normalizeForSearch } from '../utils/transliterate';
 import { TransliterationInput } from '../components/TransliterationInput';
 import PropertyForm from '../components/PropertyForm';
 import { generateMaganiBillPDF } from '../utils/pdfGenerator';
@@ -165,6 +165,29 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
         loadMasters();
     }, [onAuthError]);
 
+    // --- Statistics Console Log ---
+    useEffect(() => {
+        if (records.length > 0) {
+            const wastiStats = Array.from(new Set(records.map(r => r.wastiName).filter(Boolean))).map(wasti => {
+                const wr = records.filter(r => r.wastiName === wasti);
+                const uniqueKhasras = Array.from(new Set(wr.map(r => r.khasraNo).filter(Boolean)));
+                const uniquePlots = Array.from(new Set(wr.map(r => r.plotNo).filter(Boolean)));
+                return {
+                    'Wasti Name': wasti,
+                    'Total Properties': wr.length,
+                    'Unique Khasras': uniqueKhasras.length,
+                    'Unique Plots': uniquePlots.length
+                };
+            }).sort((a, b) => b['Total Properties'] - a['Total Properties']);
+
+            console.group("📊 GramSarthi - Property Data Insights");
+            console.log("Total Records:", records.length);
+            console.table(wastiStats);
+            console.groupEnd();
+        }
+    }, [records]);
+
+
     const API_URL = `${API_BASE_URL}/api/properties`;
 
     // Cascading filter: each dropdown only shows values from records matching parent filters
@@ -187,8 +210,14 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
         let res = records;
         if (filterWasti) res = res.filter(r => r.wastiName === filterWasti);
         if (filterLayout) res = res.filter(r => r.layoutName === filterLayout);
-        if (filterKhasra) res = res.filter(r => r.khasraNo === filterKhasra);
-        if (filterPlotNo) res = res.filter(r => r.plotNo === filterPlotNo);
+        if (filterKhasra) {
+            const normalizedKhasra = normalizeForSearch(filterKhasra);
+            res = res.filter(r => normalizeForSearch(r.khasraNo) === normalizedKhasra);
+        }
+        if (filterPlotNo) {
+            const normalizedPlot = normalizeForSearch(filterPlotNo);
+            res = res.filter(r => normalizeForSearch(r.plotNo) === normalizedPlot);
+        }
         if (filterPropertyType) {
             res = res.filter(r => r.sections.some(s => s.propertyType === filterPropertyType));
         }
@@ -213,8 +242,9 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
     // Highlight duplicate records (same Khasra, Wasti, and Owner Name)
     const duplicateMap = useMemo(() => {
         const counts = new Map<string, number>();
+
         records.forEach(r => {
-            const key = `${String(r.khasraNo || '').trim()}|${String(r.wastiName || '').trim()}|${String(r.ownerName || '').trim()}`.toLowerCase();
+            const key = `${normalizeForSearch(r.khasraNo)}|${normalizeForSearch(r.wastiName)}|${normalizeForSearch(r.ownerName)}`;
             counts.set(key, (counts.get(key) || 0) + 1);
         });
         return counts;
@@ -675,7 +705,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
                                         {paginatedRecords.length > 0 ? paginatedRecords.map((record, idx) => {
-                                            const dKey = `${String(record.khasraNo || '').trim()}|${String(record.wastiName || '').trim()}|${String(record.ownerName || '').trim()}`.toLowerCase();
+                                            const dKey = `${normalizeForSearch(record.khasraNo)}|${normalizeForSearch(record.wastiName)}|${normalizeForSearch(record.ownerName)}`;
                                             const isDuplicate = (duplicateMap.get(dKey) || 0) > 1;
 
                                             return (

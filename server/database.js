@@ -392,18 +392,18 @@ const initializeDatabase = async () => {
             "SELECT config_key FROM system_config WHERE config_key = 'current_fy'"
         );
         if (fyConfig.length === 0) {
-            const currentFY = '2025-26';
+            const currentFY = '2026-27';
             await connection.query(
                 "INSERT INTO system_config (config_key, config_value) VALUES ('current_fy', ?)",
                 [currentFY]
             );
             console.log(`  [SEED] Default current_fy set to ${currentFY}`);
         } else {
-            // Update to 2025-26 if not already
+            // Update to 2026-27 if not already
             await connection.query(
-                "UPDATE system_config SET config_value = '2025-26' WHERE config_key = 'current_fy'"
+                "UPDATE system_config SET config_value = '2026-27' WHERE config_key = 'current_fy'"
             );
-            console.log('  [MIGRATION] current_fy updated to 2025-26');
+            console.log('  [MIGRATION] current_fy updated to 2026-27');
         }
 
         await connection.query(`CREATE TABLE IF NOT EXISTS attendance (
@@ -548,11 +548,11 @@ const initializeDatabase = async () => {
         const [rrCount] = await connection.query('SELECT COUNT(*) as count FROM ready_reckoner_rates');
         if (rrCount[0].count === 0) {
             await connection.query(`INSERT INTO ready_reckoner_rates (year_range, item_name_mr, valuation_rate, tax_rate, unit_mr) VALUES 
+                ('२०२६-२७', 'निवासी (Residential)', 12500.00, 1.20, 'चौ. मी.'),
+                ('२०२६-२७', 'वाणिज्य (Commercial)', 18500.00, 1.50, 'चौ. मी.'),
+                ('२०२६-२७', 'औद्योगिक (Industrial)', 15000.00, 1.25, 'चौ. मी.'),
                 ('२०२५-२६', 'निवासी (Residential)', 12500.00, 1.20, 'चौ. मी.'),
-                ('२०२५-२६', 'वाणिज्य (Commercial)', 18500.00, 1.50, 'चौ. मी.'),
-                ('२०२५-२६', 'औद्योगिक (Industrial)', 15000.00, 1.25, 'चौ. मी.'),
-                ('२०२४-२५', 'निवासी (Residential)', 11800.00, 1.20, 'चौ. मी.'),
-                ('२०२४-२५', 'वाणिज्य (Commercial)', 17000.00, 1.50, 'चौ. मी.')`);
+                ('२०२५-२६', 'वाणिज्य (Commercial)', 18500.00, 1.50, 'चौ. मी.')`);
         }
 
         await connection.query('SET FOREIGN_KEY_CHECKS = 1');

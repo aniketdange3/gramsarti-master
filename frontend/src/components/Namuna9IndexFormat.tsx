@@ -132,7 +132,7 @@ export default function Namuna9IndexFormat({
                 }
                 .col-sr { width: 35px; }
                 .col-plot { width: 85px; }
-                .col-khasra { width: 100px; }
+                .col-khasra { width: 85px; }
                 .col-page { width: 50px; }
             `}} />
 

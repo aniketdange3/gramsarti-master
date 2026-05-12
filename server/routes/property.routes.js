@@ -25,6 +25,10 @@ router.post('/import', authenticate, authorize('super_admin', 'gram_sevak'), pro
 // युनिक लेआउट्स मिळवणे
 router.get('/unique-layouts', authenticate, propertyController.getUniqueLayouts);
 
+// युनिक प्लॉट्स मिळवणे
+router.get('/plots', authenticate, propertyController.getUniquePlots);
+
+
 // विशिष्ट मालमत्ता आयडीने मिळवणे
 router.get('/:id', authenticate, propertyController.getPropertyById);
 

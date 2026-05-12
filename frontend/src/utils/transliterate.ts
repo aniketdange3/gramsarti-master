@@ -105,6 +105,18 @@ export function normalizeDigits(input: string, toMarathi: boolean = false): stri
 }
 
 /**
+ * Robust normalization for comparison:
+ * 1. Convert to English digits
+ * 2. Lowercase
+ * 3. Remove spaces, dots, commas, and dashes
+ */
+export function normalizeForSearch(s: any): string {
+    const str = String(s || '').toLowerCase();
+    const enDigits = normalizeDigits(str, false);
+    return enDigits.replace(/[\s\.,\-]/g, '');
+}
+
+/**
  * Transliterate English text to Devanagari (Marathi)
  */
 export function transliterate(input: string): string {
@@ -257,25 +269,34 @@ export function matchesSearch(record: any, searchTerm: string): boolean {
 
     const variations = getSearchVariations(searchTerm);
 
-    const propertyTypesArr: string[] = [];
-    if (record.sections && Array.isArray(record.sections)) {
-        for (const s of record.sections) {
-            if (s.propertyType && s.propertyType !== 'निवडा') {
-                propertyTypesArr.push(s.propertyType);
-            }
-        }
-    }
-    const propertyTypesStr = propertyTypesArr.join(' ');
-
+    // Collect all relevant fields for searching
     const fieldsToSearch = [
         record.ownerName || '',
+        record.occupantName || '',
+        record.propertyId || '',
+        record.khasraNo || '',
+        record.plotNo || '',
+        record.srNo ? String(record.srNo) : '',
+        record.wardNo || '',
+        record.wastiName || '',
+        record.layoutName || '',
+        record.receiptNo || '',
     ];
 
+    // Optional: Include property types from sections
+    if (record.sections && Array.isArray(record.sections)) {
+        record.sections.forEach((s: any) => {
+            if (s.propertyType && s.propertyType !== 'निवडा') {
+                fieldsToSearch.push(s.propertyType);
+            }
+        });
+    }
+
     for (const field of fieldsToSearch) {
-        const fieldLower = field.toLowerCase().replace(/[\s\.]/g, '');
+        const fieldNormalized = normalizeForSearch(field);
         for (const variation of variations) {
-            const varLower = variation.toLowerCase().replace(/[\s\.]/g, '');
-            if (varLower && fieldLower.includes(varLower)) {
+            const varNormalized = normalizeForSearch(variation);
+            if (varNormalized && fieldNormalized.includes(varNormalized)) {
                 return true;
             }
         }

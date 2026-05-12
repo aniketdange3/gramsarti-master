@@ -107,12 +107,13 @@ exports.getAllProperties = async (req, res) => {
                     SELECT MAX(id) FROM payments GROUP BY property_id
                 )
             ) lat_pay ON lat_pay.property_id = p.id
-            WHERE p.status != 'rejected'
-            AND (p.created_by = ? OR ? IN ('super_admin', 'gram_sevak', 'sarpanch', 'gram_sachiv'))
+            WHERE 1=1
+
             ORDER BY p.srNo ASC
         `;
 
-        const [rows] = await db.query(query, [prevFY, req.user.id, req.user.role]);
+        const [rows] = await db.query(query, [prevFY]);
+
 
         // डेटा प्रोसेसिंग: मालमत्ता आणि मजले एकत्र करणे (Grouping sections)
         const propertiesMap = {};
@@ -610,6 +611,26 @@ exports.getUniqueLayouts = async (req, res) => {
         res.json(layouts);
     } catch (err) {
         console.error('[PROPERTIES] Get Layouts Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+/**
+ * Get unique plot numbers
+ */
+exports.getUniquePlots = async (req, res) => {
+    try {
+        const query = `
+            SELECT DISTINCT plotNo 
+            FROM properties 
+            WHERE plotNo IS NOT NULL AND plotNo != "" 
+            ORDER BY plotNo ASC
+        `;
+        const [rows] = await db.query(query);
+        const plots = rows.map(r => r.plotNo);
+        res.json(plots);
+    } catch (err) {
+        console.error('[PROPERTIES] Get Plots Error:', err);
         res.status(500).json({ error: err.message });
     }
 };

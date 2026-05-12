@@ -82,6 +82,8 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
         propertyType: 'सर्व',
         layoutName: 'सर्व',
         selectedKhasras: [] as string[],
+
+
         enabledFields: [] as string[],
         taxes: {
             streetLightTax: '' as any,
@@ -92,9 +94,12 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
         }
     });
 
+
     const [layouts, setLayouts] = useState<MasterItem[]>([]);
     const [propertyTypes, setPropertyTypes] = useState<MasterItem[]>([]);
     const [allKhasras, setAllKhasras] = useState<string[]>([]);
+
+
 
     const authHeaders = () => ({
         'Content-Type': 'application/json',
@@ -104,7 +109,7 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const [taxRes, catRes, depRes, buRes, rrRes, userRes, configRes, layRes, typeRes] = await Promise.all([
+            const [taxRes, catRes, depRes, buRes, rrRes, userRes, configRes, layRes, typeRes, khasraRes] = await Promise.all([
                 fetch(`${API_BASE_URL}/api/tax-rates`, { headers: authHeaders() }),
                 fetch(`${API_BASE_URL}/api/master/categories`, { headers: authHeaders() }),
                 fetch(`${API_BASE_URL}/api/master/depreciation`, { headers: authHeaders() }),
@@ -116,6 +121,9 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
                 fetch(`${API_BASE_URL}/api/master/items/PROPERTY_TYPE`, { headers: authHeaders() }),
                 fetch(`${API_BASE_URL}/api/properties/khasras`, { headers: authHeaders() })
             ]);
+
+
+
 
             if (taxRes.status === 401 || catRes.status === 401 || depRes.status === 401 || buRes.status === 401 || rrRes.status === 401 || userRes.status === 401 || configRes.status === 401) {
                 onAuthError?.();
@@ -130,10 +138,10 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
             if (configRes.ok) setConfig(await configRes.json());
             if (layRes.ok) setLayouts(await layRes.json());
             if (typeRes.ok) setPropertyTypes(await typeRes.json());
-            if (typeRes.status === 200) {
-                const khasras = await (await fetch(`${API_BASE_URL}/api/properties/khasras`, { headers: authHeaders() })).json();
-                setAllKhasras(khasras);
-            }
+            if (khasraRes.ok) setAllKhasras(await khasraRes.json());
+
+
+
 
         } catch (err) {
             console.error(err);
@@ -249,6 +257,9 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
                     layoutName: bulkForm.layoutName,
                     taxes: filteredTaxes
                 })
+
+
+
             });
 
 
@@ -774,6 +785,9 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
                                                 </div>
 
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:w-1/2">
+
+
+
                                                     {/* Layout Selection */}
                                                     <div className="space-y-2">
                                                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">१. लेआउट (Layout)</label>
@@ -803,7 +817,10 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
                                                             ))}
                                                         </select>
                                                     </div>
+                                                    </div>
                                                 </div>
+
+
                                             </div>
 
                                             {/* Tight Tax Grid */}
@@ -880,7 +897,6 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
                                 )}
 
                                 {activeTab === 'common' && (

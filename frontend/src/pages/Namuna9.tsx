@@ -6,7 +6,7 @@ import { PANCHAYAT_CONFIG } from '../utils/panchayatConfig';
 import NamunaTable9 from '../components/NamunaTable9';
 
 import PropertyForm from '../components/PropertyForm';
-import { matchesSearch } from '../utils/transliterate';
+import { matchesSearch, normalizeForSearch } from '../utils/transliterate';
 import { TransliterationInput } from '../components/TransliterationInput';
 import Namuna9PrintFormat from '../components/Namuna9PrintFormat';
 import Namuna9IndexFormat from '../components/Namuna9IndexFormat';
@@ -155,8 +155,14 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
         let res = records;
         if (filterWasti) res = res.filter(r => r.wastiName === filterWasti);
         if (filterLayout) res = res.filter(r => r.layoutName === filterLayout);
-        if (filterKhasra) res = res.filter(r => r.khasraNo === filterKhasra);
-        if (filterPlotNo) res = res.filter(r => r.plotNo === filterPlotNo);
+        if (filterKhasra) {
+            const normalizedKhasra = normalizeForSearch(filterKhasra);
+            res = res.filter(r => normalizeForSearch(r.khasraNo) === normalizedKhasra);
+        }
+        if (filterPlotNo) {
+            const normalizedPlot = normalizeForSearch(filterPlotNo);
+            res = res.filter(r => normalizeForSearch(r.plotNo) === normalizedPlot);
+        }
         if (filterPropertyId) res = res.filter(r => r.propertyId === filterPropertyId);
         if (filterPropertyType) {
             res = res.filter(r => r.sections.some(s => s.propertyType === filterPropertyType));
@@ -165,7 +171,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
             res = res.filter(r => matchesSearch(r, searchTerm));
         }
         return res;
-    }, [records, viewId, filterWasti, filterLayout, filterKhasra, filterPlotNo, filterPropertyId, filterPropertyType, searchTerm]);
+    }, [records, viewId, filterWasti, filterLayout, filterKhasra, filterPlotNo, filterPropertyId, filterPropertyType, searchTerm, fetchedRecord]);
 
     const selectedRecord = useMemo(() => records.find(r => r.id === viewId), [records, viewId]);
 

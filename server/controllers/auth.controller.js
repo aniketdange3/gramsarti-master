@@ -10,7 +10,7 @@ const db = require('../config/db.config');
 const jwt = require('jsonwebtoken');
 
 // गुपित की (Secret Key for JWT)
-const JWT_SECRET = process.env.JWT_SECRET || 'gramsarthi_secret_key_2025';
+const JWT_SECRET = process.env.JWT_SECRET || 'gramsarthi_secret_key_2024';
 
 /**
  * Helper: Generate Employee ID based on role

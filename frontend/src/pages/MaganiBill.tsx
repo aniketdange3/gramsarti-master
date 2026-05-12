@@ -6,17 +6,15 @@ import { Search, Printer, FileText, X, RotateCcw, LayoutDashboard, IndianRupee, 
 import { PropertyRecord } from '../types';
 import { CustomDropdown } from '../components/CustomDropdown';
 import { TransliterationInput } from '../components/TransliterationInput';
-import { matchesSearch } from '../utils/transliterate';
+import { matchesSearch, normalizeForSearch, normalizeDigits } from '../utils/transliterate';
 import MaganiBillDocument from '../components/MaganiBillDocument';
 
 const MN = (v: number | string | undefined) =>
     String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
 
 const sortKhasra = (a: string, b: string) => {
-    const aStr = String(a || '');
-    const bStr = String(b || '');
-    const aEng = aStr.replace(/[०-९]/g, (d: string) => '0123456789'['०१२३४५६७८९'.indexOf(d)] || d);
-    const bEng = bStr.replace(/[०-९]/g, (d: string) => '0123456789'['०१२३४५६७८९'.indexOf(d)] || d);
+    const aEng = normalizeDigits(String(a || ''), false);
+    const bEng = normalizeDigits(String(b || ''), false);
     return aEng.localeCompare(bEng, undefined, { numeric: true, sensitivity: 'base' });
 };
 
@@ -111,7 +109,10 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
     const filteredRecords = useMemo(() => {
         let res = records;
         if (filterWasti) res = res.filter(r => r.wastiName === filterWasti);
-        if (filterKhasra) res = res.filter(r => r.khasraNo === filterKhasra);
+        if (filterKhasra) {
+            const normalizedKhasra = normalizeForSearch(filterKhasra);
+            res = res.filter(r => normalizeForSearch(r.khasraNo) === normalizedKhasra);
+        }
         if (searchTerm.trim()) res = res.filter(r => matchesSearch(r, searchTerm));
 
         if (showOnlyUnpaid) {
@@ -239,8 +240,8 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
                     onChange={setFilterKhasra}
                     placeholder={filterWasti ? "खसरा निवडा" : "प्रथम वस्ती निवडा"}
                     options={uniqueKhasras.map(k => {
-                        const eng = String(k).replace(/[०-९]/g, (d: string) => '0123456789'['०१२३४५६७८९'.indexOf(d)] || d);
-                        const mar = String(k).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
+                        const eng = normalizeDigits(String(k), false);
+                        const mar = normalizeDigits(String(k), true);
                         return { value: k, label: mar === eng ? mar : `${mar} (${eng})` };
                     })}
                     disabled={!filterWasti}

@@ -5,6 +5,7 @@ import { Plus, X, Building2, Info, Save, ChevronDown, ChevronUp, Calculator, Che
 import { PropertyRecord, PropertySection, DEFAULT_SECTION, FLOOR_NAMES, PROPERTY_TYPES, WASTI_NAMES, LABELS } from '../types';
 import { PLACEHOLDERS } from '../utils/constants';
 import { TransliterationInput } from './TransliterationInput';
+import { normalizeForSearch } from '../utils/transliterate';
 import { ComboTransliterationInput } from './ComboTransliterationInput';
 import { calculateTax, TaxRateMaster, DepreciationMaster, BuildingUsageMaster } from '../utils/taxUtils';
 
@@ -137,12 +138,19 @@ const PropertyForm = ({
 
     const isDuplicate = React.useMemo(() => {
         if (!formData.ownerName || !formData.khasraNo || !formData.wastiName) return false;
-        const currentKey = `${String(formData.khasraNo).trim()}|${String(formData.wastiName).trim()}|${String(formData.ownerName).trim()}`.toLowerCase();
+
+        const currentOwner = normalizeForSearch(formData.ownerName);
+        const currentKhasra = normalizeForSearch(formData.khasraNo);
+        const currentWasti = normalizeForSearch(formData.wastiName);
 
         return records.some(r => {
             if (initialData && r.id === initialData.id) return false;
-            const key = `${String(r.khasraNo).trim()}|${String(r.wastiName).trim()}|${String(r.ownerName).trim()}`.toLowerCase();
-            return key === currentKey;
+            
+            const owner = normalizeForSearch(r.ownerName);
+            const khasra = normalizeForSearch(r.khasraNo);
+            const wasti = normalizeForSearch(r.wastiName);
+
+            return owner === currentOwner && khasra === currentKhasra && wasti === currentWasti;
         });
     }, [formData.ownerName, formData.khasraNo, formData.wastiName, records, initialData]);
 

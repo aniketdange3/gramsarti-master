@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useUI } from '../components/UIProvider';
 import { Search, Printer, FileText, X, RotateCcw, LayoutDashboard, IndianRupee, Users, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
-import { PropertyRecord } from '../types';
+import { PropertyRecord, DEFAULT_SECTION } from '../types';
 import { CustomDropdown } from '../components/CustomDropdown';
 import { TransliterationInput } from '../components/TransliterationInput';
 import { matchesSearch, normalizeForSearch, normalizeDigits } from '../utils/transliterate';
@@ -152,7 +152,7 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
 
     if (activeBillRecord || bulkPrintRecords) {
         return (
-            <div className="flex flex-col h-full bg-slate-100 no-print-bg">
+            <div className="flex flex-col h-full bg-white no-print-bg">
                 <style>{`
                     @media print {
                         * { overflow: visible !important; }
@@ -179,7 +179,7 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
     }
 
     return (
-        <div className="flex flex-col h-full bg-slate-50/50">
+        <div className="flex flex-col h-full bg-white">
             {/* Header */}
             <div className="p-6 bg-white border-b border-slate-200 no-print">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
@@ -276,7 +276,7 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
                         <thead>
                             <tr className="bg-white border-b border-slate-200  sticky top-0 z-10">
                                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-16 text-center">अ.क्र.</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">वस्ती / खसरा</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">वस्ती / खसरा / मालमत्ता क्र.</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">मालकाचे नाव</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">मागणी (₹)</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">भरलेली (₹)</th>
@@ -294,7 +294,7 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
                                                 <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{r.wastiName || '-'}</span>
-                                                <span className="text-[10px] font-bold text-slate-400">खसरा: {MN(r.khasraNo)}</span>
+                                                <span className="text-[10px] font-bold text-slate-400 mt-0.5">खसरा: {r.khasraNo ? MN(r.khasraNo) : '-'} • मालमत्ता: {(r.propertyId || r.plotNo) ? MN(r.propertyId || r.plotNo) : '-'}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">

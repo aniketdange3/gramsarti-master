@@ -132,7 +132,7 @@ export default function Namuna9IndexFormat({
                 }
                 .col-sr { width: 35px; }
                 .col-plot { width: 85px; }
-                .col-khasra { width: 85px; }
+                .col-khasra { width: 95px; }
                 .col-page { width: 50px; }
             `}} />
 
@@ -199,8 +199,16 @@ export default function Namuna9IndexFormat({
                                                                     })()}
                                                                 </span>
                                                             </td>
-                                                            <td className="text-center">{r.propertyId || (r.plotNo ? MN(r.plotNo) : '-')}</td>
-                                                            <td className="text-center">{r.khasraNo ? r.khasraNo.split(',').map(k => MN(k.trim())).join(', ') : '-'}</td>
+                                                            <td className="text-center">
+                                                                <span style={{ fontSize: (r.propertyId || r.plotNo || '').toString().length > 6 ? '10px' : '16px' }}>
+                                                                    {r.propertyId || (r.plotNo ? MN(r.plotNo) : '-')}
+                                                                </span>
+                                                            </td>
+                                                            <td className="text-center">
+                                                                <span style={{ fontSize: (r.khasraNo || '').toString().length > 6 ? '10px' : '16px' }}>
+                                                                    {r.khasraNo ? r.khasraNo.split(',').map(k => MN(k.trim())).join(', ') : '-'}
+                                                                </span>
+                                                            </td>
                                                             <td className="text-center">{MN(regPageNum)}</td>
                                                         </tr>
                                                     );

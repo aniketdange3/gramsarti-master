@@ -817,86 +817,86 @@ export default function TaxMaster({ onAuthError, onNavigate }: { onAuthError?: (
                                                             ))}
                                                         </select>
                                                     </div>
-                                                    </div>
                                                 </div>
-
-
                                             </div>
 
-                                            {/* Tight Tax Grid */}
-                                            <div className="p-8 space-y-6">
-                                                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                                                    <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">३. कर आणि दर प्रविष्ट करा (Insert Tax Values)</h4>
-                                                    <button
-                                                        onClick={() => {
-                                                            setBulkForm(prev => ({
-                                                                ...prev,
-                                                                taxes: {
-                                                                    streetLightTax: '' as any,
-                                                                    healthTax: '' as any,
-                                                                    wasteCollectionTax: '' as any,
-                                                                    generalWaterTax: '' as any,
-                                                                    specialWaterTax: '' as any
-                                                                }
-                                                            }));
-                                                        }}
-                                                        className="text-[9px] font-black text-rose-500 uppercase tracking-widest hover:underline"
-                                                    >
-                                                        सर्व साफ करा
-                                                    </button>
-                                                </div>
 
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                    {bulkUpdateFields.map(field => {
-                                                        const val = (bulkForm.taxes as any)[field.key];
-                                                        const isFilled = val !== undefined && val !== null && val !== '';
-                                                        return (
-                                                            <div
-                                                                key={field.key}
-                                                                className={`group relative flex flex-col p-3 rounded-2xl border-2 transition-all ${isFilled ? 'border-indigo-600 bg-indigo-50/20 shadow-md' : 'border-slate-100 bg-white'}`}
-                                                            >
-                                                                <div className="flex items-center justify-between mb-1.5">
-                                                                    <span className={`text-[9px] font-black uppercase tracking-tight ${isFilled ? 'text-indigo-600' : 'text-slate-400'}`}>
-                                                                        {field.label.split('(')[0]}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="relative">
-                                                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 font-black text-xs">₹</span>
-                                                                    <input
-                                                                        type="number"
-                                                                        value={val === 0 ? '0' : (val || '')}
-                                                                        onChange={e => {
-                                                                            setBulkForm({
-                                                                                ...bulkForm,
-                                                                                taxes: { ...bulkForm.taxes, [field.key]: e.target.value }
-                                                                            });
-                                                                        }}
-                                                                        className={`w-full bg-white border-b-2 rounded-lg py-1.5 pl-6 pr-2 font-black text-xs text-slate-700 outline-none transition-all ${isFilled ? 'border-indigo-600' : 'border-slate-100 focus:border-indigo-300'}`}
-                                                                        placeholder="0"
-                                                                    />
-                                                                </div>
+                                        </div>
+
+                                        {/* Tight Tax Grid */}
+                                        <div className="p-8 space-y-6">
+                                            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                                                <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">३. कर आणि दर प्रविष्ट करा (Insert Tax Values)</h4>
+                                                <button
+                                                    onClick={() => {
+                                                        setBulkForm(prev => ({
+                                                            ...prev,
+                                                            taxes: {
+                                                                streetLightTax: '' as any,
+                                                                healthTax: '' as any,
+                                                                wasteCollectionTax: '' as any,
+                                                                generalWaterTax: '' as any,
+                                                                specialWaterTax: '' as any
+                                                            }
+                                                        }));
+                                                    }}
+                                                    className="text-[9px] font-black text-rose-500 uppercase tracking-widest hover:underline"
+                                                >
+                                                    सर्व साफ करा
+                                                </button>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                {bulkUpdateFields.map(field => {
+                                                    const val = (bulkForm.taxes as any)[field.key];
+                                                    const isFilled = val !== undefined && val !== null && val !== '';
+                                                    return (
+                                                        <div
+                                                            key={field.key}
+                                                            className={`group relative flex flex-col p-3 rounded-2xl border-2 transition-all ${isFilled ? 'border-indigo-600 bg-indigo-50/20 shadow-md' : 'border-slate-100 bg-white'}`}
+                                                        >
+                                                            <div className="flex items-center justify-between mb-1.5">
+                                                                <span className={`text-[9px] font-black uppercase tracking-tight ${isFilled ? 'text-indigo-600' : 'text-slate-400'}`}>
+                                                                    {field.label.split('(')[0]}
+                                                                </span>
                                                             </div>
-                                                        );
-                                                    })}
-                                                </div>
+                                                            <div className="relative">
+                                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 font-black text-xs">₹</span>
+                                                                <input
+                                                                    type="number"
+                                                                    value={val === 0 ? '0' : (val || '')}
+                                                                    onChange={e => {
+                                                                        setBulkForm({
+                                                                            ...bulkForm,
+                                                                            taxes: { ...bulkForm.taxes, [field.key]: e.target.value }
+                                                                        });
+                                                                    }}
+                                                                    className={`w-full bg-white border-b-2 rounded-lg py-1.5 pl-6 pr-2 font-black text-xs text-slate-700 outline-none transition-all ${isFilled ? 'border-indigo-600' : 'border-slate-100 focus:border-indigo-300'}`}
+                                                                    placeholder="0"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
 
-                                                <div className="pt-6 border-t border-slate-50 flex flex-col items-center gap-6">
-                                                    <button
-                                                        onClick={handleBulkUpdate}
-                                                        className="w-full md:w-auto px-16 py-4 rounded-2xl font-black uppercase tracking-[0.2em] transition-all text-xs shadow-xl bg-indigo-600 text-white shadow-indigo-600/30 hover:bg-indigo-700 hover:-translate-y-1 active:scale-95"
-                                                    >
-                                                        {bulkForm.layoutName === 'सर्व' ? 'सर्व मालमत्तांवर लागू करा' : 'निवडलेल्या लेआउटवर लागू करा'} (Apply Now)
-                                                    </button>
+                                            <div className="pt-6 border-t border-slate-50 flex flex-col items-center gap-6">
+                                                <button
+                                                    onClick={handleBulkUpdate}
+                                                    className="w-full md:w-auto px-16 py-4 rounded-2xl font-black uppercase tracking-[0.2em] transition-all text-xs shadow-xl bg-indigo-600 text-white shadow-indigo-600/30 hover:bg-indigo-700 hover:-translate-y-1 active:scale-95"
+                                                >
+                                                    {bulkForm.layoutName === 'सर्व' ? 'सर्व मालमत्तांवर लागू करा' : 'निवडलेल्या लेआउटवर लागू करा'} (Apply Now)
+                                                </button>
 
-                                                    <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 flex gap-3 max-w-2xl">
-                                                        <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                                                        <p className="text-[10px] font-bold text-amber-800 leading-tight uppercase">
-                                                            टीप: वरील बदल केल्यावर निवडलेल्या {bulkForm.layoutName} मधील {bulkForm.propertyType === 'सर्व' ? 'सर्व' : bulkForm.propertyType} मालमत्तांचे कर अपडेट होतील.
-                                                        </p>
-                                                    </div>
+                                                <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 flex gap-3 max-w-2xl">
+                                                    <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                                                    <p className="text-[10px] font-bold text-amber-800 leading-tight uppercase">
+                                                        टीप: वरील बदल केल्यावर निवडलेल्या {bulkForm.layoutName} मधील {bulkForm.propertyType === 'सर्व' ? 'सर्व' : bulkForm.propertyType} मालमत्तांचे कर अपडेट होतील.
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
                                 )}
 
                                 {activeTab === 'common' && (

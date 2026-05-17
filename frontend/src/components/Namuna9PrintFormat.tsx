@@ -30,9 +30,11 @@ interface Namuna9PrintFormatProps {
     records: any[];
     pageSize?: number;
     wastiName?: string;
+    fyStart: number;
+    fyEnd: number;
 }
 
-export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName }: Namuna9PrintFormatProps) {
+export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName, fyStart, fyEnd }: Namuna9PrintFormatProps) {
     // Force pageSize to 3 for audit consistency as requested
     const effectivePageSize = 3;
 
@@ -57,9 +59,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName }:
         recordChunks.push(sortedRecords.slice(i, i + effectivePageSize));
     }
 
-    // Financial year set to 2026-27 as requested
-    const fyStart = 2026;
-    const fyEnd = 27;
+
 
     return (
         <div className="namuna9-print-root bg-white min-h-screen flex flex-col items-center print:p-0">
@@ -161,7 +161,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName }:
                     // ५% दंड (Penalty): मागील थकबाकीच्या 'घर कर' + 'जमीन कर' वर ५% दंड. तपशील नसल्यास एकूण थकबाकीवर.
                     const prevBase = (Number(r.prev_breakdown?.propertyTax) || 0) + (Number(r.prev_breakdown?.openSpaceTax) || 0);
                     const baseForPenalty = prevBase > 0 ? prevBase : originalArrears;
-                    const finalPenalty = (originalArrears > 0 && baseForPenalty > 0) ? Number((baseForPenalty * 0.05).toFixed(2)) : 0;
+                    const finalPenalty = (originalArrears > 0 && baseForPenalty > 0) ? Number((baseForPenalty * 0.05).toFixed(0)) : 0;
                     const combinedArrears = originalArrears + finalPenalty;
 
                     const originalCurrentDemand = Number(r.totalTaxAmount) || 0;
@@ -172,7 +172,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName }:
                     const cutoffDate = new Date(fyStart, 8, 30);
                     const effectivePaymentDate = r.paymentDate ? new Date(r.paymentDate) : today;
                     const isEligible = effectivePaymentDate <= cutoffDate;
-                    const finalDiscount = isEligible ? Number((baseForDiscount * 0.05).toFixed(2)) : 0;
+                    const finalDiscount = isEligible ? Number((baseForDiscount * 0.05).toFixed(0)) : 0;
 
                     const grandTotalWithDiscount = (combinedArrears + originalCurrentDemand) - finalDiscount;
                     const paidAmount = Number(r.paidAmount) || 0;
@@ -239,7 +239,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName }:
                                     // ५% दंड (Penalty): मागील थकबाकीच्या 'घर कर' + 'जमीन कर' वर ५% दंड. तपशील नसल्यास एकूण थकबाकीवर.
                                     const prevBase = (Number(r.prev_breakdown?.propertyTax) || 0) + (Number(r.prev_breakdown?.openSpaceTax) || 0);
                                     const baseForPenalty = prevBase > 0 ? prevBase : originalArrears;
-                                    const finalPenalty = (originalArrears > 0 && baseForPenalty > 0) ? Number((baseForPenalty * 0.05).toFixed(2)) : 0;
+                                    const finalPenalty = (originalArrears > 0 && baseForPenalty > 0) ? Number((baseForPenalty * 0.05).toFixed(0)) : 0;
                                     const combinedArrears = originalArrears + finalPenalty;
 
                                     const originalCurrentDemand = Number(r.totalTaxAmount) || 0;
@@ -253,12 +253,12 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName }:
                                     const effectivePaymentDate = r.paymentDate ? new Date(r.paymentDate) : today;
 
                                     const isEligible = effectivePaymentDate >= fyStartDate && effectivePaymentDate <= cutoffDate;
-                                    const finalDiscount = isEligible ? Number((baseForDiscount * 0.05).toFixed(2)) : 0;
+                                    const finalDiscount = isEligible ? Number((baseForDiscount * 0.05).toFixed(0)) : 0;
 
                                     const grandTotalDemand = combinedArrears + originalCurrentDemand;
-                                    const grandTotalWithDiscount = Number((grandTotalDemand - finalDiscount).toFixed(2));
+                                    const grandTotalWithDiscount = Number((grandTotalDemand - finalDiscount).toFixed(0));
                                     const paidAmount = Number(r.paidAmount) || 0;
-                                    const remainingBalance = Number((grandTotalWithDiscount - paidAmount).toFixed(2));
+                                    const remainingBalance = Number((grandTotalWithDiscount - paidAmount).toFixed(0));
 
                                     // Base current demand for subtotal (excludes penalty)
                                     const baseCurrentDemand = originalCurrentDemand;
@@ -311,20 +311,20 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName }:
                                                                     {r.occupantName && r.occupantName !== 'स्वतः' && (
                                                                         <div className="font-normal italic p-2 text-[10px]">भोगवटाधारक: <b>{r.occupantName}</b></div>
                                                                     )}
-                                                                    <div className="font-bold uppercase p-2 text-[10px]">मौजा: {r.wastiName}</div>
+                                                                    <div className="font-bold uppercase p-2 text-[10px]">मौजा: {r.wastiName} {r.layoutName ? ` / ${r.layoutName}` : ''}</div>
                                                                 </td>
 
                                                                 {/* Column 3: Plot/Property ID */}
                                                                 <td className="text-center p-0.5 font-bold bg-transparent" rowSpan={11}>
-                                                                    <div className="mb-0.5">{r.propertyId ? MN(r.propertyId) : ''}</div>
-                                                                    <div className="border-t border-slate-100 pt-0.5">{r.plotNo ? MN(r.plotNo) : ''}</div>
+                                                                    <div className="mb-0.5" style={{ fontSize: (r.propertyId || '').toString().length > 6 ? '9px' : '11px' }}>{r.propertyId ? MN(r.propertyId) : ''}</div>
+                                                                    <div className="border-t border-slate-100 pt-0.5" style={{ fontSize: (r.plotNo || '').toString().length > 6 ? '9px' : '11px' }}>{r.plotNo ? MN(r.plotNo) : ''}</div>
                                                                 </td>
 
                                                                 {/* Column 4: Khasra Number (Arranged properly) */}
                                                                 <td className="text-center p-0.5 font-bold align-middle bg-transparent" rowSpan={11}>
                                                                     <div className="flex flex-col gap-0.5 items-center justify-center h-full">
                                                                         {r.khasraNo ? r.khasraNo.split(',').map((k: string, ki: number) => (
-                                                                            <div key={ki} className="px-1 py-0.5">
+                                                                            <div key={ki} className="px-1 py-0.5" style={{ fontSize: k.trim().length > 6 ? '9px' : '12px' }}>
                                                                                 {MN(k.trim())}
                                                                             </div>
                                                                         )) : '-'}
@@ -338,17 +338,17 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName }:
 
                                                         {/* Column 6: Arrears (मागील) Demand */}
                                                         <td className="pr-1.5 p-0.5 font-medium">
-                                                            {demandArrears > 0 ? MN(demandArrears.toFixed(2)) : ''}
+                                                            {demandArrears > 0 ? MN(demandArrears.toFixed(0)) : ''}
                                                         </td>
 
                                                         {/* Column 7: Current (चालू) Demand */}
                                                         <td className="pr-1.5 p-0.5 font-medium">
-                                                            {demandCurrent > 0 ? MN(demandCurrent.toFixed(2)) : ''}
+                                                            {demandCurrent > 0 ? MN(demandCurrent.toFixed(0)) : ''}
                                                         </td>
 
                                                         {/* Column 8: Row Total (एकूण मागणी) */}
                                                         <td className="pr-1.5 p-0.5 font-bold">
-                                                            {demandRowTotal > 0 ? MN(demandRowTotal.toFixed(2)) : ''}
+                                                            {demandRowTotal > 0 ? MN(demandRowTotal.toFixed(0)) : ''}
                                                         </td>
 
                                                         {hIdx === 0 && (
@@ -374,24 +374,24 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName }:
 
                                                         {/* Column 12: Arrears (मागील) Recovery */}
                                                         <td className="pr-1.5 p-0.5">
-                                                            <span className="screen-data">{isPenaltyRow ? '' : (hIdx === 0 ? MN(arrearsPaid.toFixed(2)) : '')}</span>
+                                                            <span className="screen-data">{isPenaltyRow ? '' : (hIdx === 0 ? MN(arrearsPaid.toFixed(0)) : '')}</span>
                                                         </td>
 
                                                         {/* Column 13: Chalu (चालू) Recovery */}
                                                         <td className="pr-1.5 p-0.5">
-                                                            <span className="screen-data">{isPenaltyRow ? MN(penaltyPaid.toFixed(2)) : (headRecoveryMap[tax.key] > 0 ? MN(headRecoveryMap[tax.key].toFixed(2)) : '')}</span>
+                                                            <span className="screen-data">{isPenaltyRow ? MN(penaltyPaid.toFixed(0)) : (headRecoveryMap[tax.key] > 0 ? MN(headRecoveryMap[tax.key].toFixed(0)) : '')}</span>
                                                         </td>
 
                                                         {/* Column 14: Row Total Recovery */}
                                                         <td className="pr-1.5 p-0.5 font-bold">
                                                             <span className="screen-data">
                                                                 {isPenaltyRow
-                                                                    ? (penaltyPaid > 0 ? MN(penaltyPaid.toFixed(2)) : '')
+                                                                    ? (penaltyPaid > 0 ? MN(penaltyPaid.toFixed(0)) : '')
                                                                     : isDiscountRow
-                                                                        ? (finalDiscount > 0 ? MN(finalDiscount.toFixed(2)) : '')
+                                                                        ? (finalDiscount > 0 ? MN(finalDiscount.toFixed(0)) : '')
                                                                         : (hIdx === 0
-                                                                            ? MN((arrearsPaid + (headRecoveryMap[tax.key] || 0)).toFixed(2))
-                                                                            : (headRecoveryMap[tax.key] > 0 ? MN(headRecoveryMap[tax.key].toFixed(2)) : '')
+                                                                            ? MN((arrearsPaid + (headRecoveryMap[tax.key] || 0)).toFixed(0))
+                                                                            : (headRecoveryMap[tax.key] > 0 ? MN(headRecoveryMap[tax.key].toFixed(0)) : '')
                                                                         )
                                                                 }
                                                             </span>
@@ -400,7 +400,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName }:
                                                         {hIdx === 0 && (
                                                             /* Column 15: Balance (बाकी) - Blank in print */
                                                             <td className="pr-2 font-black bg-transparent border-l border-slate-900 text-center" rowSpan={11}>
-                                                                <span className="screen-data text-[14px]">₹ {MN(remainingBalance.toFixed(2))}</span>
+                                                                <span className="screen-data text-[14px]">₹ {MN(remainingBalance.toFixed(0))}</span>
                                                             </td>
                                                         )}
                                                     </tr>
@@ -410,13 +410,13 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName }:
                                             {/* Subtotal Row */}
                                             <tr className="font-bold border-t border-slate-300">
                                                 <td className="p-0.5 px-2 text-center">एकूण </td>
-                                                <td className="pr-1.5 p-0.5">{MN(combinedArrears.toFixed(2))}</td>
-                                                <td className="pr-1.5 p-0.5">{MN(baseCurrentDemand.toFixed(2))}</td>
-                                                <td className="pr-1.5 p-0.5">{MN((combinedArrears + baseCurrentDemand).toFixed(2))}</td>
+                                                <td className="pr-1.5 p-0.5">{MN(combinedArrears.toFixed(0))}</td>
+                                                <td className="pr-1.5 p-0.5">{MN(baseCurrentDemand.toFixed(0))}</td>
+                                                <td className="pr-1.5 p-0.5">{MN((combinedArrears + baseCurrentDemand).toFixed(0))}</td>
 
                                                 <td className="p-0.5 px-2 text-left font-medium bg-slate-100" colSpan={3}>एकूण वसुली </td>
                                                 <td className="p-0.5 text-right pr-2">
-                                                    <span className="screen-data">₹ {MN(paidAmount.toFixed(2))}</span>
+                                                    <span className="screen-data">₹ {MN(paidAmount.toFixed(0))}</span>
                                                 </td>
                                             </tr>
 
@@ -424,8 +424,8 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName }:
                                             <tr className="bg-transparent font-medium border-t border-slate-200">
                                                 <td className="p-0.5 px-2 italic text-left">चालू रक्कमेवर (५%) सूट  </td>
                                                 <td className="p-0.5"></td>
-                                                <td className="p-0.5 text-red-600">-{MN(finalDiscount.toFixed(2))}</td>
-                                                <td className="p-0.5 text-red-600">-{MN(finalDiscount.toFixed(2))}</td>
+                                                <td className="p-0.5 text-red-600">-{MN(finalDiscount.toFixed(0))}</td>
+                                                <td className="p-0.5 text-red-600">-{MN(finalDiscount.toFixed(0))}</td>
 
                                                 <td className="p-0.5" colSpan={4} style={{ height: '15px' }}></td>
                                             </tr>
@@ -433,13 +433,13 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName }:
                                             {/* Net Total Row */}
                                             <tr className="total-row-highlight font-black border-b-2 border-black">
                                                 <td className="p-0.5 px-2 uppercase tracking-tighter"> एकूण </td>
-                                                <td className="pr-1.5 p-0.5 border-l border-slate-300">{MN(combinedArrears.toFixed(2))}</td>
-                                                <td className="pr-1.5 p-0.5 border-l border-slate-300">{MN((originalCurrentDemand - finalDiscount).toFixed(2))}</td>
-                                                <td className="pr-1.5 p-0.5 border-l border-slate-900">₹ {MN(grandTotalWithDiscount.toFixed(2))}</td>
+                                                <td className="pr-1.5 p-0.5 border-l border-slate-300">{MN(combinedArrears.toFixed(0))}</td>
+                                                <td className="pr-1.5 p-0.5 border-l border-slate-300">{MN((originalCurrentDemand - finalDiscount).toFixed(0))}</td>
+                                                <td className="pr-1.5 p-0.5 border-l border-slate-900">₹ {MN(grandTotalWithDiscount.toFixed(0))}</td>
 
                                                 <td className="p-0.5 px-2 text-left font-black bg-slate-200 print:hidden" colSpan={3}>बाकी रक्कम </td>
                                                 <td className="p-0.5 text-right pr-2 bg-slate-200 print:hidden">
-                                                    <span className="screen-data">₹ {MN(remainingBalance.toFixed(2))}</span>
+                                                    <span className="screen-data">₹ {MN(remainingBalance.toFixed(0))}</span>
                                                 </td>
                                             </tr>
                                         </tbody>

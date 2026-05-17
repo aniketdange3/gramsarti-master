@@ -41,6 +41,9 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
     const [searchTerm, setSearchTerm] = useState('');
     const [showRegister, setShowRegister] = useState(false);
     const [showForm, setShowForm] = useState(false);
+    const [isFetchingSingle, setIsFetchingSingle] = useState(false);
+    const [showOnlyKhasraIndex, setShowOnlyKhasraIndex] = useState(false);
+    const [showDuplicates, setShowDuplicates] = useState(false);
     const [editingRecord, setEditingRecord] = useState<PropertyRecord | null>(null);
     const [visibleFloorCount, setVisibleFloorCount] = useState(1);
     const [saving, setSaving] = useState(false);
@@ -50,7 +53,6 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
     const [activeBillRecord, setActiveBillRecord] = useState<PropertyRecord | null>(null);
     const [printPageSize, setPrintPageSize] = useState<number>(3);
     const [fetchedRecord, setFetchedRecord] = useState<PropertyRecord | null>(null);
-    const [isFetchingSingle, setIsFetchingSingle] = useState(false);
 
     const currentUser = useMemo(() => JSON.parse(localStorage.getItem('gp_user') || '{}'), []);
     const isAdmin = currentUser.role === 'super_admin' || currentUser.role === 'gram_sachiv' || currentUser.role === 'gram_sevak';
@@ -117,6 +119,18 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
         fetchSingle();
     }, [selectedId, records]);
 
+    // Dynamically update document title for PDF filename (Namuna 9)
+    React.useEffect(() => {
+        if (printRecords && printRecords.length > 0) {
+            const wasti = filterWasti || printRecords[0].wastiName || '';
+            const khasra = filterKhasra || (printRecords.length === 1 ? printRecords[0].khasraNo : '');
+            const title = `नमुना ९ - ${wasti}${khasra ? ' - ' + khasra : ''}`;
+            const oldTitle = document.title;
+            document.title = title;
+            return () => { document.title = oldTitle; };
+        }
+    }, [printRecords, filterWasti, filterKhasra]);
+
     const API_URL = `${API_BASE_URL}/api/properties`;
 
     // Cascading Filter Logic
@@ -124,7 +138,11 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
     const layoutFiltered = useMemo(() => filterLayout ? wastiFiltered.filter(r => r.layoutName === filterLayout) : wastiFiltered, [wastiFiltered, filterLayout]);
     const khasraFiltered = useMemo(() => filterKhasra ? layoutFiltered.filter(r => r.khasraNo === filterKhasra) : layoutFiltered, [layoutFiltered, filterKhasra]);
 
-    const uniqueWastis = useMemo(() => Array.from(new Set(records.map(r => r.wastiName).filter(Boolean))).sort(), [records]);
+    const uniqueWastis = useMemo(() => {
+        const list = Array.from(new Set(records.map(r => r.wastiName).filter(Boolean))).sort();
+        console.log('Unique Wastis (N9):', list);
+        return list;
+    }, [records]);
     const uniqueLayouts = useMemo(() => Array.from(new Set(wastiFiltered.map(r => r.layoutName).filter(Boolean))).sort(), [wastiFiltered]);
 
     // Sort Khasra Logic
@@ -136,12 +154,49 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
         return aEng.localeCompare(bEng, undefined, { numeric: true, sensitivity: 'base' });
     };
 
-    const uniqueKhasras = useMemo(() => Array.from(new Set(layoutFiltered.map(r => r.khasraNo).filter(Boolean))).sort(sortKhasra), [layoutFiltered]);
+    const uniqueKhasras = useMemo(() => {
+        const list = Array.from(new Set(layoutFiltered.map(r => r.khasraNo).filter(Boolean))).sort(sortKhasra);
+        console.log('Unique Khasras (N9):', list);
+        return list;
+    }, [layoutFiltered]);
     const uniquePlots = useMemo(() => Array.from(new Set(khasraFiltered.map(r => r.plotNo).filter(Boolean))).sort(sortKhasra), [khasraFiltered]);
+
+    const wastiKhasraCounts = useMemo(() => {
+        const mapping: Record<string, Set<string>> = {};
+        records.forEach(r => {
+            if (r.wastiName && r.khasraNo) {
+                if (!mapping[r.wastiName]) mapping[r.wastiName] = new Set();
+                mapping[r.wastiName].add(r.khasraNo);
+            }
+        });
+        const counts: Record<string, number> = {};
+        Object.entries(mapping).forEach(([w, kSet]) => {
+            counts[w] = kSet.size;
+        });
+        console.log('Wasti-wise Unique Khasra Counts (N9):', counts);
+        return counts;
+    }, [records]);
 
     const handleWastiChange = (v: string) => { setFilterWasti(v); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); };
     const handleLayoutChange = (v: string) => { setFilterLayout(v); setFilterKhasra(''); setFilterPlotNo(''); };
     const handleKhasraChange = (v: string) => { setFilterKhasra(v); setFilterPlotNo(''); };
+
+    const duplicates = useMemo(() => {
+        const map = new Map<string, PropertyRecord[]>();
+        records.forEach(r => {
+            // Match with wasti, khasra, plot, name and tax (totalTaxAmount)
+            const key = `${r.wastiName}-${r.khasraNo}-${r.plotNo}-${r.ownerName}`;
+            if (!map.has(key)) map.set(key, []);
+            map.get(key)!.push(r);
+        });
+        const result: PropertyRecord[] = [];
+        map.forEach(group => {
+            if (group.length > 1) {
+                result.push(...group);
+            }
+        });
+        return result;
+    }, [records]);
 
     const filteredRecords = useMemo(() => {
         // जर एखादा विशिष्ट ID निवडला असेल (उदा. डॅशबोर्डवरून रिडायरेक्ट), तर फक्त तीच नोंद दाखवा
@@ -152,7 +207,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
             return [];
         }
 
-        let res = records;
+        let res = showDuplicates ? duplicates : records;
         if (filterWasti) res = res.filter(r => r.wastiName === filterWasti);
         if (filterLayout) res = res.filter(r => r.layoutName === filterLayout);
         if (filterKhasra) {
@@ -171,7 +226,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
             res = res.filter(r => matchesSearch(r, searchTerm));
         }
         return res;
-    }, [records, viewId, filterWasti, filterLayout, filterKhasra, filterPlotNo, filterPropertyId, filterPropertyType, searchTerm, fetchedRecord]);
+    }, [records, viewId, filterWasti, filterLayout, filterKhasra, filterPlotNo, filterPropertyId, filterPropertyType, searchTerm, fetchedRecord, showDuplicates, duplicates]);
 
     const selectedRecord = useMemo(() => records.find(r => r.id === viewId), [records, viewId]);
 
@@ -245,6 +300,61 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
         } catch (error) {
             console.error('Error deleting record:', error);
             fetchRecords(); // Rollback
+        }
+    };
+
+    const handleDeleteDuplicates = async () => {
+        if (!window.confirm(`आपण ${MN(duplicates.length)} डुप्लिकेट नोंदींमधून मूळ नोंदी ठेवून उर्वरित नोंदी हटवू इच्छिता का? ही प्रक्रिया कायमस्वरूपी आहे.`)) return;
+
+        setSaving(true);
+        try {
+            const token = localStorage.getItem('gp_token');
+            const map = new Map<string, PropertyRecord[]>();
+
+            // फक्त सध्याच्या फिल्टरनुसार असलेल्या डुप्लिकेटवर प्रक्रिया करा (Process only filtered duplicates)
+            const targets = filterWasti ? duplicates.filter(r => r.wastiName === filterWasti) : duplicates;
+
+            targets.forEach(r => {
+                const key = `${r.wastiName}-${r.khasraNo}-${r.plotNo}-${r.ownerName}`;
+                if (!map.has(key)) map.set(key, []);
+                map.get(key)!.push(r);
+            });
+
+            const toDelete: string[] = [];
+            map.forEach(group => {
+                if (group.length > 1) {
+                    // कराच्या रकमेनुसार उतरत्या क्रमाने लावा (Sort by tax amount descending)
+                    const sortedGroup = [...group].sort((a, b) => (b.totalTaxAmount || 0) - (a.totalTaxAmount || 0));
+                    // सर्वात जास्त कर असलेली नोंद ठेवा (Keep the highest tax record), बाकी हटवा (Delete others)
+                    const [keep, ...others] = sortedGroup;
+                    others.forEach(o => toDelete.push(o.id));
+                }
+            });
+
+            if (toDelete.length === 0) {
+                alert('हटवण्यासाठी कोणतीही अतिरिक्त डुप्लिकेट नोंद सापडली नाही.');
+                return;
+            }
+
+            // क्रमाने हटवा (Delete sequentially to avoid server overload)
+            for (const id of toDelete) {
+                await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (typeof onRemoveLocalRecord === 'function') {
+                    onRemoveLocalRecord(id);
+                }
+            }
+
+            alert(`${MN(toDelete.length)} डुप्लिकेट नोंदी यशस्वीरित्या हटवल्या गेल्या.`);
+            fetchRecords();
+        } catch (error) {
+            console.error('Error deleting duplicates:', error);
+            alert('काही नोंदी हटवताना त्रुटी आली.');
+        } finally {
+            setSaving(false);
+            setShowDuplicates(false);
         }
     };
 
@@ -411,6 +521,25 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                             <Printer size={12} /> प्रिंट (फिल्टर)
                         </button>
                         <button
+                            onClick={() => setShowDuplicates(!showDuplicates)}
+                            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg font-black uppercase tracking-wider shadow-sm transition-all text-[9px] active:scale-95 ${showDuplicates ? 'bg-rose-600 text-white' : 'bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-600 hover:text-white'}`}
+                            title="डुप्लिकेट नोंदी पहा"
+                        >
+                            <AlertTriangle size={12} /> {showDuplicates ? 'सर्व नोंदी पहा' : 'डुप्लिकेट तपासा'}
+                        </button>
+
+                        {showDuplicates && (
+                            <button
+                                onClick={handleDeleteDuplicates}
+                                disabled={saving}
+                                className="flex items-center gap-1.5 px-4 py-1.5 bg-rose-600 text-white rounded-lg font-black uppercase tracking-wider hover:bg-rose-700 shadow-lg shadow-rose-600/20 transition-all text-[9px] active:scale-95 disabled:opacity-50"
+                                title="सर्व डुप्लिकेट नोंदी हटवा"
+                            >
+                                <X size={12} /> सर्व डुप्लिकेट हटवा
+                            </button>
+                        )}
+
+                        <button
                             onClick={() => exportToExcel(filteredRecords, 'Namuna9_Data')}
                             className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg font-black uppercase tracking-wider hover:bg-indigo-600 hover:text-white shadow-sm transition-all text-[9px] active:scale-95"
                             title="फिल्टर केलेला नमुना ९ एक्सपोर्ट करा"
@@ -479,7 +608,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                             options={dynamicPropertyTypes.map(p => ({ value: p, label: p }))}
                         />
 
-                        {(filterWasti || filterLayout || filterKhasra || filterPlotNo || filterPropertyId || filterPropertyType || searchTerm || viewId) && (
+                        {(filterWasti || filterLayout || filterKhasra || filterPlotNo || filterPropertyId || filterPropertyType || searchTerm || viewId || showDuplicates) && (
                             <button
                                 onClick={() => {
                                     setFilterWasti('');
@@ -490,6 +619,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                                     setFilterPropertyType('');
                                     setSearchTerm('');
                                     setViewId(null);
+                                    setShowDuplicates(false);
                                 }}
                                 className="flex items-center gap-1.5 px-3 py-2 text-[9px] font-black text-rose-600 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100 transition-all flex-shrink-0"
                             >

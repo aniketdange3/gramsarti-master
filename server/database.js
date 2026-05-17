@@ -406,6 +406,23 @@ const initializeDatabase = async () => {
             console.log('  [MIGRATION] current_fy updated to 2026-27');
         }
 
+        // Seed Global Tax Defaults (only if they don't exist, so admin changes are preserved)
+        const defaultTaxes = [
+            ['street_light_default', '25'],
+            ['health_tax_default', '25'],
+            ['general_water_default', '25'],
+            ['special_water_default', '750'],
+            ['waste_collection_default', '200']
+        ];
+        
+        for (const [key, val] of defaultTaxes) {
+            const [tRows] = await connection.query("SELECT config_key FROM system_config WHERE config_key = ?", [key]);
+            if (tRows.length === 0) {
+                await connection.query("INSERT INTO system_config (config_key, config_value) VALUES (?, ?)", [key, val]);
+                console.log(`  [SEED] Default ${key} set to ${val}`);
+            }
+        }
+
         await connection.query(`CREATE TABLE IF NOT EXISTS attendance (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,

@@ -114,6 +114,16 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
         };
         fetchSingle();
     }, [selectedId, records]);
+    
+    // Dynamically update document title for PDF filename (Namuna 8)
+    React.useEffect(() => {
+        if (printRecord) {
+            const title = `नमुना ८ - ${printRecord.ownerName} - ${printRecord.wastiName} - ${printRecord.khasraNo}`;
+            const oldTitle = document.title;
+            document.title = title;
+            return () => { document.title = oldTitle; };
+        }
+    }, [printRecord]);
 
     const API_URL = `${API_BASE_URL}/api/properties`;
 
@@ -122,7 +132,11 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
     const layoutFiltered = useMemo(() => filterLayout ? wastiFiltered.filter(r => r.layoutName === filterLayout) : wastiFiltered, [wastiFiltered, filterLayout]);
     const khasraFiltered = useMemo(() => filterKhasra ? layoutFiltered.filter(r => r.khasraNo === filterKhasra) : layoutFiltered, [layoutFiltered, filterKhasra]);
 
-    const uniqueWastis = useMemo(() => Array.from(new Set(records.map(r => r.wastiName).filter(Boolean))).sort(), [records]);
+    const uniqueWastis = useMemo(() => {
+        const list = Array.from(new Set(records.map(r => r.wastiName).filter(Boolean))).sort();
+        console.log('Unique Wastis:', list);
+        return list;
+    }, [records]);
     const uniqueLayouts = useMemo(() => Array.from(new Set(wastiFiltered.map(r => r.layoutName).filter(Boolean))).sort(), [wastiFiltered]);
 
     // Sort Khasra Logic (reused helper)
@@ -134,8 +148,28 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
         return aEng.localeCompare(bEng, undefined, { numeric: true, sensitivity: 'base' });
     };
 
-    const uniqueKhasras = useMemo(() => Array.from(new Set(layoutFiltered.map(r => r.khasraNo).filter(Boolean))).sort(sortKhasra), [layoutFiltered]);
+    const uniqueKhasras = useMemo(() => {
+        const list = Array.from(new Set(layoutFiltered.map(r => r.khasraNo).filter(Boolean))).sort(sortKhasra);
+        console.log('Unique Khasras:', list);
+        return list;
+    }, [layoutFiltered]);
     const uniquePlots = useMemo(() => Array.from(new Set(khasraFiltered.map(r => r.plotNo).filter(Boolean))).sort(sortKhasra), [khasraFiltered]);
+
+    const wastiKhasraCounts = useMemo(() => {
+        const mapping: Record<string, Set<string>> = {};
+        records.forEach(r => {
+            if (r.wastiName && r.khasraNo) {
+                if (!mapping[r.wastiName]) mapping[r.wastiName] = new Set();
+                mapping[r.wastiName].add(r.khasraNo);
+            }
+        });
+        const counts: Record<string, number> = {};
+        Object.entries(mapping).forEach(([w, kSet]) => {
+            counts[w] = kSet.size;
+        });
+        console.log('Wasti-wise Unique Khasra Counts (N8):', counts);
+        return counts;
+    }, [records]);
 
     const handleWastiChange = (v: string) => { setFilterWasti(v); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); };
     const handleLayoutChange = (v: string) => { setFilterLayout(v); setFilterKhasra(''); setFilterPlotNo(''); };

@@ -13,7 +13,7 @@ import Namuna9IndexFormat from '../components/Namuna9IndexFormat';
 import { hasModulePermission } from '../utils/permissions';
 import { CustomDropdown } from '../components/CustomDropdown';
 import { FileCheck } from 'lucide-react';
-import MaganiBillDocument from '../components/MaganiBillDocument';
+
 import { exportToExcel } from '../utils/exportUtils';
 
 
@@ -265,7 +265,18 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                 fetchRecords();
             } else {
                 // यशस्विरीत्या सेव्ह झाल्यावर अचूक आयडी मिळवण्यासाठी फेच करा
-                fetchRecords();
+                const resData = await response.json();
+                if (resData.id) {
+                    try {
+                        const singleRes = await fetch(`${API_URL}/${resData.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                        if (singleRes.ok) {
+                            const freshRecord = await singleRes.json();
+                            if (typeof onUpdateLocalRecord === 'function') {
+                                onUpdateLocalRecord(freshRecord);
+                            }
+                        }
+                    } catch (e) { console.error('Failed to fetch fresh record', e); }
+                }
             }
         } catch (error) {
             console.error('Error saving record:', error);
@@ -293,9 +304,10 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                 onAuthError?.();
                 return;
             }
-            if (!response.ok) {
-                // त्रुटी असल्यास रोलबॅक करा (Rollback on error)
-                fetchRecords();
+            if (response.ok) {
+                // do nothing locally, already removed
+            } else {
+                fetchRecords(); // Rollback
             }
         } catch (error) {
             console.error('Error deleting record:', error);
@@ -434,32 +446,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
         // ... (existing detail view logic, though the user might prefer the bill view now)
     }
 
-    if (activeBillRecord) {
-        return (
-            <div className="flex flex-col h-full bg-slate-100 no-print-bg">
-                <style>{`
-                    @media print {
-                        body, html { margin: 0 !important; padding: 0 !important; background: white !important; }
-                        .no-print { display: none !important; }
-                    }
-                `}</style>
-                <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center gap-3 no-print shadow-sm sticky top-0 z-50">
-                    <button onClick={() => setActiveBillRecord(null)}
-                        className="flex items-center gap-2 text-sm font-bold text-slate-600 px-4 py-2 rounded-xl hover:bg-slate-100 border border-slate-200 transition-all">
-                        <ArrowLeft className="w-4 h-4" /> विंडो बंद करा
-                    </button>
-                    <div className="flex-1" />
-                    <button onClick={() => window.print()}
-                        className="flex items-center gap-2 text-sm font-black text-white bg-indigo-600 px-6 py-2.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20">
-                        <Printer className="w-4 h-4" /> प्रिंट (लँडस्केप)
-                    </button>
-                </div>
-                <div className="flex-1 overflow-auto p-8 pt-4 flex justify-center no-print-bg">
-                    <MaganiBillDocument record={activeBillRecord} onClose={() => setActiveBillRecord(null)} />
-                </div>
-            </div>
-        );
-    }
+
 
     if (viewId && !selectedRecord) {
         return (
@@ -483,10 +470,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
         }
     };
 
-    const handlePrintBill = (id: string) => {
-        const record = records.find(r => r.id === id);
-        if (record) setActiveBillRecord(record);
-    };
+
 
     // ─── LIST VIEW (High-Fidelity Overhaul) ──────────────────────────────────
     return (
@@ -645,7 +629,7 @@ export default function Namuna9({ records, selectedId, fetchRecords, onUpdateLoc
                         onEdit={canEdit ? handleEdit : undefined}
                         onDelete={canDelete ? handleDelete : undefined}
                         onPrint={handlePrint}
-                        onPrintBill={handlePrintBill}
+
                         onPrintMultiple={handlePrintMultiple}
                         showActions={true}
                     />

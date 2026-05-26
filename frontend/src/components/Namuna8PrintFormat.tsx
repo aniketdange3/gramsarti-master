@@ -36,7 +36,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                 @media print {
                     @page {
                         size: legal landscape;
-                        margin: 0;
+                        margin: 0.5in;
                     }
                     body, html {
                         -webkit-print-color-adjust: exact !important;
@@ -51,155 +51,251 @@ export default function Namuna8PrintFormat({ records }: Props) {
                         break-after: page;
                         box-shadow: none !important;
                         margin: 0 !important;
-                        border: none !important;
-                        padding: 20px !important;
+                        padding: 10px !important;
                         width: 100% !important;
-                        max-width: none !important;
+                        max-width: 100% !important;
+                        min-height: unset !important;
+                        height: auto !important;
                         position: relative !important;
                         overflow: visible !important;
+                        border: 3px double #800000 !important;
+                        box-sizing: border-box !important;
                     }
+                    .flower-corner { display: block !important; }
                     .no-print { display: none !important; }
+                    table { font-size: 8px !important; }
+                    thead th { font-size: 8px !important; }
+                    tbody td { font-size: 8px !important; }
                 }
                 .no-print-bg { background: none !important; }
                 .page-container {
-                    width: 355.6mm; /* Legal Landscape Width */
-                    height: 215.9mm; /* Legal Landscape Height */
+                    /* Legal landscape printable area with 0.5in margins:
+                       14in - 1in = 13in = 330.2mm wide
+                       8.5in - 1in = 7.5in = 190.5mm tall */
+                    width: 330.2mm;
+                    min-height: 190.5mm;
                     margin: 0 auto;
-                    padding: 30px 40px;
+                    padding: 10px;
+                    border: 3px double #800000;
                     position: relative;
                     display: flex;
                     flex-direction: column;
-                    justify-content: center;
+                    justify-content: flex-start;
                     font-family: 'Inter', sans-serif;
+                    background: white;
+                    box-sizing: border-box;
                 }
+                .flower-corner {
+                    position: absolute;
+                    width: 48px;
+                    height: 48px;
+                    opacity: 0.75;
+                    z-index: 2;
+                    pointer-events: none;
+                }
+                .flower-corner.tl { top: 4px; left: 4px; }
+                .flower-corner.tr { top: 4px; right: 4px; transform: scaleX(-1); }
+                .flower-corner.bl { bottom: 4px; left: 4px; transform: scaleY(-1); }
+                .flower-corner.br { bottom: 4px; right: 4px; transform: scale(-1,-1); }
                 table, th, td {
-                    border: 1px solid #a9a9a9fc !important;
+                    border: 1px solid #800000 !important;
                     border-collapse: collapse;
                 }
                 thead th {
-                    border: 1px solid #a9a9a9fc !important;
+                    border: 1px solid #800000 !important;
                 }
-                .header-logo {
-                    width: 100px;
-                    height: 100px;
-                }
-                .text-brand-red { color: #bf0644f1; }
-                .bg-brand-gradient { background: #a02f37ff; }
             `}} />
 
             {recordChunks.map((chunk, chunkIdx) => (
-                <div key={chunkIdx} className="page-container relative overflow-visible">
+                <div key={chunkIdx} className="page-container relative overflow-visible mt-4 mb-4 print:mt-0 print:mb-0">
+                    {/* Decorative flower corners */}
+                    <svg className="flower-corner tl" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="8" cy="8" r="5" fill="#4a0000" opacity="0.85" />
+                        <circle cx="20" cy="6" r="4" fill="#4a0000" opacity="0.75" />
+                        <circle cx="6" cy="20" r="4" fill="#4a0000" opacity="0.75" />
+                        <circle cx="14" cy="14" r="6" fill="#4a0000" opacity="0.95" />
+                        <circle cx="28" cy="10" r="3" fill="#4a0000" opacity="0.65" />
+                        <circle cx="10" cy="28" r="3" fill="#4a0000" opacity="0.65" />
+                        <path d="M4 4 Q14 2 24 8 Q12 10 4 4Z" fill="#4a0000" opacity="0.7" />
+                        <path d="M4 4 Q2 14 8 24 Q10 12 4 4Z" fill="#4a0000" opacity="0.7" />
+                        <circle cx="4" cy="4" r="2.5" fill="#4a0000" opacity="1" />
+                        <path d="M0 0 L36 0 L36 3 Q18 3 3 18 L0 18 Z" fill="#4a0000" opacity="0.35" />
+                        <path d="M0 0 L0 36 L3 36 Q3 18 18 3 L18 0 Z" fill="#4a0000" opacity="0.35" />
+                    </svg>
+                    <svg className="flower-corner tr" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="8" cy="8" r="5" fill="#4a0000" opacity="0.85" />
+                        <circle cx="20" cy="6" r="4" fill="#4a0000" opacity="0.75" />
+                        <circle cx="6" cy="20" r="4" fill="#4a0000" opacity="0.75" />
+                        <circle cx="14" cy="14" r="6" fill="#4a0000" opacity="0.95" />
+                        <circle cx="28" cy="10" r="3" fill="#4a0000" opacity="0.65" />
+                        <circle cx="10" cy="28" r="3" fill="#4a0000" opacity="0.65" />
+                        <path d="M4 4 Q14 2 24 8 Q12 10 4 4Z" fill="#4a0000" opacity="0.7" />
+                        <path d="M4 4 Q2 14 8 24 Q10 12 4 4Z" fill="#4a0000" opacity="0.7" />
+                        <circle cx="4" cy="4" r="2.5" fill="#4a0000" opacity="1" />
+                        <path d="M0 0 L36 0 L36 3 Q18 3 3 18 L0 18 Z" fill="#4a0000" opacity="0.35" />
+                        <path d="M0 0 L0 36 L3 36 Q3 18 18 3 L18 0 Z" fill="#4a0000" opacity="0.35" />
+                    </svg>
+                    <svg className="flower-corner bl" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="8" cy="8" r="5" fill="#4a0000" opacity="0.85" />
+                        <circle cx="20" cy="6" r="4" fill="#4a0000" opacity="0.75" />
+                        <circle cx="6" cy="20" r="4" fill="#4a0000" opacity="0.75" />
+                        <circle cx="14" cy="14" r="6" fill="#4a0000" opacity="0.95" />
+                        <circle cx="28" cy="10" r="3" fill="#4a0000" opacity="0.65" />
+                        <circle cx="10" cy="28" r="3" fill="#4a0000" opacity="0.65" />
+                        <path d="M4 4 Q14 2 24 8 Q12 10 4 4Z" fill="#4a0000" opacity="0.7" />
+                        <path d="M4 4 Q2 14 8 24 Q10 12 4 4Z" fill="#4a0000" opacity="0.7" />
+                        <circle cx="4" cy="4" r="2.5" fill="#4a0000" opacity="1" />
+                        <path d="M0 0 L36 0 L36 3 Q18 3 3 18 L0 18 Z" fill="#4a0000" opacity="0.35" />
+                        <path d="M0 0 L0 36 L3 36 Q3 18 18 3 L18 0 Z" fill="#4a0000" opacity="0.35" />
+                    </svg>
+                    <svg className="flower-corner br" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="8" cy="8" r="5" fill="#4a0000" opacity="0.85" />
+                        <circle cx="20" cy="6" r="4" fill="#4a0000" opacity="0.75" />
+                        <circle cx="6" cy="20" r="4" fill="#4a0000" opacity="0.75" />
+                        <circle cx="14" cy="14" r="6" fill="#4a0000" opacity="0.95" />
+                        <circle cx="28" cy="10" r="3" fill="#4a0000" opacity="0.65" />
+                        <circle cx="10" cy="28" r="3" fill="#4a0000" opacity="0.65" />
+                        <path d="M4 4 Q14 2 24 8 Q12 10 4 4Z" fill="#4a0000" opacity="0.7" />
+                        <path d="M4 4 Q2 14 8 24 Q10 12 4 4Z" fill="#4a0000" opacity="0.7" />
+                        <circle cx="4" cy="4" r="2.5" fill="#4a0000" opacity="1" />
+                        <path d="M0 0 L36 0 L36 3 Q18 3 3 18 L0 18 Z" fill="#4a0000" opacity="0.35" />
+                        <path d="M0 0 L0 36 L3 36 Q3 18 18 3 L18 0 Z" fill="#4a0000" opacity="0.35" />
+                    </svg>
                     {/* Watermark */}
-                    <div className="absolute inset-0   flex items-center justify-center pointer-events-none opacity-[0.3]">
-                        <img src="/images/logo.png" className="w-[450px] h-[450px] object-contain " alt="Watermark" />
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 1, opacity: 0.3 }}>
+                        <img src="/images/logo.jpeg" onError={(e: any) => { e.target.src = '/images/logo.png'; }} className="w-[450px] h-[450px] object-contain" alt="Watermark" />
                     </div>
 
-                    <div className="relative z-10 w-full flex flex-col justify-center items-center">
-                        <div className="w-full">
-                            {/* Header Section - Modern Balanced Layout */}
-                            <div className="relative mb-10 w-full flex justify-between items-center px-4">
+                    <div className="relative w-full flex flex-col justify-start items-center" style={{ zIndex: 2 }}>
+                        <div className="w-full flex-1 flex flex-col">
+                            {/* Header Section */}
+                            <div className="relative mb-3 mt-8 w-full flex justify-between items-start px-2">
                                 {/* Left: Logo */}
-                                <div className="header-logo flex-shrink-0">
-                                    <img src="/images/logo.png" alt="GP Logo" className="w-[110px] h-[110px] object-contain" />
+                                <div className="flex-shrink-0">
+                                    <img src="/images/logo.jpeg" onError={(e: any) => { e.target.src = '/images/logo.png'; }} alt="GP Logo" className="w-[130px] h-[130px] object-contain" />
                                 </div>
 
                                 {/* Center: Titles */}
-                                <div className="flex-1 flex flex-col items-center text-center">
-                                    <h2 className="text-[36px] font-black tracking-tight leading-none text-[#A80D40] uppercase mb-4">
+                                <div className="flex-1 flex flex-col items-center text-center -mt-2">
+                                    <h2 className="text-[32px] font-black tracking-tight leading-none text-[#800000] mb-3">
                                         गट ग्रामपंचायत वेळा हरिश्चंद्र
                                     </h2>
-                                    <div className="flex items-center justify-center gap-4 mb-4">
-                                        <div className="h-[2px] w-16 bg-brand-gradient opacity-30"></div>
-                                        <span className="text-[26px] font-black px-10 py-1.5 rounded-full text-white bg-brand-gradient shadow-xl">नमुना ८</span>
-                                        <div className="h-[2px] w-16 bg-brand-gradient opacity-30"></div>
+                                    <div className="flex items-center justify-center mb-1">
+                                        <span className="text-[20px] font-black px-8 py-1 rounded-full text-white bg-[#800000] shadow-sm tracking-wide">नमुना ८</span>
                                     </div>
-                                    <p className="text-[13px] font-bold text-gray-500 italic mb-2 tracking-[0.2em] uppercase text-brand-red font-bold">नियम ३२ (१) पहा</p>
-                                    <h1 className="text-[15px] font-black text-gray-900 tracking-wide">
-                                        सन २०{MN(fyStart % 100)} - २०{MN(fyEnd % 100)} या वर्षाची कर आकारणी नोंदवही
-                                    </h1>
+                                    <p className="text-[12px] font-bold text-[#800000] italic mb-3 tracking-widest">नियम ३२ (१) पहा</p>
+                                    <div className="border border-[#800000] rounded-full px-6 py-1">
+                                        <h1 className="text-[14px] font-bold text-black tracking-wide">
+                                            सन २०{MN(fyStart % 100)} - २०{MN(fyEnd % 100)} या वर्षाची कर आकारणी नोंदवही
+                                        </h1>
+                                    </div>
                                 </div>
 
                                 {/* Right: Location Details */}
-                                <div className="flex-shrink-0 text-right space-y-1 bg-[#fff8f8] p-6 rounded-[32px] border border-[#A80D40]/20 min-w-[200px]">
-                                    <p className="text-[13px] font-black flex justify-between gap-4">
-                                        <span className="text-gray-500 uppercase tracking-tighter">मौजा:</span>
-                                        <span className="text-[#A80D40]">{chunk[0]?.wastiName || PANCHAYAT_CONFIG.mouza || 'वेळा'}</span>
+                                <div className="flex-shrink-0 text-left space-y-1 p-3 rounded-xl border border-[#800000] min-w-[200px] bg-white">
+                                    <p className="text-[12px] font-bold flex justify-between gap-4">
+                                        <span className="text-gray-700">मौजा:</span>
+                                        <span className="text-black font-black">{chunk[0]?.wastiName || PANCHAYAT_CONFIG.mouza || 'वेळा'}</span>
                                     </p>
-                                    <p className="text-[13px] font-black flex justify-between gap-4">
-                                        <span className="text-gray-500 uppercase tracking-tighter">तालुका:</span>
-                                        <span className="text-[#A80D40]">{PANCHAYAT_CONFIG.taluka || 'नागपूर'}</span>
+                                    <p className="text-[12px] font-bold flex justify-between gap-4">
+                                        <span className="text-gray-700">तालुका:</span>
+                                        <span className="text-black font-black">{PANCHAYAT_CONFIG.taluka || 'नागपूर'}</span>
                                     </p>
-                                    <p className="text-[13px] font-black flex justify-between gap-4">
-                                        <span className="text-gray-500 uppercase tracking-tighter">जिल्हा:</span>
-                                        <span className="text-[#A80D40]">{PANCHAYAT_CONFIG.jilha || 'नागपूर'}</span>
+                                    <p className="text-[12px] font-bold flex justify-between gap-4">
+                                        <span className="text-gray-700">जिल्हा:</span>
+                                        <span className="text-black font-black">{PANCHAYAT_CONFIG.jilha || 'नागपूर'}</span>
                                     </p>
-                                    <div className="pt-2 mt-2 border-t border-[#A80D40]/20">
-                                        <p className="text-[13px] font-black flex justify-between items-center">
-                                            <span className="text-gray-500 uppercase tracking-tighter">पान नं:</span>
-                                            <span className="inline-block w-12 border-b-2 border-[#A80D40] mt-1 h-4"></span>
-                                        </p>
-                                    </div>
+                                    <p className="text-[12px] font-bold flex justify-between gap-4 mt-2">
+                                        <span className="text-gray-700">पान नं:</span>
+                                        <span className="text-black border-b border-gray-400 w-16 inline-block h-4"></span>
+                                    </p>
                                 </div>
                             </div>
 
-                            {/* Main Table - bg-white ensures watermark is hidden behind data */}
-                            <table className="w-full text-[10px] border-collapse border-2 border-[#4a0000] leading-tight mt-2 bg-white">
+                            {/* Main Table */}
+                            <table className="w-full text-[9px] border-collapse leading-tight mb-2" style={{ tableLayout: 'fixed' }}>
+                                <colgroup>
+                                    <col style={{ width: '22px' }} />{/* अ.क्र. */}
+                                    <col style={{ width: '60px' }} />{/* वस्ती/खसरा */}
+                                    <col style={{ width: '42px' }} />{/* प्लॉट */}
+                                    <col style={{ width: '110px' }} />{/* मालकाचे नाव */}
+                                    <col style={{ width: '40px' }} />{/* एकूण क्षेत्रफळ */}
+                                    <col style={{ width: '55px' }} />{/* मालमत्ता प्रकार */}
+                                    <col style={{ width: '45px' }} />{/* क्षेत्रफळ */}
+                                    <col style={{ width: '45px' }} />{/* बांधकाम वर्ष */}
+                                    <col style={{ width: '35px' }} />{/* जमीन दर */}
+                                    <col style={{ width: '35px' }} />{/* बांधकाम दर */}
+                                    <col style={{ width: '35px' }} />{/* भारांक/घसारा */}
+                                    <col style={{ width: '52px' }} />{/* भांडवली मूल्य */}
+                                    <col style={{ width: '35px' }} />{/* कराचा दर */}
+                                    <col style={{ width: '40px' }} />{/* मालमत्ता कर */}
+                                    <col style={{ width: '35px' }} />{/* दिवाबत्ती */}
+                                    <col style={{ width: '35px' }} />{/* आरोग्य */}
+                                    <col style={{ width: '35px' }} />{/* सामान्य पाणी */}
+                                    <col style={{ width: '35px' }} />{/* विशेष पाणी */}
+                                    <col style={{ width: '35px' }} />{/* कचरागाडी */}
+                                    <col style={{ width: '45px' }} />{/* एकूण */}
+                                    <col style={{ width: '38px' }} />{/* शेरा */}
+                                </colgroup>
                                 <thead>
-                                    <tr className="text-white bg-brand-gradient">
-                                        <th rowSpan={2} className="p-1 border border-white/40 w-[25px]">अ.क्र.</th>
-                                        <th rowSpan={2} className="p-0 border border-white/40 w-[80px]">
-                                            <div className="p-1 border-b  border-white/40border-dashed">वस्ती नाव</div>
-                                            <div className="p-1">खसरा क्र.</div>
+                                    <tr className="text-[#800000] bg-gray-100 text-center font-bold">
+                                        <th rowSpan={2} className="p-1 w-[25px]">अ.क्र.</th>
+                                        <th rowSpan={2} className="p-0 w-[70px]">
+                                            <div className="border-b border-red-900 p-1 text-[#800000]">वस्ती नाव</div>
+                                            <div className="p-1 text-[#800000]">खसरा क्र.</div>
                                         </th>
-                                        <th rowSpan={2} className="p-0 border border-white/40 w-[60px]">
-                                            <div className="p-1 border-b  border-white/40border-dashed">मालमत्ता</div>
-                                            <div className="p-1">प्लॉट क्र.</div>
+                                        <th rowSpan={2} className="p-0 w-[50px]">
+                                            <div className="border-b border-red-900 p-1 text-[#800000]">मालमत्ता</div>
+                                            <div className="p-1 text-[#800000]">प्लॉट क्र.</div>
                                         </th>
-                                        <th rowSpan={2} className="p-0 border border-white/40 w-[160px]">
-                                            <div className="p-1 border-b  border-white/40border-dashed">मालकाचे नाव</div>
-                                            <div className="p-1">भोगवटादाराचे नाव</div>
+                                        <th rowSpan={2} className="p-0 w-[140px]">
+                                            <div className="border-b border-red-900 p-1 text-[#800000]">मालकाचे नाव</div>
+                                            <div className="border-b border-red-900 p-1 text-[#800000]">भोगवटादाराचे नाव</div>
+                                            <div className="p-1 text-[#800000]">संपर्क :</div>
                                         </th>
-                                        <th rowSpan={2} className="p-0 border border-white/40 w-[50px]">
-                                            <div className="p-1 border-b  border-white/40border-dashed">एकूण</div>
-                                            <div className="p-1">क्षेत्रफळ</div>
+                                        <th rowSpan={2} className="p-1 w-[40px] text-[#800000]">
+                                            एकूण<br />क्षेत्रफळ
                                         </th>
-                                        <th rowSpan={2} className="p-1 border border-white/40 w-[100px]">मालमत्ता प्रकार</th>
-                                        <th rowSpan={2} className="p-1 border border-white/40 w-[60px]">क्षेत्रफळ <br />(चौ.फूट / चौ.मी)</th>
-                                        <th rowSpan={2} className="p-0 border border-white/40 w-[70px]">
-                                            <div className="p-1 border-b  border-white/40border-dashed">बांधकाम वर्ष</div>
-                                            <div className="p-1">वय</div>
+                                        <th rowSpan={2} className="p-1 w-[70px] text-[#800000]">
+                                            मालमत्ता प्रकार
                                         </th>
-                                        <th colSpan={2} className="p-1 border border-white/40">वार्षिक मूल्य दर</th>
-                                        <th rowSpan={2} className="p-0 border border-white/40 w-[50px]">
-                                            <div className="p-1 border-b  border-white/40border-dashed">भारांक</div>
-                                            <div className="p-1">घसारा</div>
+                                        <th rowSpan={2} className="p-0 w-[50px]">
+                                            <div className="p-1 text-[#800000]">क्षेत्रफळ</div>
+                                            <div className="p-1 text-[#800000]">(चौ.फुट /<br />चौ.मी)</div>
                                         </th>
-                                        <th rowSpan={2} className="p-0 border border-white/40 w-[80px]">
-                                            <div className="p-1 border-b  border-white/40border-dashed">भांडवली मूल्य</div>
-                                            <div className="p-1">(रु.)</div>
+                                        <th rowSpan={2} className="p-0 w-[50px]">
+                                            <div className="border-b border-red-900 p-1 text-[#800000]">बांधकाम वर्ष</div>
+                                            <div className="p-1 text-[#800000]">वय</div>
                                         </th>
-                                        <th rowSpan={2} className="p-0 border border-white/40 w-[40px]">
-                                            <div className="p-1 border-b  border-white/40border-dashed">कराचा दर</div>
-                                            <div className="p-1">(पैसे)</div>
+                                        <th colSpan={2} className="p-1 text-[#800000]">वार्षिक मूल्य दर</th>
+                                        <th rowSpan={2} className="p-0 w-[40px]">
+                                            <div className="border-b border-red-900 p-1 text-[#800000]">भारांक</div>
+                                            <div className="p-1 text-[#800000]">घसारा</div>
                                         </th>
-                                        <th colSpan={7} className="p-1 border border-white/40 uppercase tracking-widest text-[9px]">आकारणी केलेल्या करांची रक्कम (रु.)</th>
-                                        <th rowSpan={2} className="p-1 border border-white/40 w-[80px]">शेरा</th>
+                                        <th rowSpan={2} className="p-0 w-[60px]">
+                                            <div className="border-b border-red-900 p-1 text-[#800000]">भांडवली मूल्य</div>
+                                            <div className="p-1 text-[#800000]">(रु.)</div>
+                                        </th>
+                                        <th rowSpan={2} className="p-0 w-[40px]">
+                                            <div className="border-b border-red-900 p-1 text-[#800000]">कराचा दर</div>
+                                            <div className="p-1 text-[#800000]">(पैसे)</div>
+                                        </th>
+                                        <th colSpan={7} className="p-1 text-[#800000]">आकारणी केलेल्या करांची रक्कम (रु.)</th>
+                                        <th rowSpan={2} className="p-1 w-[50px] text-[#800000]">शेरा</th>
                                     </tr>
-                                    <tr className="text-white text-[8.5px] font-black bg-brand-gradient uppercase tracking-wider">
-                                        <th className="p-1 border border-white/40">जमीन</th>
-                                        <th className="p-1 border border-white/40">बांधकाम</th>
-                                        <th className="p-1 border border-white/40 w-[50px]">मालमत्ता <br />कर </th>
-                                        <th className="p-1 border border-white/40 w-[50px]">दिवाबत्ती <br />कर</th>
-                                        <th className="p-1 border border-white/40 w-[50px]">आरोग्य <br />कर</th>
-                                        <th className="p-1 border border-white/40 w-[50px]">सामान्य पाणी
-                                            <br />कर</th>
-                                        <th className="p-1 border border-white/40 w-[50px]">विशेष पाणी
-                                            <br />कर</th>
-                                        <th className="p-1 border border-white/40 w-[50px]">कचरागाडी <br />कर</th>
-
-                                        <th className="p-1 border border-white/40 w-[60px]">एकूण</th>
+                                    <tr className="text-[#800000] bg-gray-100 text-center font-bold text-[8px]">
+                                        <th className="p-1 w-[40px]">जमीन</th>
+                                        <th className="p-1 w-[40px]">बांधकाम</th>
+                                        <th className="p-1 w-[40px]">मालमत्ता<br />कर</th>
+                                        <th className="p-1 w-[40px]">दिवाबत्ती<br />कर</th>
+                                        <th className="p-1 w-[40px]">आरोग्य<br />कर</th>
+                                        <th className="p-1 w-[40px]">सामान्य पाणी<br />कर</th>
+                                        <th className="p-1 w-[40px]">विशेष पाणी<br />कर</th>
+                                        <th className="p-1 w-[40px]">कचरागाडी<br />कर</th>
+                                        <th className="p-1 w-[50px]">एकूण</th>
                                     </tr>
                                 </thead>
+
 
                                 <tbody>
                                     {chunk.map((r, rIdx) => {
@@ -274,91 +370,68 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                     const sTaxO = details?.sTaxO || 0;
 
                                                     return (
-                                                        <tr key={sIdx} className={sIdx % 2 === 0 ? "bg-white" : "bg-[#fef7f7]"}>
+                                                        <tr key={sIdx} style={{ backgroundColor: 'rgba(255,255,255,0.55)' }}>
                                                             {sIdx === 0 && (
                                                                 <>
-                                                                    <td rowSpan={rowCount} className="p-1 text-center font-black align-middle border border-black text-xs text-[#A80D40]">{MN(srNo)}</td>
-                                                                    <td rowSpan={rowCount} className="p-0 text-center align-middle border border-black text-[10px]">
-                                                                        <div className="p-1 font-bold border-b border-black text-gray-800">{r.wastiName || '-'}</div>
-                                                                        <div className="p-1 font-black text-[#A80D40]">{r.khasraNo || '-'}</div>
+                                                                    <td rowSpan={rowCount} className="p-1 text-center font-black align-middle text-[#800000]">{MN(srNo)}</td>
+                                                                    <td rowSpan={rowCount} className="p-0 text-center align-middle">
+                                                                        <div className="p-1 font-bold border-b border-red-900 text-black">{r.wastiName || '-'}</div>
+                                                                        <div className="p-1 font-black text-[#800000]">{r.khasraNo || '-'}</div>
                                                                     </td>
-                                                                    <td rowSpan={rowCount} className="p-1 text-center font-black align-middle border border-black text-[10px] text-gray-900">
+                                                                    <td rowSpan={rowCount} className="p-1 text-center font-black align-middle text-black">
                                                                         {r.propertyId || r.plotNo || '-'}
                                                                     </td>
-                                                                    <td rowSpan={rowCount} className="p-0 align-middle border border-black text-[10px]">
-                                                                        <div className="p-1 font-black border-b border-black flex items-center justify-between text-gray-900 uppercase">
+                                                                    <td rowSpan={rowCount} className="p-0 align-middle">
+                                                                        <div className="p-1 font-black border-b border-red-900 text-black flex items-center justify-between">
                                                                             <OwnerNameDisplay name={r.ownerName || '-'} />
-
-                                                                            <button
-                                                                                onClick={() => setSelectedRecordForFormula(r)}
-                                                                                className="no-print ml-2 w-7 h-7 flex items-center justify-center bg-[#A80D40]/10 text-[#A80D40] rounded-lg border border-[#A80D40]/20 hover:bg-[#A80D40] hover:text-white transition-all shadow-md active:scale-95"
-                                                                                title="गणना सूत्र पहा"
-                                                                            >
-                                                                                🧮
-                                                                            </button>
                                                                         </div>
-                                                                        <div className="p-1 text-[9px] text-gray-500 font-bold italic border-b border-black/10">भोगवटादार: {r.occupantName || 'स्वतः'}</div>
-                                                                        <div className="p-1 text-[9px] text-slate-500 font-bold">संपर्क: {r.contactNo ? MN(r.contactNo) : '-'}</div>
+                                                                        <div className="p-1 text-[9px] text-black border-b border-red-900">भोगवटादार: {r.occupantName || 'स्वतः'}</div>
+                                                                        <div className="p-1 text-[9px] text-black">संपर्क: {r.contactNo ? MN(r.contactNo) : '-'}</div>
                                                                     </td>
-                                                                    <td rowSpan={rowCount} className="p-1 justify-center items-center text-center font-black align-middle border border-black text-[10px] bg-[#A80D40]/5 leading-tight">
-                                                                        <div className="flex flex-col items-center justify-center gap-0.5">
-                                                                            {Number(r.propertyLength) > 0 && Number(r.propertyWidth) > 0 && (
-                                                                                <span className="text-[#A80D40] whitespace-nowrap text-[9px]">
-                                                                                    {MN(r.propertyLength)} × {MN(r.propertyWidth)}
-                                                                                </span>
-                                                                            )}
-                                                                            <span className="text-[#952B32] font-black whitespace-nowrap">
-                                                                                {MN(r.totalAreaSqFt || totalArea)} <span className="text-[8px] font-bold text-gray-500">चौ.फूट</span>
-                                                                            </span>
-                                                                            {Number(r.totalAreaSqMt || 0) > 0 && (
-                                                                                <span title="चौरस मीटर" className="text-[9px] text-gray-600 italic border-t border-black">
-                                                                                    ({MN(r.totalAreaSqMt || 0)} <span className="text-[7.5px]">चौ.मी</span>)
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
+                                                                    <td rowSpan={rowCount} className="p-1 text-center font-black align-middle text-[#800000]">
+                                                                        {MN(r.totalAreaSqFt || totalArea)} <span className="text-[8px] font-bold ">चौ.फूट</span>
                                                                     </td>
                                                                 </>
                                                             )}
-                                                            <td className="p-1 text-center font-black border border-black bg-white text-[10px] text-[#A80D40]">
+                                                            <td className="p-1 text-center font-black text-[#800000]">
                                                                 <div>{s?.propertyType || '-'}</div>
                                                                 {s?.propertyType === 'आर.सी.सी' && activeSections.length > 1 && (
-                                                                    <div className="text-[8px] font-black text-[#952B32]">({FLOOR_NAMES[s.floorIndex]})</div>
+                                                                    <div className="text-[8px] font-black">({FLOOR_NAMES[s.floorIndex]})</div>
                                                                 )}
                                                             </td>
-                                                            <td className="p-0 text-center border border-black text-[10px]">
-                                                                <div className="p-1 border-b border-black bg-white font-black">{s ? MN(s.areaSqFt || 0) : '-'}</div>
-                                                                <div className="p-1 text-gray-500 font-black text-[8.5px] bg-gray-50">{s ? MN(s.areaSqMt || 0) : '-'}</div>
+                                                            <td className="p-0 text-center">
+                                                                <div className="p-1 border-b border-red-900 font-black text-black">{s ? MN(s.areaSqFt || 0) : '-'}</div>
+                                                                <div className="p-1  font-black text-[8.5px]">{s ? MN(s.areaSqMt || 0) : '-'}</div>
                                                             </td>
-                                                            <td className="p-0 text-center border border-black text-[9px]">
-                                                                <div className="p-1 font-black border-b border-black text-gray-800">
+                                                            <td className="p-0 text-center">
+                                                                <div className="p-1 font-black border-b border-red-900 text-black">
                                                                     {s?.propertyType === 'आर.सी.सी' ? (s?.constructionYear || r.constructionYear ? MN(s?.constructionYear || r.constructionYear) : '-') : '-'}
                                                                 </div>
-                                                                <div className="p-1 font-bold text-[#A80D40]">
-                                                                    {s?.propertyType === 'आर.सी.सी' ? `(${MN(s?.propertyAge || r.propertyAge || 0)} वर्ष)` : ''}
+                                                                <div className="p-1 font-bold text-[#800000]">
+                                                                    {s?.propertyType === 'आर.सी.सी' ? `(${MN(s?.propertyAge || r.propertyAge || 0)} वर्षे)` : ''}
                                                                 </div>
                                                             </td>
-                                                            <td className="p-1 text-right border border-black text-[10px] font-bold">
+                                                            <td className="p-1 text-right font-bold text-black">
                                                                 {s?.propertyType === 'खाली जागा' ? MN(s.landRate || 0) : '-'}
                                                             </td>
-                                                            <td className="p-1 text-right border border-black text-[10px] font-bold">
+                                                            <td className="p-1 text-right font-bold text-black">
                                                                 {s?.propertyType !== 'खाली जागा' ? MN(s.buildingRate || 0) : '-'}
                                                             </td>
-                                                            <td className="p-0 text-center border border-black text-[10px] font-black">
-                                                                <div className="p-1 border-b border-black">{s ? MN(details?.weightage || 0) : '-'}</div>
-                                                                <div className="p-1 text-[#A80D40]">{s ? MN(details?.depreciationRate || 0) : '-'}</div>
+                                                            <td className="p-0 text-center font-black">
+                                                                <div className="p-1 border-b border-red-900 text-black">{s ? MN(details?.weightage || 0) : '-'}</div>
+                                                                <div className="p-1 text-[#800000]">{s ? MN(details?.depreciationRate || 0) : '-'}</div>
                                                             </td>
-                                                            <td className="p-1 text-right font-black border border-black text-[10px] bg-[#A80D40]/5 text-[#952B32]">
+                                                            <td className="p-1 text-right font-black text-[#800000]">
                                                                 {s ? MN((finalBVal + finalLVal).toFixed(0)) : '-'}
                                                             </td>
-                                                            <td className="p-1 text-center border border-black text-[10px] font-black" style={{ color: '#A80D40' }}>
+                                                            <td className="p-1 text-center font-black text-[#800000]">
                                                                 {s ? MN(s.buildingTaxRate || s.openSpaceTaxRate || 0) : '-'}
                                                             </td>
-                                                            {/* Column 15: Property Tax per section with breakdown */}
-                                                            <td className="p-0 text-right align-middle border border-black text-[10px] font-bold">
+                                                            <td className="p-0 text-right align-middle font-bold text-black">
                                                                 <div className="p-1 flex flex-col gap-1">
                                                                     {(details?.sTaxB || 0) > 0 && (details?.sTaxO || 0) > 0 ? (
                                                                         <div className="flex flex-col gap-0.5">
-                                                                            <div className="flex justify-between items-center text-[#A80D40]">
+                                                                            <div className="flex justify-between items-center text-[#800000]">
                                                                                 <span className="text-[7px] italic">इमारत:</span>
                                                                                 <span>{MN(details.sTaxB.toFixed(0))}</span>
                                                                             </div>
@@ -366,12 +439,12 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                                                 <span className="text-[7px] italic">जागा:</span>
                                                                                 <span>{MN(details.sTaxO.toFixed(0))}</span>
                                                                             </div>
-                                                                            <div className="mt-1 pt-1 border-t border-black/10 text-center font-black text-[#A80D40]">
+                                                                            <div className="mt-1 pt-1 border-t border-red-900 text-center font-black text-[#800000]">
                                                                                 {MN((details.sTaxB + details.sTaxO).toFixed(0))}
                                                                             </div>
                                                                         </div>
                                                                     ) : (
-                                                                        <div className={`text-center ${(details?.sTaxB || 0) > 0}`}>
+                                                                        <div className="text-center text-black">
                                                                             {MN(((details?.sTaxB || 0) + (details?.sTaxO || 0)).toFixed(0))}
                                                                         </div>
                                                                     )}
@@ -380,14 +453,14 @@ export default function Namuna8PrintFormat({ records }: Props) {
 
                                                             {sIdx === 0 && (
                                                                 <>
-                                                                    <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.streetLightTax) || 0).toFixed(0))}</td>
-                                                                    <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.healthTax) || 0).toFixed(0))}</td>
-                                                                    <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.generalWaterTax) || 0).toFixed(0))}</td>
-                                                                    <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.specialWaterTax) || 0).toFixed(0))}</td>
-                                                                    <td rowSpan={rowCount} className="p-1 text-center align-middle border border-black text-[10px] font-bold">{MN((Number(r.wasteCollectionTax) || 0).toFixed(0))}</td>
+                                                                    <td rowSpan={rowCount} className="p-1 text-center align-middle font-bold text-black">{MN((Number(r.streetLightTax) || 0).toFixed(0))}</td>
+                                                                    <td rowSpan={rowCount} className="p-1 text-center align-middle font-bold text-black">{MN((Number(r.healthTax) || 0).toFixed(0))}</td>
+                                                                    <td rowSpan={rowCount} className="p-1 text-center align-middle font-bold text-black">{MN((Number(r.generalWaterTax) || 0).toFixed(0))}</td>
+                                                                    <td rowSpan={rowCount} className="p-1 text-center align-middle font-bold text-black">{MN((Number(r.specialWaterTax) || 0).toFixed(0))}</td>
+                                                                    <td rowSpan={rowCount} className="p-1 text-center align-middle font-bold text-black">{MN((Number(r.wasteCollectionTax) || 0).toFixed(0))}</td>
 
-                                                                    <td rowSpan={rowCount} className="p-1 text-center font-black align-middle border border-black text-[11px] ">{MN(recordTotalTax.toFixed(0))}</td>
-                                                                    <td rowSpan={rowCount} className="p-1 text-[9px] align-middle border border-black whitespace-pre-wrap font-bold text-gray-700">{(r.remarksNotes || '-').replace(/फेरफार क्र:/g, 'फेरफार बुक क्र:') || '-'}</td>
+                                                                    <td rowSpan={rowCount} className="p-1 text-center font-black align-middle text-black">{MN(recordTotalTax.toFixed(0))}</td>
+                                                                    <td rowSpan={rowCount} className="p-1 text-[9px] align-middle whitespace-pre-wrap font-bold text-gray-700">{(r.remarksNotes || '-').replace(/फेरफार क्र:/g, 'फेरफार बुक क्र:') || '-'}</td>
                                                                 </>
                                                             )}
                                                         </tr>
@@ -398,300 +471,75 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                     })}
                                 </tbody>
                                 <tfoot>
-                                    <tr className="text-white font-black text-[10px] bg-brand-gradient">
-                                        <td colSpan={4} className="p-2 text-right uppercase tracking-widest opacity-80 text-white font-black whitespace-nowrap"></td>
-                                        <td className="">
-
-                                        </td>
-                                        <td className="bg-brand-gradient border-white/20"></td>
-                                        <td className="bg-brand-gradient border-white/20"></td>
-
-                                        <td colSpan={4} className="bg-brand-gradient "></td>
-                                        <td className="p-1 text-right  bg-brand-gradient">
-                                            &nbsp;
-                                        </td>
-                                        <td className="bg-brand-gradient border-white/20"></td>
-                                        <td className="p-0 text-right border-white/40 text-[9px] bg-brand-gradient">
-                                            <div className="p-1 font-black bg-brand-gradient">
-                                                {MN(chunk.reduce((sum: number, r: any) => {
-                                                    const active = (r.sections || [])
-                                                        .filter((s: any) => s.propertyType && s.propertyType !== 'निवडा');
-                                                    const rGhar = active.reduce((sSum: number, s: any) => {
-                                                        const area = Number(s?.areaSqMt || 0);
-                                                        const bRes = calculateTax({
-                                                            areaSqMt: area,
-                                                            rate: Number(s?.buildingRate || 0),
-                                                            taxRate: Number(s?.buildingTaxRate || 0),
-                                                            weightage: Number(s?.weightage || 1),
-                                                            valueMultiplier: Number(s?.depreciationRate || 1)
-                                                        });
-                                                        const lRes = calculateTax({
-                                                            areaSqMt: area,
-                                                            rate: Number(s?.landRate || 0),
-                                                            taxRate: Number(s?.openSpaceTaxRate || 0),
-                                                            weightage: 1.0,
-                                                            valueMultiplier: 1.0
-                                                        });
-                                                        return sSum + bRes.finalTax + lRes.finalTax;
-                                                    }, 0);
-                                                    return sum + rGhar;
-                                                }, 0).toFixed(0))}
-                                            </div>
-                                        </td>
-                                        <td className="p-1 text-right border-white/40 bg-brand-gradient">
-                                            {MN(chunk.reduce((sum: number, r: any) => sum + (Number(r.streetLightTax) || 0), 0).toFixed(0))}
-                                        </td>
-                                        <td className="p-1 text-right border-white/40 bg-brand-gradient">
-                                            {MN(chunk.reduce((sum: number, r: any) => sum + (Number(r.healthTax) || 0), 0).toFixed(0))}
-                                        </td>
-                                        <td className="p-1 text-right border-white/40 bg-brand-gradient">
-                                            {MN(chunk.reduce((sum: number, r: any) => sum + (Number(r.wasteCollectionTax) || 0), 0).toFixed(0))}
-                                        </td>
-                                        <td className="p-1 text-right border-white/40 bg-brand-gradient">
-                                            {MN(chunk.reduce((sum: number, r: any) => sum + (Number(r.generalWaterTax) || 0), 0).toFixed(0))}
-                                        </td>
-                                        <td className="p-1 text-right border-white/40 bg-brand-gradient">
-                                            {MN(chunk.reduce((sum: number, r: any) => sum + (Number(r.specialWaterTax) || 0), 0).toFixed(0))}
-                                        </td>
-                                        <td className="p-2 text-right border border-white/40 text-[12px] bg-brand-gradient text-white ">
+                                    <tr className="font-black text-[9px]  text-[#800000]">
+                                        {/* Spans: Sr(1)+Wasti(1)+Plot(1)+Owner(1)+Area(1)+Type(1)+SqFt(1)+Year(1)+LandRate(1)+BuildRate(1)+Weightage(1)+Capital(1)+TaxRate(1) = 13 */}
+                                        <td colSpan={13} className="p-2 text-right font-black text-[#800000] tracking-wide">एकूण रक्कम :</td>
+                                        {/* मालमत्ता कर total */}
+                                        <td className="p-1 text-center font-black text-[#800000]">
                                             {MN(chunk.reduce((sum: number, r: any) => {
-                                                const active = (r.sections || [])
-                                                    .filter((s: any) => s.propertyType && s.propertyType !== 'निवडा');
-                                                const rGhar = active.reduce((sSum: number, s: any) => {
+                                                const active = (r.sections || []).filter((s: any) => s.propertyType && s.propertyType !== 'निवडा');
+                                                return sum + active.reduce((sSum: number, s: any) => {
                                                     const area = Number(s?.areaSqMt || 0);
-                                                    const bRes = calculateTax({
-                                                        areaSqMt: area,
-                                                        rate: Number(s?.buildingRate || 0),
-                                                        taxRate: Number(s?.buildingTaxRate || 0),
-                                                        weightage: Number(s?.weightage || 1),
-                                                        valueMultiplier: Number(s?.depreciationRate || 1)
-                                                    });
-                                                    const lRes = calculateTax({
-                                                        areaSqMt: area,
-                                                        rate: Number(s?.landRate || 0),
-                                                        taxRate: Number(s?.openSpaceTaxRate || 0),
-                                                        weightage: 1.0,
-                                                        valueMultiplier: 1.0
-                                                    });
+                                                    const bRes = calculateTax({ areaSqMt: area, rate: Number(s?.buildingRate || 0), taxRate: Number(s?.buildingTaxRate || 0), weightage: Number(s?.weightage || 1), valueMultiplier: Number(s?.depreciationRate || 1) });
+                                                    const lRes = calculateTax({ areaSqMt: area, rate: Number(s?.landRate || 0), taxRate: Number(s?.openSpaceTaxRate || 0), weightage: 1.0, valueMultiplier: 1.0 });
                                                     return sSum + bRes.finalTax + lRes.finalTax;
                                                 }, 0);
-                                                const other = (Number(r.streetLightTax) || 0) +
-                                                    (Number(r.healthTax) || 0) +
-                                                    (Number(r.wasteCollectionTax) || 0) +
-                                                    (Number(r.generalWaterTax) || 0) +
-                                                    (Number(r.specialWaterTax) || 0);
-                                                return sum + rGhar + other;
                                             }, 0).toFixed(0))}
                                         </td>
-                                        <td className="p-1 text-center border-white/40 uppercase text-[9px] font-black">प्रमाणित</td>
+                                        {/* दिवाबत्ती कर */}
+                                        <td className="p-1 text-center text-[#800000]">{MN(chunk.reduce((s: number, r: any) => s + (Number(r.streetLightTax) || 0), 0).toFixed(0))}</td>
+                                        {/* आरोग्य कर */}
+                                        <td className="p-1 text-center text-[#800000]">{MN(chunk.reduce((s: number, r: any) => s + (Number(r.healthTax) || 0), 0).toFixed(0))}</td>
+                                        {/* सामान्य पाणी कर */}
+                                        <td className="p-1 text-center text-[#800000]">{MN(chunk.reduce((s: number, r: any) => s + (Number(r.generalWaterTax) || 0), 0).toFixed(0))}</td>
+                                        {/* विशेष पाणी कर */}
+                                        <td className="p-1 text-center text-[#800000]">{MN(chunk.reduce((s: number, r: any) => s + (Number(r.specialWaterTax) || 0), 0).toFixed(0))}</td>
+                                        {/* कचरागाडी कर */}
+                                        <td className="p-1 text-center text-[#800000]">{MN(chunk.reduce((s: number, r: any) => s + (Number(r.wasteCollectionTax) || 0), 0).toFixed(0))}</td>
+                                        {/* एकूण grand total */}
+                                        <td className="p-2 text-center text-white bg-[#800000] font-black text-[12px]">
+                                            {MN(chunk.reduce((sum: number, r: any) => {
+                                                const active = (r.sections || []).filter((s: any) => s.propertyType && s.propertyType !== 'निवडा');
+                                                const rGhar = active.reduce((sSum: number, s: any) => {
+                                                    const area = Number(s?.areaSqMt || 0);
+                                                    const bRes = calculateTax({ areaSqMt: area, rate: Number(s?.buildingRate || 0), taxRate: Number(s?.buildingTaxRate || 0), weightage: Number(s?.weightage || 1), valueMultiplier: Number(s?.depreciationRate || 1) });
+                                                    const lRes = calculateTax({ areaSqMt: area, rate: Number(s?.landRate || 0), taxRate: Number(s?.openSpaceTaxRate || 0), weightage: 1.0, valueMultiplier: 1.0 });
+                                                    return sSum + bRes.finalTax + lRes.finalTax;
+                                                }, 0);
+                                                return sum + rGhar + (Number(r.streetLightTax) || 0) + (Number(r.healthTax) || 0) + (Number(r.wasteCollectionTax) || 0) + (Number(r.generalWaterTax) || 0) + (Number(r.specialWaterTax) || 0);
+                                            }, 0).toFixed(0))}
+                                        </td>
+                                        <td className="p-1 text-center font-black text-[#800000] text-[9px]">प्रमाणित</td>
                                     </tr>
+
+
+
+
                                 </tfoot>
                             </table>
-
-                            {/* Signatures */}
-                            <div className="mt-12 flex flex-col items-start px-4 pb-2 w-full">
-                                <div className="grid grid-cols-3 gap-24 w-full mb-4 pt-12">
-                                    <div className="text-center group">
-                                        <div className="pt-2 border-t-2 border-[#A80D40] text-[#A80D40] uppercase font-black text-[11px] tracking-widest">लिपिक</div>
-                                    </div>
-                                    <div className="text-center">
-                                        {/* <div className="pt-2 border-t-2 border-[#A80D40] text-[#A80D40] uppercase font-black text-[11px] tracking-widest">सरपंच / उपसरपंच</div> */}
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="pt-2 border-t-2 border-[#A80D40] text-[#A80D40] uppercase font-black text-[11px] tracking-widest">ग्रामविकास अधिकारी</div>
-                                    </div>
+                            <center>
+                                <p className="  Center font-bold text-[11px] whitespace-nowrap  ">
+                                    नक्कल दिल्याची दिनांक : {MN(currentDate.toLocaleDateString('en-GB'))}</p>
+                            </center>
+                            {/* Footer Signatures and Notes */}
+                            <div className="mt-auto pt-24 flex w-full gap-8 items-end">
+                                <div className="w-[65%] border border-[#800000] rounded-xl p-3 bg-white">
+                                    <p className="text-[#800000] font-bold text-[10px]  mb-1">
+                                        टीप (१): सदरचा उतारा हा मालकी हक्काचा नसून कर आकारणीचा आहे. सदरच्या उताऱ्यावरून खरेदी-विक्रीचा व्यवहार झाल्यास त्यास ग्रामपंचायत जबाबदार राहणार नाही.
+                                    </p>
+                                    <p className="text-[#800000] font-bold text-[10px]">
+                                        टीप (२): शासन परिपत्रक क्र. VTM2603/ प्र.क्र. २०६८/ पं.रा. ४ दि २० नोव्हेंबर २००३ नुसार ग्रामीण भागातील घरांची नोंदणी पती-पत्नी यांच्या संयुक्त नावे करण्याबाबत निर्देशित करण्यात आलेले आहेत.
+                                    </p>
                                 </div>
-                                <div className="text-[10px] font-bold text-gray-900 leading-relaxed border-t-2 border-gray-200 p-6 w-full mt-6 bg-[#A80D40]/5 rounded-3xl">
-                                    <div className="flex flex-col gap-3">
-                                        <p className="flex items-start gap-2">
-                                            <span className="text-[#A80D40] font-black tracking-tighter shrink-0">टीप (१) :</span>
-                                            <span>सदरचा उतारा हा मालकी हक्काचा नसून कर आकारणीचा आहे. सदरचा उताऱ्यावरून खरेदी-विक्रीचा व्यवहार झाल्यास त्यास ग्रामपंचायत जबाबदार राहणार नाही.</span>
-                                        </p>
-                                        <p className="flex items-start gap-2">
-                                            <span className="text-[#A80D40] font-black tracking-tighter shrink-0">टीप (२) :</span>
-                                            <span>शासन परिपत्रक क्र. VTM2603/ प्र.क्र. २०६८/ पं.रा. ४ दि २० नोव्हेंबर २००३ नुसार ग्रामीण भागातील घरांची नोंदणी पती-पत्नी यांच्या संयुक्त नावे करण्याबाबत निर्देशित करण्यात आलेले आहेत.</span>
-                                        </p>
-                                    </div>
+                                <div className="w-[30%] flex justify-between gap-4 px-2 pb-1">
+                                    <div className="flex-1 border-t border-[#800000] pt-1 text-[#800000] font-black text-[13px] text-center">लिपिक</div>
+                                    <div className="flex-1 border-t border-[#800000] pt-1 text-[#800000] font-black text-[13px] text-center">ग्राम पंचायत अधिकारी</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             ))}
-
-            {selectedRecordForFormula && (
-                <div className="no-print fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-                    <div className="bg-white rounded-[40px] shadow-3xl w-full max-w-5xl max-h-[92vh] overflow-hidden flex flex-col border border-[#A80D40]/20 scale-100 animate-in fade-in zoom-in duration-300">
-                        {/* Modal Header */}
-                        <div className="px-10 py-8 flex justify-between items-center text-white shrink-0 bg-brand-gradient relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12 pointer-events-none">
-                                <span className="text-[120px] font-black">₹</span>
-                            </div>
-                            <div className="relative z-10">
-                                <h3 className="text-3xl font-black flex items-center gap-4">
-                                    <span className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">🧮</span>
-                                    <div className="flex flex-col">
-                                        <span>गणना सूत्र मार्गदर्शक</span>
-                                        <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/50">Tax Calculation Logic</span>
-                                    </div>
-                                </h3>
-                                <p className="text-white/80 text-[12px] font-black uppercase tracking-widest mt-4">
-                                    मालमत्ता क्र: {MN(selectedRecordForFormula.propertyId || '-')} • {selectedRecordForFormula.ownerName}
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setSelectedRecordForFormula(null)}
-                                className="relative z-10 w-14 h-14 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full transition-all duration-300 group border border-white/20 shadow-2xl"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 group-hover:rotate-90 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        {/* Modal Content */}
-                        <div className="flex-1 overflow-y-auto p-10 space-y-10 bg-gray-50/50">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {(selectedRecordForFormula.sections || [])
-                                    .filter(s => s.propertyType && s.propertyType !== 'निवडा')
-                                    .map((s, idx) => {
-                                        const areaSqFt = Number(s.areaSqFt) || 0;
-                                        const areaSqMt = Number(s.areaSqMt) || 0;
-                                        const bRate = Number(s.buildingRate) || 0;
-                                        const lRate = Number(s.landRate) || 0;
-                                        const tr = Number(s.buildingTaxRate || s.openSpaceTaxRate || 0);
-                                        const results = calculateTax({
-                                            areaSqMt: areaSqMt,
-                                            rate: bRate || lRate,
-                                            taxRate: tr,
-                                            weightage: Number(s.weightage || 1),
-                                            valueMultiplier: 1 - Number(s.depreciationRate || 0)
-                                        });
-
-                                        return (
-                                            <div key={idx} className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-premium group hover:shadow-2xl transition-all duration-500 relative overflow-hidden">
-                                                <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-500">
-                                                    <span className="text-[100px] font-black italic" style={{ color: '#A80D40' }}>{MN(idx + 1)}</span>
-                                                </div>
-                                                <h4 className="text-base font-black mb-6 border-b pb-4 flex items-center gap-4" style={{ color: '#A80D40', borderColor: '#A80D40' }}>
-                                                    <div className="w-10 h-10 bg-brand-gradient rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg">{MN(idx + 1)}</div>
-                                                    <div className="flex flex-col">
-                                                        <span>{s.propertyType}</span>
-                                                        <span className="text-[10px] text-gray-500 uppercase tracking-widest">{s.floorIndex !== undefined ? FLOOR_NAMES[s.floorIndex] : ''}</span>
-                                                    </div>
-                                                </h4>
-
-                                                <div className="space-y-6">
-                                                    <div className="flex flex-col gap-2">
-                                                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">१. मोजमाप रुपांतरण</span>
-                                                        <div className="flex justify-between items-center bg-gray-50 p-4 rounded-2xl border border-gray-100 group-hover:border-[#A80D40]/10 transition-colors">
-                                                            <span className="text-[13px] font-black text-gray-700">{MN(areaSqFt.toFixed(2))} <span className="text-[10px] text-gray-400">SqFt</span> ÷ १०.७६</span>
-                                                            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm">
-                                                                <span className="font-black text-sm" style={{ color: '#A80D40' }}>= {MN(areaSqMt.toFixed(2))}</span>
-                                                                <span className="text-[9px] font-black text-gray-400">SqMt</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="flex flex-col gap-2">
-                                                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">२. भांडवली मूल्य (Valuation)</span>
-                                                        <div className="flex flex-col gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100 group-hover:border-[#A80D40]/10 transition-colors">
-                                                            <div className="flex justify-between items-center">
-                                                                <span className="text-[13px] font-black text-gray-700">मूलभूत मूल्य: {MN(areaSqMt.toFixed(2))} × {MN(bRate || lRate)}</span>
-                                                                <span className="font-black text-gray-500">₹ {MN((areaSqMt * (bRate || lRate)).toFixed(0))}</span>
-                                                            </div>
-                                                            {Number(s.weightage || 1) !== 1 && (
-                                                                <div className="flex justify-between items-center text-[#A80D40]">
-                                                                    <span className="text-[11px] font-black italic">× भारांक (Weightage):</span>
-                                                                    <span className="font-black">× {MN(s.weightage)}</span>
-                                                                </div>
-                                                            )}
-                                                            <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-                                                                <span className="text-[11px] font-black text-gray-400">अंतिम भांडवली मूल्य:</span>
-                                                                <div className="bg-brand-gradient px-4 py-1.5 rounded-xl shadow-xl text-white font-black text-sm">
-                                                                    ₹ {MN(results.valuation.toFixed(0))}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="flex flex-col gap-2">
-                                                        <span className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2" style={{ color: '#A80D40' }}>
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-[#A80D40] animate-pulse"></div> ३. वार्षिक मालमत्ता कर
-                                                        </span>
-                                                        <div className="flex flex-col gap-3 bg-[#A80D40]/5 p-5 rounded-2xl border-2 border-[#A80D40]/10 group-hover:border-[#A80D40]/30 transition-all duration-500">
-                                                            {Number(s.depreciationRate || 0) > 0 && (
-                                                                <div className="flex justify-between items-center text-gray-500 text-[11px] font-bold border-b border-[#A80D40]/10 pb-2 mb-1">
-                                                                    <span>घसारा (Depreciation {MN(Number(s.depreciationRate) * 100)}%):</span>
-                                                                    <span>- ₹ {MN((results.valuation - results.depreciatedValue).toFixed(0))}</span>
-                                                                </div>
-                                                            )}
-                                                            <div className="flex justify-between items-center">
-                                                                <span className="text-[13px] font-black text-gray-800 tracking-tight">({MN(results.depreciatedValue.toFixed(0))} × {MN(tr)}) ÷ १०००</span>
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="font-black text-xl" style={{ color: '#A80D40' }}>₹ {MN(results.finalTax.toFixed(0))}</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                            </div>
-
-                            <div className="mt-12 bg-white border-2 border-[#A80D40]/10 rounded-[48px] p-10 relative overflow-hidden shadow-premium-dark">
-                                <div className="absolute top-0 left-0 w-full h-2 bg-brand-gradient"></div>
-                                <h4 className="text-2xl font-black mb-10 flex items-center gap-5 text-[#A80D40]">
-                                    <div className="w-12 h-12 bg-brand-gradient rounded-2xl flex items-center justify-center text-white shadow-premium">Σ</div>
-                                    <div className="flex flex-col">
-                                        <span>एकूण मागणी सारांश</span>
-                                        <span className="text-[10px] text-gray-400 uppercase tracking-[0.4em] font-black mt-1">Consolidated Summary</span>
-                                    </div>
-                                </h4>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
-                                    <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100 hover:scale-105 transition-transform duration-300">
-                                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">मालमत्ता कर</div>
-                                        <div className="text-2xl font-black text-gray-900 leading-none">₹ {MN(Number(selectedRecordForFormula.propertyTax || 0).toFixed(0))}</div>
-                                    </div>
-                                    <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100 hover:scale-105 transition-transform duration-300">
-                                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">जमीन कर</div>
-                                        <div className="text-2xl font-black text-gray-900 leading-none">₹ {MN(Number(selectedRecordForFormula.openSpaceTax || 0).toFixed(0))}</div>
-                                    </div>
-                                    <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100 hover:scale-105 transition-transform duration-300">
-                                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">इतर सर्व कर</div>
-                                        <div className="text-2xl font-black text-gray-900 leading-none">
-                                            ₹ {MN((
-                                                (Number(selectedRecordForFormula.streetLightTax) || 0) +
-                                                (Number(selectedRecordForFormula.healthTax) || 0) +
-                                                (Number(selectedRecordForFormula.wasteCollectionTax) || 0) +
-                                                (Number(selectedRecordForFormula.generalWaterTax) || 0) +
-                                                (Number(selectedRecordForFormula.specialWaterTax) || 0)
-                                            ).toFixed(0))}
-                                        </div>
-                                    </div>
-                                    <div className="bg-brand-gradient p-6 rounded-[32px] shadow-premium-dark ring-8 ring-[#A80D40]/5 hover:scale-110 transition-transform duration-500 cursor-default">
-                                        <div className="text-[10px] font-black text-white/60 uppercase tracking-[0.3em] mb-2 leading-none">एकूण वार्षिक मागणी</div>
-                                        <div className="text-3xl font-black text-white leading-none mt-2 tracking-tighter">₹ {MN(Number(selectedRecordForFormula.totalTaxAmount || 0).toFixed(0))}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="px-10 py-8 bg-gray-50 border-t border-gray-100 flex justify-end shrink-0">
-                            <button
-                                onClick={() => setSelectedRecordForFormula(null)}
-                                className="px-12 py-4 bg-brand-gradient text-white font-black rounded-2xl hover:scale-105 hover:shadow-xl active:scale-95 transition-all duration-300 shadow-premium flex items-center gap-3 uppercase tracking-widest text-xs"
-                            >
-                                <span>बंद करा</span>
-                                <span className="opacity-40 font-normal">|</span>
-                                <span>CLOSE</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

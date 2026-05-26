@@ -11,7 +11,6 @@ interface Props {
     onView?: (id: string) => void;
     showActions?: boolean;
     onPrint?: (id: string) => void;
-    onPrintBill?: (id: string) => void;
     onPrintMultiple?: (records: PropertyRecord[]) => void;
 }
 
@@ -39,7 +38,6 @@ export default function NamunaTable9({
     onDelete,
     onView,
     onPrint,
-    onPrintBill,
     onPrintMultiple,
     showActions = false
 }: Props) {
@@ -341,11 +339,6 @@ export default function NamunaTable9({
                                                 {onPrint && (
                                                     <button onClick={() => onPrint(r.id)} className="w-7 h-7 flex items-center justify-center text-indigo-500 bg-indigo-50 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-indigo-100" title="नमुना ९ प्रिंट">
                                                         <Printer className="w-3.5 h-3.5" />
-                                                    </button>
-                                                )}
-                                                {onPrintBill && (
-                                                    <button onClick={() => onPrintBill(r.id)} className="w-7 h-7 flex items-center justify-center text-emerald-500 bg-emerald-50 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100" title="मागणी बिल">
-                                                        <FileText className="w-3.5 h-3.5" />
                                                     </button>
                                                 )}
                                                 {onEdit && (

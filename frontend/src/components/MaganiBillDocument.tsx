@@ -33,6 +33,10 @@ export const BillContent = ({ record, copyLabel }: BillContentProps) => {
     const arrearsTotal = taxMapping.reduce((acc, row) => acc + (row.arrears || 0), 0);
     const grandTotal = currentTotal + arrearsTotal;
 
+    // 5% discount applies ONLY on घर कर (propertyTax) + जमीन कर (openSpaceTax)
+    const discountBase = (Number(record.propertyTax) || 0) + (Number(record.openSpaceTax) || 0);
+    const discountAmt = Math.round(discountBase * 0.05);
+
     return (
         <div className="flex-1 p-4 print:p-2 relative h-full font-black border-r-2 border-dashed border-gray-400 last:border-r-0 overflow-hidden bg-white text-black">
             {/* Watermark Logo */}
@@ -126,17 +130,17 @@ export const BillContent = ({ record, copyLabel }: BillContentProps) => {
                         </tr>
                         {/* 5% Discount Row */}
                         <tr className="border-b border-gray-600 text-gray-800 font-black">
-                            <td className="border-r border-gray-600 p-1 font-black text-[9px]">५% सूट (चालू रकमेवर सप्टेंबर पर्यंत)</td>
+                            <td className="border-r border-gray-600 p-1 font-black text-[9px]">५% सूट (घर कर / जमीन कर - सप्टेंबर पर्यंत)</td>
                             <td className="border-r border-gray-600 p-1 text-right text-slate-400">-</td>
-                            <td className="border-r border-gray-600 p-1 text-right text-green-700 font-black">({MN((currentTotal * 0.05).toFixed(0))})</td>
-                            <td className="p-1 text-right font-black text-green-700">-{MN((currentTotal * 0.05).toFixed(0))}</td>
+                            <td className="border-r border-gray-600 p-1 text-right text-green-700 font-black">({MN(discountAmt)})</td>
+                            <td className="p-1 text-right font-black text-green-700">-{MN(discountAmt)}</td>
                         </tr>
                         {/* Net Payable Row */}
                         <tr className="border-b border-gray-600 bg-[#7cdc39] print:bg-[#7cdc39] print:text-black text-black font-black">
                             <td className="border-r border-gray-600 p-1">एकूण</td>
                             <td className="border-r border-gray-600 p-1 text-right">{MN(arrearsTotal)}</td>
-                            <td className="border-r border-gray-600 p-1 text-right">{MN((currentTotal - currentTotal * 0.05).toFixed(0))}</td>
-                            <td className="p-1 text-right text-[12px] font-black">{MN((grandTotal - currentTotal * 0.05).toFixed(0))}</td>
+                            <td className="border-r border-gray-600 p-1 text-right">{MN(currentTotal - discountAmt)}</td>
+                            <td className="p-1 text-right text-[12px] font-black">{MN(grandTotal - discountAmt)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -144,7 +148,7 @@ export const BillContent = ({ record, copyLabel }: BillContentProps) => {
                 {/* Footer Section */}
                 <div className="mt-auto ">
                     <p className="text-[10px] font-black leading-tight mb-2">
-                        अक्षरी - <span className="underline text-[12px]">{numberToMarathiWords(Math.round(grandTotal - currentTotal * 0.05))} रु.</span> फक्त.
+                        अक्षरी - <span className="underline text-[12px]">{numberToMarathiWords(Math.round(grandTotal - discountAmt))} रु.</span> फक्त.
                     </p>
 
                     <div className="flex justify-between items-end gap-2">
@@ -161,7 +165,7 @@ export const BillContent = ({ record, copyLabel }: BillContentProps) => {
                                 </div>
                             </div>
                             <p className="text-[10px] font-black mt-2">
-                                दिनांक: {record.paymentDate ? MN(record.paymentDate) : '____/____/२०____'}
+                                दिनांक: {record.paymentDate ? MN(record.paymentDate) : ''}
                             </p>
                             <div className="items-center">
                                 {copyLabel === 'कार्यालयीन प्रत' ? (
@@ -277,7 +281,7 @@ export default function MaganiBillDocument({ record, records, onClose }: Props) 
     }
 
     return (
-        <div className="bg-white min-h-screen w-full flex flex-col items-center p-4 print:p-0 overflow-auto font-black" >
+        <div className="bg-white min-h-screen w-full flex flex-col items-center  print:p-0 overflow-auto font-black" >
             <style>{`
               
                 @media print {
@@ -303,9 +307,9 @@ export default function MaganiBillDocument({ record, records, onClose }: Props) 
                         width: 297mm !important;
                         height: 209mm !important;
                         padding-left: 0.70in !important;
-                        padding-right: 0.10in !important;
-                        padding-top: 0.30in !important;
-                        padding-bottom: 0.10in !important;
+                        padding-right: 0.20in !important;
+                        padding-top: 0.20in !important;
+                        padding-bottom: 0.20in !important;
                         box-sizing: border-box !important;
                         background: white !important;
                         box-shadow: none !important;
@@ -324,7 +328,7 @@ export default function MaganiBillDocument({ record, records, onClose }: Props) 
 
             <div className="flex flex-col w-full max-w-[297mm] print:max-w-none">
                 {pendingRecords.map((r, idx) => (
-                    <div key={r.id || idx} className="flex flex-row w-full bg-white  print:shadow-none min-h-[200mm] overflow-hidden print-container mb-8 print:mb-0">
+                    <div key={r.id || idx} className="flex flex-row w-full bg-white  print:shadow-none min-h-[189mm] overflow-hidden print-container mb-8 print:mb-0">
                         <BillContent record={r} copyLabel="कार्यालयीन प्रत" />
                         <BillContent record={r} copyLabel="लाभार्थी प्रत" />
                     </div>

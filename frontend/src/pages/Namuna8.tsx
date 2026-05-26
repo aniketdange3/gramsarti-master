@@ -232,7 +232,18 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
             if (!res.ok) {
                 fetchRecords(); // Rollback on error
             } else {
-                fetchRecords(); // Get reliable ID
+                const resData = await res.json();
+                if (resData.id) {
+                    try {
+                        const singleRes = await fetch(`${API_URL}/${resData.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                        if (singleRes.ok) {
+                            const freshRecord = await singleRes.json();
+                            if (typeof onUpdateLocalRecord === 'function') {
+                                onUpdateLocalRecord(freshRecord);
+                            }
+                        }
+                    } catch (e) { console.error('Failed to fetch fresh record', e); }
+                }
             }
         } catch (err) {
             console.error(err);
@@ -259,7 +270,6 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
                 return;
             }
             if (res.ok) {
-                fetchRecords();
                 if (viewId === id) {
                     setViewId(null);
                     onClearSelected();

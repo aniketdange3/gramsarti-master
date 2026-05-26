@@ -187,6 +187,8 @@ const initializeDatabase = async () => {
         await addIndexIfNotExists(connection, 'properties', 'idx_prop_srNo', 'srNo');
         await addIndexIfNotExists(connection, 'properties', 'idx_prop_ward', 'wardNo');
         await addIndexIfNotExists(connection, 'properties', 'idx_prop_wasti', 'wastiName');
+        await addIndexIfNotExists(connection, 'properties', 'idx_prop_khasra', 'khasraNo');
+        await addIndexIfNotExists(connection, 'properties', 'idx_prop_layout', 'layoutName');
 
         // 3. PROPERTY SECTIONS - मजले आणि बांधकाम तपशील
         await connection.query(`CREATE TABLE IF NOT EXISTS property_sections (

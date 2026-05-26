@@ -78,7 +78,9 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
         fetchSingle();
     }, [selectedId, records]);
     const [filterKhasra, setFilterKhasra] = useState('');
+    const [filterLayout, setFilterLayout] = useState('');
     const [showOnlyUnpaid, setShowOnlyUnpaid] = useState(true);
+    const [filterPropertyType, setFilterPropertyType] = useState<'rcc' | 'gharkaar' | ''>('');
     const [activeBillRecord, setActiveBillRecord] = useState<PropertyRecord | null>(null);
     const [bulkPrintRecords, setBulkPrintRecords] = useState<PropertyRecord[] | null>(null);
     const [fetchedRecord, setFetchedRecord] = useState<PropertyRecord | null>(null);
@@ -106,12 +108,26 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
             .map(k => k.orig);
     }, [wastiFiltered, filterWasti]);
 
+    const uniqueLayouts = useMemo(() => {
+        if (!filterWasti) return [];
+        const set = new Set<string>();
+        for (const r of wastiFiltered) if (r.layoutName) set.add(r.layoutName);
+        const toEng = (s: string) => s.replace(/[०-९]/g, (d: string) => '0123456789'['०१२३४५६७८९'.indexOf(d)] || d);
+        return Array.from(set)
+            .map(l => ({ orig: l, eng: toEng(l) }))
+            .sort((a, b) => a.eng.localeCompare(b.eng, undefined, { numeric: true, sensitivity: 'base' }))
+            .map(l => l.orig);
+    }, [wastiFiltered, filterWasti]);
+
     const filteredRecords = useMemo(() => {
         let res = records;
         if (filterWasti) res = res.filter(r => r.wastiName === filterWasti);
         if (filterKhasra) {
             const normalizedKhasra = normalizeForSearch(filterKhasra);
             res = res.filter(r => normalizeForSearch(r.khasraNo) === normalizedKhasra);
+        }
+        if (filterLayout) {
+            res = res.filter(r => r.layoutName === filterLayout);
         }
         if (searchTerm.trim()) res = res.filter(r => matchesSearch(r, searchTerm));
 
@@ -123,13 +139,40 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
             });
         }
 
+        // --- RCC / घर कर Smart Filter ---
+        const hasRCC = (r: any) => (r.sections || []).some((s: any) =>
+            s.propertyType && s.propertyType.trim() === 'आर.सी.सी'
+        );
+        const hasGharKar = (r: any) => (r.sections || []).some((s: any) =>
+            s.propertyType && (s.propertyType.includes('घर') || s.propertyType.includes('गृह'))
+        );
+
+        if (filterPropertyType === 'rcc') {
+            // Manual toggle: RCC first, fallback to घर कर
+            const rccRecords = res.filter(hasRCC);
+            res = rccRecords.length > 0 ? rccRecords : res.filter(hasGharKar);
+        } else if (filterPropertyType === 'gharkaar') {
+            res = res.filter(hasGharKar);
+        } else if (filterWasti) {
+            // Auto-smart filter when Wasti (and optionally Khasra/Layout) is selected:
+            // RCC records exist → show RCC; else → fallback to घर कर if available
+            const rccRecords = res.filter(hasRCC);
+            if (rccRecords.length > 0) {
+                res = rccRecords;
+            } else {
+                const gharKarRecords = res.filter(hasGharKar);
+                if (gharKarRecords.length > 0) res = gharKarRecords;
+                // else: no RCC and no GharKar → show all (खाली जागा etc.)
+            }
+        }
+
         // Sort by Khasra then Plot naturally
         return [...res].sort((a, b) => {
             const kComp = sortKhasra(a.khasraNo || '', b.khasraNo || '');
             if (kComp !== 0) return kComp;
             return sortKhasra(a.plotNo || '', b.plotNo || '');
         });
-    }, [records, searchTerm, filterWasti, filterKhasra, showOnlyUnpaid]);
+    }, [records, searchTerm, filterWasti, filterKhasra, filterLayout, showOnlyUnpaid, filterPropertyType]);
 
     const totalPages = Math.ceil(filteredRecords.length / pageSize);
     const paginatedRecords = useMemo(() => {
@@ -139,7 +182,7 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, filterWasti, filterKhasra, showOnlyUnpaid]);
+    }, [searchTerm, filterWasti, filterKhasra, filterLayout, showOnlyUnpaid]);
 
     const stats = useMemo(() => {
         const unpaidRecords = records.filter(r => {
@@ -247,7 +290,35 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
                     disabled={!filterWasti}
                 />
 
+                {/* Layout filter — only when Wasti is selected */}
+                {filterWasti && uniqueLayouts.length > 0 && (
+                    <CustomDropdown
+                        value={filterLayout}
+                        onChange={setFilterLayout}
+                        placeholder="लेआउट निवडा"
+                        options={uniqueLayouts.map((l, i) => ({ value: l, label: `${i + 1}. ${l}` }))}
+                    />
+                )}
+
                 <div className="flex items-center gap-3 ml-auto">
+                    {/* RCC / घर कर Smart Filter Button */}
+                    <button
+                        onClick={() => setFilterPropertyType(p => p === 'rcc' ? '' : 'rcc')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all border ${
+                            filterPropertyType === 'rcc'
+                                ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-sm'
+                                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                        title="आर.सी.सी मालमत्ता दाखवा (नसल्यास घर कर)">
+                        <div className={`w-2 h-2 rounded-full ${filterPropertyType === 'rcc' ? 'bg-blue-600 animate-pulse' : 'bg-slate-300'}`} />
+                        आर.सी.सी / घर कर
+                        {filterPropertyType === 'rcc' && (
+                            <span className="ml-1 px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 text-[9px] font-black">
+                                {filteredRecords.some(r => (r.sections || []).some((s: any) => s.propertyType?.trim() === 'आर.सी.सी'))
+                                    ? 'RCC' : 'घर कर'}
+                            </span>
+                        )}
+                    </button>
                     <button
                         onClick={() => setShowOnlyUnpaid(!showOnlyUnpaid)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all border ${showOnlyUnpaid
@@ -260,7 +331,7 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
                     </button>
 
                     <button
-                        onClick={() => { setFilterWasti(''); setFilterKhasra(''); setSearchTerm(''); setShowOnlyUnpaid(true); }}
+                        onClick={() => { setFilterWasti(''); setFilterKhasra(''); setFilterLayout(''); setSearchTerm(''); setShowOnlyUnpaid(true); setFilterPropertyType(''); }}
                         className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                         title="रीसेट करा"
                     >

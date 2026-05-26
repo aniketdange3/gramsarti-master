@@ -24,16 +24,17 @@ import { API_BASE_URL as BASE } from './utils/config';
 import Sidebar from './components/Sidebar';
 import { UIProvider } from './components/UIProvider';
 import { saveRecordsToDB, loadRecordsFromDB, clearRecordsDB } from './utils/db';
+import GlobalLoader from './components/GlobalLoader';
 
 // --- Lazy loaded pages for performance ---
-const Dashboard  = React.lazy(() => import('./pages/Dashboard'));
-const Namuna8    = React.lazy(() => import('./pages/Namuna8'));
-const Namuna9    = React.lazy(() => import('./pages/Namuna9'));
-const Reports    = React.lazy(() => import('./pages/Reports'));
-const TaxMaster  = React.lazy(() => import('./pages/TaxMaster'));
-const Ferfar     = React.lazy(() => import('./pages/Ferfar'));
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Namuna8 = React.lazy(() => import('./pages/Namuna8'));
+const Namuna9 = React.lazy(() => import('./pages/Namuna9'));
+const Reports = React.lazy(() => import('./pages/Reports'));
+const TaxMaster = React.lazy(() => import('./pages/TaxMaster'));
+const Ferfar = React.lazy(() => import('./pages/Ferfar'));
 const MaganiBill = React.lazy(() => import('./pages/MaganiBill'));
-const Login      = React.lazy(() => import('./pages/Login'));
+const Login = React.lazy(() => import('./pages/Login'));
 
 
 
@@ -41,46 +42,46 @@ const Login      = React.lazy(() => import('./pages/Login'));
 export type ViewType = 'dashboard' | 'namuna8' | 'namuna9' | 'maganiBill' | 'taxMaster' | 'reports' | 'roleAccess' | 'ferfar';
 
 export const VIEW_TO_PATH: Record<ViewType, string> = {
-  dashboard:  '/dashboard',
-  namuna8:    '/namuna8',
-  namuna9:    '/namuna9',
-  taxMaster:  '/taxmaster',
-  reports:    '/reports',
-  ferfar:     '/ferfar',
+  dashboard: '/dashboard',
+  namuna8: '/namuna8',
+  namuna9: '/namuna9',
+  taxMaster: '/taxmaster',
+  reports: '/reports',
+  ferfar: '/ferfar',
   maganiBill: '/maganibill',
   roleAccess: '/role-access',
 };
 
 export const PATH_TO_VIEW: Record<string, ViewType> = {
-  '/dashboard':   'dashboard',
-  '/namuna8':     'namuna8',
-  '/namuna9':     'namuna9',
-  '/taxmaster':   'taxMaster',
-  '/reports':     'reports',
-  '/ferfar':      'ferfar',
-  '/maganibill':  'maganiBill',
+  '/dashboard': 'dashboard',
+  '/namuna8': 'namuna8',
+  '/namuna9': 'namuna9',
+  '/taxmaster': 'taxMaster',
+  '/reports': 'reports',
+  '/ferfar': 'ferfar',
+  '/maganibill': 'maganiBill',
   '/role-access': 'roleAccess',
 };
 
 // ── Inner app (needs router context) ───────────────────────────────────────
 function AppInner() {
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [records,           setRecords]           = useState<PropertyRecord[]>([]);
-  const [taxRates,          setTaxRates]          = useState<any[]>([]);
-  const [sidebarOpen,       setSidebarOpen]       = useState(false);
-  const [desktopSidebarOpen,setDesktopSidebarOpen]= useState(true);
-  const [isLoading,         setIsLoading]         = useState(true);
-  const [checkedIn,         setCheckedIn]         = useState(false);
-  const [checkInTime,       setCheckInTime]       = useState<string | null>(null);
+  const [records, setRecords] = useState<PropertyRecord[]>([]);
+  const [taxRates, setTaxRates] = useState<any[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [checkedIn, setCheckedIn] = useState(false);
+  const [checkInTime, setCheckInTime] = useState<string | null>(null);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
-  const [editProfileOpen,   setEditProfileOpen]   = useState(false);
-  const [editProfile,       setEditProfile]       = useState<any>(null);
-  const [profileSaving,     setProfileSaving]     = useState(false);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [editProfile, setEditProfile] = useState<any>(null);
+  const [profileSaving, setProfileSaving] = useState(false);
 
   const [token, setToken] = useState<string | null>(localStorage.getItem('gp_token'));
-  const [user,  setUser]  = useState<any>(() => {
+  const [user, setUser] = useState<any>(() => {
     try { return JSON.parse(localStorage.getItem('gp_user') || 'null'); } catch { return null; }
   });
 
@@ -89,7 +90,7 @@ function AppInner() {
   // Derive activeView from URL
   const activeView: ViewType = PATH_TO_VIEW[location.pathname] ?? 'dashboard';
 
-  const API_URL     = `${BASE}/api/properties`;
+  const API_URL = `${BASE}/api/properties`;
   const TAX_API_URL = `${BASE}/api/tax-rates`;
 
   useEffect(() => {
@@ -203,12 +204,12 @@ function AppInner() {
 
       const data = await res.json();
       if (!Array.isArray(data)) { setRecords([]); return; }
-      
+
       const processed = data.map((r: any) => ({
         ...r,
-        wastiName:     r.wastiName || '',
+        wastiName: r.wastiName || '',
         arrearsAmount: Number(r.arrearsAmount) || 0,
-        paidAmount:    Number(r.paidAmount)    || 0,
+        paidAmount: Number(r.paidAmount) || 0,
         sections: (r.sections || []).map((s: any) => ({ ...DEFAULT_SECTION, ...s })),
       }));
 
@@ -235,15 +236,15 @@ function AppInner() {
   };
 
   const navItems = [
-    { id: 'dashboard'  as ViewType, label: 'डैशबोर्ड',           sublabel: 'Dashboard',          icon: <LayoutDashboard className="w-5 h-5" />, color: 'from-violet-500 to-indigo-600' },
-    { id: 'namuna8'    as ViewType, label: 'नमुना ८',             sublabel: 'Assessment Register', icon: <FileText className="w-5 h-5" />,        color: 'from-sky-500 to-blue-600' },
-    { id: 'namuna9'    as ViewType, label: 'नमुना ९',             sublabel: 'Tax Notice',          icon: <Receipt className="w-5 h-5" />,         color: 'from-emerald-500 to-green-600' },
-    { id: 'maganiBill' as ViewType, label: 'मागणी बिल',           sublabel: 'Demand Bill',        icon: <Printer className="w-5 h-5" />,         color: 'from-indigo-500 to-violet-600' },
+    { id: 'dashboard' as ViewType, label: 'डैशबोर्ड', sublabel: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, color: 'from-violet-500 to-indigo-600' },
+    { id: 'namuna8' as ViewType, label: 'नमुना ८', sublabel: 'Assessment Register', icon: <FileText className="w-5 h-5" />, color: 'from-sky-500 to-blue-600' },
+    { id: 'namuna9' as ViewType, label: 'नमुना ९', sublabel: 'Tax Notice', icon: <Receipt className="w-5 h-5" />, color: 'from-emerald-500 to-green-600' },
+    { id: 'maganiBill' as ViewType, label: 'मागणी बिल', sublabel: 'Demand Bill', icon: <Printer className="w-5 h-5" />, color: 'from-indigo-500 to-violet-600' },
 
-    { id: 'reports'    as ViewType, label: 'अहवाल',               sublabel: 'Reports',             icon: <BarChart3 className="w-5 h-5" />,       color: 'from-purple-500 to-fuchsia-600', allowedRoles: ['super_admin','gram_sevak','gram_sachiv'] },
-    { id: 'ferfar'     as ViewType, label: 'फेरफार नोंदवही',      sublabel: 'Mutation Register',   icon: <FileText className="w-5 h-5" />,        color: 'from-fuchsia-500 to-purple-600', allowedRoles: ['super_admin','gram_sevak','operator'] },
-    { id: 'roleAccess' as ViewType, label: 'रोल अ‍ॅक्सेस',        sublabel: 'Role Access',         icon: <Shield className="w-5 h-5" />,          color: 'from-rose-600 to-rose-400',      allowedRoles: ['super_admin','gram_sevak','gram_sachiv'] },
-    { id: 'taxMaster'  as ViewType, label: 'प्रणाली संचलन केंद्र', sublabel: 'Tax Master',         icon: <Settings className="w-5 h-5" />,        color: 'from-amber-500 to-orange-500',   allowedRoles: ['super_admin','gram_sevak','gram_sachiv'] },
+    { id: 'reports' as ViewType, label: 'अहवाल', sublabel: 'Reports', icon: <BarChart3 className="w-5 h-5" />, color: 'from-purple-500 to-fuchsia-600', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
+    { id: 'ferfar' as ViewType, label: 'फेरफार नोंदवही', sublabel: 'Mutation Register', icon: <FileText className="w-5 h-5" />, color: 'from-fuchsia-500 to-purple-600', allowedRoles: ['super_admin', 'gram_sevak', 'operator'] },
+    { id: 'roleAccess' as ViewType, label: 'रोल अ‍ॅक्सेस', sublabel: 'Role Access', icon: <Shield className="w-5 h-5" />, color: 'from-rose-600 to-rose-400', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
+    { id: 'taxMaster' as ViewType, label: 'प्रणाली संचलन केंद्र', sublabel: 'Tax Master', icon: <Settings className="w-5 h-5" />, color: 'from-amber-500 to-orange-500', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
   ];
 
   // ── Unauthenticated ──────────────────────────────────────────────────────
@@ -273,7 +274,7 @@ function AppInner() {
     <div className="min-h-screen bg-slate-50 flex font-sans">
 
       {/* Desktop Sidebar */}
-      <div className={`hidden md:flex shrink-0 no-print h-screen sticky top-0 transition-all duration-300 ease-in-out relative z-50 ${desktopSidebarOpen ? 'w-64' : 'w-20'}`}>
+      <div className={`hidden md:flex shrink-0 no-print h-screen sticky top-0 transition-all duration-300 ease-in-out relative z-50 ${desktopSidebarOpen ? 'w-80' : 'w-20'}`}>
         <Sidebar
           user={user} activeView={activeView} onNavClick={handleNavClick}
           totalRecords={records.length} navItems={navItems as any}
@@ -291,7 +292,7 @@ function AppInner() {
 
       {/* Mobile Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 md:hidden transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="relative h-full w-64">
+        <div className="relative h-full w-72">
           <Sidebar
             user={user} activeView={activeView} onNavClick={handleNavClick}
             totalRecords={records.length} navItems={navItems as any}
@@ -305,70 +306,58 @@ function AppInner() {
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
 
         {/* Loading Overlay */}
-        {isLoading && (
-          <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-30 flex items-center justify-center text-Marathi">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin" />
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">डेटा लोड होत आहे...</p>
-            </div>
-          </div>
-        )}
+        {isLoading && <GlobalLoader />}
 
         <div className="flex-1 overflow-auto">
-          <React.Suspense fallback={
-            <div className="h-full flex flex-col items-center justify-center bg-slate-50/50 grayscale opacity-40">
-              <div className="w-10 h-10 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin mb-4" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">लोड होत आहे...</p>
-            </div>
-          }>
+          <React.Suspense fallback={<GlobalLoader />}>
             <Routes>
 
-            <Route path="/dashboard" element={
-              <Dashboard
-                records={records} fetchRecords={fetchRecords}
-                onUpdateLocalRecord={handleUpdateLocalRecord}
-                onRemoveLocalRecord={handleRemoveLocalRecord}
-                taxRates={taxRates} onViewRecord={handleViewRecord}
-                onAuthError={handleLogout}
-              />
-            } />
-            <Route path="/role-access" element={
-              <Dashboard
-                key="role-access"
-                records={records} fetchRecords={fetchRecords}
-                onUpdateLocalRecord={handleUpdateLocalRecord}
-                onRemoveLocalRecord={handleRemoveLocalRecord}
-                taxRates={taxRates} onViewRecord={handleViewRecord}
-                onAuthError={handleLogout} initialTab="user_requests"
-              />
-            } />
-            <Route path="/namuna8" element={
-              <Namuna8
-                records={records} selectedId={selectedId}
-                onClearSelected={() => navigate('/namuna8', { replace: true })}
-                fetchRecords={fetchRecords}
-                onUpdateLocalRecord={handleUpdateLocalRecord}
-                onRemoveLocalRecord={handleRemoveLocalRecord}
-                taxRates={taxRates} onAuthError={handleLogout}
-              />
-            } />
-            <Route path="/namuna9" element={
-              <Namuna9
-                records={records}
-                selectedId={selectedId}
-                fetchRecords={fetchRecords}
-                onUpdateLocalRecord={handleUpdateLocalRecord}
-                onRemoveLocalRecord={handleRemoveLocalRecord}
-                taxRates={taxRates} onAuthError={handleLogout}
-              />
-            } />
-            <Route path="/maganibill" element={<MaganiBill records={records} onAuthError={handleLogout} />} />
-            <Route path="/reports"   element={<Reports    records={records} onAuthError={handleLogout} />} />
-            <Route path="/ferfar"    element={<Ferfar     records={records} fetchRecords={fetchRecords} onAuthError={handleLogout} />} />
-            <Route path="/taxmaster" element={<TaxMaster  onAuthError={handleLogout} onNavigate={handleNavClick} />} />
+              <Route path="/dashboard" element={
+                <Dashboard
+                  records={records} fetchRecords={fetchRecords}
+                  onUpdateLocalRecord={handleUpdateLocalRecord}
+                  onRemoveLocalRecord={handleRemoveLocalRecord}
+                  taxRates={taxRates} onViewRecord={handleViewRecord}
+                  onAuthError={handleLogout}
+                />
+              } />
+              <Route path="/role-access" element={
+                <Dashboard
+                  key="role-access"
+                  records={records} fetchRecords={fetchRecords}
+                  onUpdateLocalRecord={handleUpdateLocalRecord}
+                  onRemoveLocalRecord={handleRemoveLocalRecord}
+                  taxRates={taxRates} onViewRecord={handleViewRecord}
+                  onAuthError={handleLogout} initialTab="user_requests"
+                />
+              } />
+              <Route path="/namuna8" element={
+                <Namuna8
+                  records={records} selectedId={selectedId}
+                  onClearSelected={() => navigate('/namuna8', { replace: true })}
+                  fetchRecords={fetchRecords}
+                  onUpdateLocalRecord={handleUpdateLocalRecord}
+                  onRemoveLocalRecord={handleRemoveLocalRecord}
+                  taxRates={taxRates} onAuthError={handleLogout}
+                />
+              } />
+              <Route path="/namuna9" element={
+                <Namuna9
+                  records={records}
+                  selectedId={selectedId}
+                  fetchRecords={fetchRecords}
+                  onUpdateLocalRecord={handleUpdateLocalRecord}
+                  onRemoveLocalRecord={handleRemoveLocalRecord}
+                  taxRates={taxRates} onAuthError={handleLogout}
+                />
+              } />
+              <Route path="/maganibill" element={<MaganiBill records={records} onAuthError={handleLogout} />} />
+              <Route path="/reports" element={<Reports records={records} onAuthError={handleLogout} />} />
+              <Route path="/ferfar" element={<Ferfar records={records} fetchRecords={fetchRecords} onAuthError={handleLogout} />} />
+              <Route path="/taxmaster" element={<TaxMaster onAuthError={handleLogout} onNavigate={handleNavClick} />} />
 
-            <Route path="*"          element={<Navigate to="/dashboard" replace />} />
-          </Routes>
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
           </React.Suspense>
         </div>
 

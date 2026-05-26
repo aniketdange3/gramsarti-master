@@ -4,7 +4,7 @@
  * URL Routes:
  *  /              → redirect to /dashboard
  *  /login         → Login page
- *  /dashboard     → Dashboard (मालमत्ता व्यवस्थापन)
+ *  /dashboard     → Dashboard (x)
  *  /namuna8       → नमुना ८ (Assessment Register)
  *  /namuna9       → नमुना ९ (Tax Notice / Demand Register)
  *  /reports       → अहवाल (Reports)
@@ -26,15 +26,26 @@ import { UIProvider } from './components/UIProvider';
 import { saveRecordsToDB, loadRecordsFromDB, clearRecordsDB } from './utils/db';
 import GlobalLoader from './components/GlobalLoader';
 
-// --- Lazy loaded pages for performance ---
-const Dashboard = React.lazy(() => import('./pages/Dashboard'));
-const Namuna8 = React.lazy(() => import('./pages/Namuna8'));
-const Namuna9 = React.lazy(() => import('./pages/Namuna9'));
-const Reports = React.lazy(() => import('./pages/Reports'));
-const TaxMaster = React.lazy(() => import('./pages/TaxMaster'));
-const Ferfar = React.lazy(() => import('./pages/Ferfar'));
-const MaganiBill = React.lazy(() => import('./pages/MaganiBill'));
-const Login = React.lazy(() => import('./pages/Login'));
+// --- Lazy loaded pages with Preloading support ---
+const lazyWithPreload = <T extends React.ComponentType<any>>(
+  importFn: () => Promise<{ default: T }>
+) => {
+  const LazyComponent = React.lazy(importFn);
+  const PreloadComponent = LazyComponent as typeof LazyComponent & {
+    preload: () => Promise<{ default: T }>;
+  };
+  PreloadComponent.preload = importFn;
+  return PreloadComponent;
+};
+
+const Dashboard = lazyWithPreload(() => import('./pages/Dashboard'));
+const Namuna8 = lazyWithPreload(() => import('./pages/Namuna8'));
+const Namuna9 = lazyWithPreload(() => import('./pages/Namuna9'));
+const Reports = lazyWithPreload(() => import('./pages/Reports'));
+const TaxMaster = lazyWithPreload(() => import('./pages/TaxMaster'));
+const Ferfar = lazyWithPreload(() => import('./pages/Ferfar'));
+const MaganiBill = lazyWithPreload(() => import('./pages/MaganiBill'));
+const Login = lazyWithPreload(() => import('./pages/Login'));
 
 
 
@@ -63,6 +74,22 @@ export const PATH_TO_VIEW: Record<string, ViewType> = {
   '/role-access': 'roleAccess',
 };
 
+// ── Token Verification Helpers ──────────────────────────────────────────────
+const isTokenExpired = (t: string | null): boolean => {
+  if (!t || t === 'undefined' || t === 'null' || t.trim() === '') return true;
+  try {
+    const parts = t.split('.');
+    if (parts.length !== 3) return true;
+    const payload = JSON.parse(atob(parts[1]));
+    if (payload.exp && Date.now() >= payload.exp * 1000) {
+      return true;
+    }
+    return false;
+  } catch (e) {
+    return true;
+  }
+};
+
 // ── Inner app (needs router context) ───────────────────────────────────────
 function AppInner() {
   const navigate = useNavigate();
@@ -80,8 +107,25 @@ function AppInner() {
   const [editProfile, setEditProfile] = useState<any>(null);
   const [profileSaving, setProfileSaving] = useState(false);
 
-  const [token, setToken] = useState<string | null>(localStorage.getItem('gp_token'));
+  const isLoggingOutRef = React.useRef(false);
+
+  const [token, setToken] = useState<string | null>(() => {
+    const t = localStorage.getItem('gp_token');
+    if (isTokenExpired(t)) {
+      localStorage.removeItem('gp_token');
+      localStorage.removeItem('gp_user');
+      return null;
+    }
+    return t;
+  });
+
   const [user, setUser] = useState<any>(() => {
+    const t = localStorage.getItem('gp_token');
+    if (isTokenExpired(t)) {
+      localStorage.removeItem('gp_token');
+      localStorage.removeItem('gp_user');
+      return null;
+    }
     try { return JSON.parse(localStorage.getItem('gp_user') || 'null'); } catch { return null; }
   });
 
@@ -96,6 +140,11 @@ function AppInner() {
   useEffect(() => {
     const initApp = async () => {
       if (isLoggedIn) {
+        if (isLoggingOutRef.current || isTokenExpired(token)) {
+          handleLogout();
+          return;
+        }
+
         // 1. Try loading from IndexedDB first for instant UI
         const cached = await loadRecordsFromDB();
         if (cached && cached.length > 0) {
@@ -112,12 +161,33 @@ function AppInner() {
     initApp();
   }, [isLoggedIn]);
 
+  // Preload other routes when the browser is idle to make page transitions instantaneous
+  useEffect(() => {
+    if (isLoggedIn && !isLoading) {
+      const timer = setTimeout(() => {
+        const pages = [Namuna8, Namuna9, MaganiBill, Reports, Ferfar, TaxMaster];
+        pages.forEach(page => {
+          try {
+            page.preload();
+          } catch (e) {
+            console.warn('Deferred preloading failed for a page component:', e);
+          }
+        });
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoggedIn, isLoading]);
+
   const authHeaders = () => ({
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   });
 
   const fetchAttendanceStatus = async () => {
+    if (isLoggingOutRef.current || isTokenExpired(token)) {
+      handleLogout();
+      return;
+    }
     try {
       const res = await fetch(`${BASE}/api/attendance/status`, { headers: authHeaders() });
       if (res.status === 401) { handleLogout(); return; }
@@ -128,6 +198,10 @@ function AppInner() {
   };
 
   const handleAttendanceToggle = async () => {
+    if (isLoggingOutRef.current || isTokenExpired(token)) {
+      handleLogout();
+      return;
+    }
     setAttendanceLoading(true);
     try {
       const endpoint = checkedIn ? '/api/attendance/check-out' : '/api/attendance/check-in';
@@ -140,13 +214,20 @@ function AppInner() {
 
   const handleLogin = (newToken: string, newUser: any) => {
     setToken(newToken);
-    setUser(newUser);
-    localStorage.setItem('gp_token', newToken);
-    localStorage.setItem('gp_user', JSON.stringify(newUser));
+    setUser(newToken ? newUser : null);
+    if (newToken) {
+      localStorage.setItem('gp_token', newToken);
+      localStorage.setItem('gp_user', JSON.stringify(newUser));
+    } else {
+      localStorage.removeItem('gp_token');
+      localStorage.removeItem('gp_user');
+    }
     navigate('/dashboard', { replace: true });
   };
 
   const handleLogout = () => {
+    if (isLoggingOutRef.current) return;
+    isLoggingOutRef.current = true;
     setToken(null);
     setUser(null);
     localStorage.removeItem('gp_token');
@@ -154,10 +235,17 @@ function AppInner() {
     clearRecordsDB();
     setRecords([]);
     navigate('/login', { replace: true });
+    setTimeout(() => {
+      isLoggingOutRef.current = false;
+    }, 1000);
   };
 
   const handleProfileSave = async () => {
     if (!editProfile) return;
+    if (isLoggingOutRef.current || isTokenExpired(token)) {
+      handleLogout();
+      return;
+    }
     setProfileSaving(true);
     try {
       const res = await fetch(`${BASE}/api/auth/users/${user.id}`, {
@@ -186,6 +274,10 @@ function AppInner() {
   };
 
   const fetchTaxRates = async () => {
+    if (isLoggingOutRef.current || isTokenExpired(token)) {
+      handleLogout();
+      return;
+    }
     try {
       const res = await fetch(TAX_API_URL, { headers: authHeaders() });
       if (res.status === 401) { handleLogout(); return; }
@@ -194,6 +286,10 @@ function AppInner() {
   };
 
   const fetchRecords = async (isInitialLoad = false) => {
+    if (isLoggingOutRef.current || isTokenExpired(token)) {
+      handleLogout();
+      return;
+    }
     const hasData = records.length > 0;
     if (isInitialLoad && !hasData) setIsLoading(true);
 
@@ -236,15 +332,15 @@ function AppInner() {
   };
 
   const navItems = [
-    { id: 'dashboard' as ViewType, label: 'डैशबोर्ड', sublabel: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, color: 'from-violet-500 to-indigo-600' },
-    { id: 'namuna8' as ViewType, label: 'नमुना ८', sublabel: 'Assessment Register', icon: <FileText className="w-5 h-5" />, color: 'from-sky-500 to-blue-600' },
-    { id: 'namuna9' as ViewType, label: 'नमुना ९', sublabel: 'Tax Notice', icon: <Receipt className="w-5 h-5" />, color: 'from-emerald-500 to-green-600' },
-    { id: 'maganiBill' as ViewType, label: 'मागणी बिल', sublabel: 'Demand Bill', icon: <Printer className="w-5 h-5" />, color: 'from-indigo-500 to-violet-600' },
+    { id: 'dashboard' as ViewType, label: 'डैशबोर्ड', sublabel: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, color: 'from-violet-500 to-indigo-600', preload: Dashboard.preload },
+    { id: 'namuna8' as ViewType, label: 'नमुना ८', sublabel: 'Assessment Register', icon: <FileText className="w-5 h-5" />, color: 'from-sky-500 to-blue-600', preload: Namuna8.preload },
+    { id: 'namuna9' as ViewType, label: 'नमुना ९', sublabel: 'Tax Notice', icon: <Receipt className="w-5 h-5" />, color: 'from-emerald-500 to-green-600', preload: Namuna9.preload },
+    { id: 'maganiBill' as ViewType, label: 'मागणी बिल', sublabel: 'Demand Bill', icon: <Printer className="w-5 h-5" />, color: 'from-indigo-500 to-violet-600', preload: MaganiBill.preload },
 
-    { id: 'reports' as ViewType, label: 'अहवाल', sublabel: 'Reports', icon: <BarChart3 className="w-5 h-5" />, color: 'from-purple-500 to-fuchsia-600', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
-    { id: 'ferfar' as ViewType, label: 'फेरफार नोंदवही', sublabel: 'Mutation Register', icon: <FileText className="w-5 h-5" />, color: 'from-fuchsia-500 to-purple-600', allowedRoles: ['super_admin', 'gram_sevak', 'operator'] },
-    { id: 'roleAccess' as ViewType, label: 'रोल अ‍ॅक्सेस', sublabel: 'Role Access', icon: <Shield className="w-5 h-5" />, color: 'from-rose-600 to-rose-400', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
-    { id: 'taxMaster' as ViewType, label: 'प्रणाली संचलन केंद्र', sublabel: 'Tax Master', icon: <Settings className="w-5 h-5" />, color: 'from-amber-500 to-orange-500', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'] },
+    { id: 'reports' as ViewType, label: 'अहवाल', sublabel: 'Reports', icon: <BarChart3 className="w-5 h-5" />, color: 'from-purple-500 to-fuchsia-600', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'], preload: Reports.preload },
+    { id: 'ferfar' as ViewType, label: 'फेरफार नोंदवही', sublabel: 'Mutation Register', icon: <FileText className="w-5 h-5" />, color: 'from-fuchsia-500 to-purple-600', allowedRoles: ['super_admin', 'gram_sevak', 'operator'], preload: Ferfar.preload },
+    { id: 'roleAccess' as ViewType, label: 'रोल अ‍ॅक्सेस', sublabel: 'Role Access', icon: <Shield className="w-5 h-5" />, color: 'from-rose-600 to-rose-400', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'], preload: Dashboard.preload },
+    { id: 'taxMaster' as ViewType, label: 'प्रणाली संचलन केंद्र', sublabel: 'Tax Master', icon: <Settings className="w-5 h-5" />, color: 'from-amber-500 to-orange-500', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'], preload: TaxMaster.preload },
   ];
 
   // ── Unauthenticated ──────────────────────────────────────────────────────

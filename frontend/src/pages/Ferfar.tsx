@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useUI } from '../components/UIProvider';
 import { API_BASE_URL } from '@/utils/config';
 import {
@@ -13,6 +13,7 @@ import { matchesSearch } from '../utils/transliterate';
 import { TransliterationInput } from '../components/TransliterationInput';
 import OwnerNameDisplay from '../components/OwnerNameDisplay';
 import { useFerfarRequests } from '../hooks/useFerfar';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Props {
     records: PropertyRecord[];
@@ -56,21 +57,51 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
     const [auditRequests, setAuditRequests] = useState<PropertyAuditRequest[]>([]);
     const [statusFilter, setStatusFilter] = useState<'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL'>('ALL');
 
-    // Pagination & Filters State
+    // Fetch ALL ferfar records (high limit = no pagination needed)
     const [page, setPage] = useState(1);
-    const limit = 10;
+    const limit = 1000;
     const [filterWard, setFilterWard] = useState('');
     const [filterWasti, setFilterWasti] = useState('');
 
     const { data: ferfarData, isLoading: ferfarLoading, refetch: refetchFerfar } = useFerfarRequests(page, limit);
     const requests = ferfarData?.data || [];
 
+    const queryClient = useQueryClient();
+
+    // Optimistic update: instantly change a request status in cache
+    const optimisticStatusUpdate = (id: number, status: 'APPROVED' | 'REJECTED') => {
+        queryClient.setQueryData<any>(['ferfar', page, limit, undefined], (old: any) => {
+            if (!old) return old;
+            return {
+                ...old,
+                data: old.data.map((r: any) =>
+                    r.id === id
+                        ? { ...r, status, approved_at: status === 'APPROVED' ? new Date().toISOString() : r.approved_at }
+                        : r
+                )
+            };
+        });
+    };
+
+    // Optimistic update: instantly add a new request to top of list
+    const optimisticAddRequest = (newReq: any) => {
+        queryClient.setQueryData<any>(['ferfar', page, limit, undefined], (old: any) => {
+            if (!old) return old;
+            return {
+                ...old,
+                data: [newReq, ...old.data],
+                pagination: { ...old.pagination, total: (old.pagination?.total || 0) + 1 }
+            };
+        });
+    };
+
     const { addToast } = useUI();
     const [rejectionModal, setRejectionModal] = useState<{ id: number, open: boolean }>({ id: 0, open: false });
     const [rejectionReason, setRejectionReason] = useState('');
 
     const currentUser = useMemo(() => JSON.parse(localStorage.getItem('gp_user') || '{}'), []);
-    const canApprove = currentUser.role === 'super_admin' || currentUser.role === 'gram_sachiv';
+    // gram_sevak also has backend approve permission per ferfar.routes.js
+    const canApprove = currentUser.role === 'super_admin' || currentUser.role === 'gram_sachiv' || currentUser.role === 'gram_sevak';
 
     const BASE = `${API_BASE_URL}`;
     const token = localStorage.getItem('gp_token') || '';
@@ -90,10 +121,19 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
         } catch (e) { console.error(e); }
     };
 
+    // Debounced search to avoid lag while typing
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const handleSearchChange = (val: string) => {
+        setSearch(val);
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => setDebouncedSearch(val), 300);
+    };
+
     const filtered = useMemo(() => {
-        if (!search.trim()) return records;
-        return records.filter(r => matchesSearch(r, search));
-    }, [records, search]);
+        if (!debouncedSearch.trim()) return records;
+        return records.filter(r => matchesSearch(r, debouncedSearch));
+    }, [records, debouncedSearch]);
 
     const displayRequests = requests.filter(r => {
         const matchesStatus = statusFilter === 'ALL' || r.status === statusFilter;
@@ -165,16 +205,37 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                     applicant_name: applicantName,
                     applicant_mobile: applicantMobile,
                     ferfar_type: ferfarType,
-                    remarks: `मासिक सभा\nदिनांक: ${remarkDate}\nविषय: ${remarkSubject}\nप्रकार: ${ferfarType}\nफेरफार बुक क्र: ${remarkFerfarNo}\nपान क्र: ${remarkPageNo}\nअनु क्र: ${remarkSerialNo}`
+                    remarks: (() => {
+                        const dateMR = remarkDate
+                            ? (() => {
+                                const [y, m, d] = remarkDate.split('-');
+                                return MN(`${d}-${m}-${y.slice(2)}`);
+                              })()
+                            : '';
+                        return [
+                            'मासिक सभा',
+                            `दिनांक: ${dateMR}`,
+                            `विषय: ${remarkSubject}`,
+                            `प्रकार: ${ferfarType}`,
+                            `फेरफार बुक क्र: ${MN(remarkFerfarNo)}`,
+                            `पान क्र: ${MN(remarkPageNo)}`,
+                            `अनु क्र: ${MN(remarkSerialNo)}`,
+                        ].join('\n');
+                    })()
                 })
             });
             if (res.status === 401) {
                 onAuthError?.();
                 return;
             }
-            if (!res.ok) throw new Error('Failed to apply');
+            const resData = await res.json();
+            if (!res.ok) {
+                addToast(resData.error || 'अर्ज करताना त्रुटी आली', 'error');
+                return;
+            }
             addToast('नवीन फेरफार अर्ज यशस्वीरित्या जतन झाला.', 'success');
             setSearch('');
+            setDebouncedSearch('');
             setSelectedProp(null);
             setNewOwnerName('');
             setApplicantName('');
@@ -187,15 +248,17 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
             refetchFerfar();
             setActiveTab('MONITOR');
         } catch (err: any) {
-            addToast(err.message, 'error');
+            addToast('सर्व्हरशी कनेक्ट होऊ शकत नाही', 'error');
         } finally {
             setLoading(false);
         }
     };
 
     const handleApprove = async (id: number) => {
-        if (!confirm('तुम्हाली खात्री आहे का? मालमत्तेचे नाव बदलले जाईल.')) return;
+        if (!confirm('तुम्हाला खात्री आहे का? फेरफार अर्ज मंजूर केला जाईल.')) return;
         setProcessingId(id);
+        // Optimistic: instantly show APPROVED in UI
+        optimisticStatusUpdate(id, 'APPROVED');
         try {
             const res = await fetch(`${BASE}/api/ferfar/approve/${id}`, {
                 method: 'PUT',
@@ -205,12 +268,20 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                 onAuthError?.();
                 return;
             }
-            if (!res.ok) throw new Error('मंजुरी अयशस्वी.');
-            addToast('अभिनंदन! फेरफार मंजूर झाला आणि रेकॉर्ड अपडेट झाले.', 'success');
+            const resData = await res.json();
+            if (!res.ok) {
+                // Rollback optimistic update
+                optimisticStatusUpdate(id, 'PENDING');
+                addToast(resData.error || 'मंजूरी अयशस्वी.', 'error');
+                return;
+            }
+            addToast('अभिनंदन! फेरफार यशस्वीरित्या मंजूर झाला.', 'success');
+            // Background refresh to sync with DB
             refetchFerfar();
             fetchRecords();
         } catch (e: any) {
-            addToast(e.message, 'error');
+            optimisticStatusUpdate(id, 'PENDING');
+            addToast('सर्व्हरशी कनेक्ट होउ शकत नाही', 'error');
         } finally {
             setProcessingId(null);
         }
@@ -250,6 +321,9 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
 
     const handleReject = async () => {
         const { id } = rejectionModal;
+        // Optimistic: instantly show REJECTED in UI
+        optimisticStatusUpdate(id, 'REJECTED');
+        setRejectionModal({ id: 0, open: false });
         try {
             const res = await fetch(`${BASE}/api/ferfar/reject/${id}`, {
                 method: 'PUT',
@@ -257,10 +331,20 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                 body: JSON.stringify({ remarks: rejectionReason })
             });
             if (res.status === 401) { onAuthError?.(); return; }
-            if (!res.ok) throw new Error('Reject failed');
+            const resData = await res.json();
+            if (!res.ok) {
+                // Rollback
+                optimisticStatusUpdate(id, 'PENDING');
+                addToast(resData.error || 'नाकारणे अयशस्वी.', 'error');
+                return;
+            }
             addToast('फेरफार अर्ज नाकारला.', 'success');
             refetchFerfar();
-        } catch (e: any) { addToast(e.message, 'error'); }
+        } catch (e: any) {
+            optimisticStatusUpdate(id, 'PENDING');
+            addToast('सर्व्हरशी कनेक्ट होउ शकत नाही', 'error');
+        }
+        setRejectionReason('');
     };
 
     return (
@@ -329,7 +413,7 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                                     <TransliterationInput
                                         placeholder="पूर्ण नाव, प्लॉट क्रमांक किंवा अनु. क्र. टाका..."
                                         value={search}
-                                        onChangeText={(val) => { setSearch(val); setSelectedProp(null); }}
+                                        onChangeText={(val) => { handleSearchChange(val); setSelectedProp(null); }}
                                         className="w-full pl-11 pr-5 py-2.5 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all bg-white shadow-sm"
                                     />
                                 </div>
@@ -717,7 +801,9 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                                                                 <span className="text-[10px] font-black text-indigo-400 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">A.No: {MN(r.srNo)}</span>
                                                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">वॉर्ड {MN(r.wardNo)} • प्लॉट {MN(r.plotNo)}</span>
                                                             </div>
-                                                            <span className="text-sm font-black text-slate-700 leading-tight group-hover:text-slate-900 transition-colors"><OwnerNameDisplay name={r.old_owner_name} /></span>
+                                                            <span className="text-sm font-black text-slate-700 leading-tight group-hover:text-slate-900 transition-colors">
+                                                                <OwnerNameDisplay name={r.status === 'APPROVED' ? `${r.old_owner_name} || ${r.new_owner_name}` : r.old_owner_name} />
+                                                            </span>
                                                         </div>
                                                     </td>
                                                     <td className="px-8 py-6">

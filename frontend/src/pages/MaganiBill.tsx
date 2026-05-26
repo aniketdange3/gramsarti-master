@@ -79,55 +79,42 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
     }, [selectedId, records]);
     const [filterKhasra, setFilterKhasra] = useState('');
     const [filterLayout, setFilterLayout] = useState('');
+    const [filterPlotNo, setFilterPlotNo] = useState('');
     const [showOnlyUnpaid, setShowOnlyUnpaid] = useState(true);
-    const [filterPropertyType, setFilterPropertyType] = useState<'rcc' | 'gharkaar' | ''>('');
+    const [filterPropertyType, setFilterPropertyType] = useState<string>('');
     const [activeBillRecord, setActiveBillRecord] = useState<PropertyRecord | null>(null);
     const [bulkPrintRecords, setBulkPrintRecords] = useState<PropertyRecord[] | null>(null);
     const [fetchedRecord, setFetchedRecord] = useState<PropertyRecord | null>(null);
     const { addToast } = useUI();
 
     const [currentPage, setCurrentPage] = useState(1);
-    const pageSize = 300;
+    const pageSize = 100;
 
-    const uniqueWastis = useMemo(() => {
-        const set = new Set<string>();
-        for (const r of records) if (r.wastiName) set.add(r.wastiName);
-        return Array.from(set).sort();
-    }, [records]);
+    const handleWastiChange = (v: string) => { setFilterWasti(v); setFilterLayout(''); setFilterKhasra(''); setFilterPlotNo(''); };
+    const handleLayoutChange = (v: string) => { setFilterLayout(v); setFilterKhasra(''); setFilterPlotNo(''); };
+    const handleKhasraChange = (v: string) => { setFilterKhasra(v); setFilterPlotNo(''); };
 
+    // Cascading Filter Logic
     const wastiFiltered = useMemo(() => filterWasti ? records.filter(r => r.wastiName === filterWasti) : records, [records, filterWasti]);
+    const layoutFiltered = useMemo(() => filterLayout ? wastiFiltered.filter(r => r.layoutName === filterLayout) : wastiFiltered, [wastiFiltered, filterLayout]);
+    const khasraFiltered = useMemo(() => filterKhasra ? layoutFiltered.filter(r => r.khasraNo === filterKhasra) : layoutFiltered, [layoutFiltered, filterKhasra]);
 
-    const uniqueKhasras = useMemo(() => {
-        if (!filterWasti) return [];
-        const set = new Set<string>();
-        for (const r of wastiFiltered) if (r.khasraNo) set.add(r.khasraNo);
-        const arr = Array.from(set);
-        const toEng = (s: string) => s.replace(/[०-९]/g, (d: string) => '0123456789'['०१२३४५६७८९'.indexOf(d)] || d);
-        return arr.map(k => ({ orig: k, eng: toEng(k) }))
-            .sort((a, b) => a.eng.localeCompare(b.eng, undefined, { numeric: true, sensitivity: 'base' }))
-            .map(k => k.orig);
-    }, [wastiFiltered, filterWasti]);
-
-    const uniqueLayouts = useMemo(() => {
-        if (!filterWasti) return [];
-        const set = new Set<string>();
-        for (const r of wastiFiltered) if (r.layoutName) set.add(r.layoutName);
-        const toEng = (s: string) => s.replace(/[०-९]/g, (d: string) => '0123456789'['०१२३४५६७८९'.indexOf(d)] || d);
-        return Array.from(set)
-            .map(l => ({ orig: l, eng: toEng(l) }))
-            .sort((a, b) => a.eng.localeCompare(b.eng, undefined, { numeric: true, sensitivity: 'base' }))
-            .map(l => l.orig);
-    }, [wastiFiltered, filterWasti]);
+    const uniqueWastis = useMemo(() => Array.from(new Set(records.map(r => r.wastiName).filter(Boolean))).sort(), [records]);
+    const uniqueLayouts = useMemo(() => Array.from(new Set(wastiFiltered.map(r => r.layoutName).filter(Boolean))).sort(), [wastiFiltered]);
+    const uniqueKhasras = useMemo(() => Array.from(new Set(layoutFiltered.map(r => r.khasraNo).filter(Boolean))).sort(sortKhasra), [layoutFiltered]);
+    const uniquePlots = useMemo(() => Array.from(new Set(khasraFiltered.map(r => r.plotNo).filter(Boolean))).sort(sortKhasra), [khasraFiltered]);
 
     const filteredRecords = useMemo(() => {
         let res = records;
         if (filterWasti) res = res.filter(r => r.wastiName === filterWasti);
+        if (filterLayout) res = res.filter(r => r.layoutName === filterLayout);
         if (filterKhasra) {
             const normalizedKhasra = normalizeForSearch(filterKhasra);
             res = res.filter(r => normalizeForSearch(r.khasraNo) === normalizedKhasra);
         }
-        if (filterLayout) {
-            res = res.filter(r => r.layoutName === filterLayout);
+        if (filterPlotNo) {
+            const normalizedPlot = normalizeForSearch(filterPlotNo);
+            res = res.filter(r => normalizeForSearch(r.plotNo) === normalizedPlot);
         }
         if (searchTerm.trim()) res = res.filter(r => matchesSearch(r, searchTerm));
 
@@ -139,40 +126,35 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
             });
         }
 
-        // --- RCC / घर कर Smart Filter ---
-        const hasRCC = (r: any) => (r.sections || []).some((s: any) =>
-            s.propertyType && s.propertyType.trim() === 'आर.सी.सी'
-        );
-        const hasGharKar = (r: any) => (r.sections || []).some((s: any) =>
-            s.propertyType && (s.propertyType.includes('घर') || s.propertyType.includes('गृह'))
-        );
-
+        // Property Type manual filter
         if (filterPropertyType === 'rcc') {
-            // Manual toggle: RCC first, fallback to घर कर
-            const rccRecords = res.filter(hasRCC);
-            res = rccRecords.length > 0 ? rccRecords : res.filter(hasGharKar);
-        } else if (filterPropertyType === 'gharkaar') {
-            res = res.filter(hasGharKar);
-        } else if (filterWasti) {
-            // Auto-smart filter when Wasti (and optionally Khasra/Layout) is selected:
-            // RCC records exist → show RCC; else → fallback to घर कर if available
-            const rccRecords = res.filter(hasRCC);
-            if (rccRecords.length > 0) {
-                res = rccRecords;
-            } else {
-                const gharKarRecords = res.filter(hasGharKar);
-                if (gharKarRecords.length > 0) res = gharKarRecords;
-                // else: no RCC and no GharKar → show all (खाली जागा etc.)
-            }
+            res = res.filter(r => (r.sections || []).some((s: any) =>
+                s.propertyType && s.propertyType.includes('आर.सी.सी')
+            ));
+        } else if (filterPropertyType === 'khali_jaga') {
+            res = res.filter(r => (r.sections || []).some((s: any) =>
+                s.propertyType && s.propertyType.includes('खाली जागा')
+            ));
+        } else if (filterPropertyType === 'vitamati') {
+            res = res.filter(r => (r.sections || []).some((s: any) =>
+                s.propertyType && (
+                    s.propertyType.includes('विटा') ||
+                    s.propertyType.includes('माती') ||
+                    s.propertyType.includes('सिमेंट') ||
+                    s.propertyType.includes('कुच्चा') ||
+                    s.propertyType.includes('KUCHA')
+                )
+            ));
         }
 
-        // Sort by Khasra then Plot naturally
+        // Robust sort numerically + alphabetically by srNo ascending
         return [...res].sort((a, b) => {
-            const kComp = sortKhasra(a.khasraNo || '', b.khasraNo || '');
-            if (kComp !== 0) return kComp;
-            return sortKhasra(a.plotNo || '', b.plotNo || '');
+            const aNum = Number(a.srNo) || 0;
+            const bNum = Number(b.srNo) || 0;
+            if (aNum !== bNum) return aNum - bNum;
+            return String(a.srNo || '').localeCompare(String(b.srNo || ''), undefined, { numeric: true });
         });
-    }, [records, searchTerm, filterWasti, filterKhasra, filterLayout, showOnlyUnpaid, filterPropertyType]);
+    }, [records, searchTerm, filterWasti, filterKhasra, filterLayout, filterPlotNo, showOnlyUnpaid, filterPropertyType]);
 
     const totalPages = Math.ceil(filteredRecords.length / pageSize);
     const paginatedRecords = useMemo(() => {
@@ -182,7 +164,7 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, filterWasti, filterKhasra, filterLayout, showOnlyUnpaid]);
+    }, [searchTerm, filterWasti, filterKhasra, filterLayout, filterPlotNo, showOnlyUnpaid]);
 
     const stats = useMemo(() => {
         const unpaidRecords = records.filter(r => {
@@ -273,52 +255,49 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
 
                 <CustomDropdown
                     value={filterWasti}
-                    onChange={(v) => { setFilterWasti(v); setFilterKhasra(''); }}
+                    onChange={handleWastiChange}
                     placeholder="वस्ती निवडा"
                     options={uniqueWastis.map(w => ({ value: w, label: w }))}
                 />
 
                 <CustomDropdown
+                    value={filterLayout}
+                    onChange={handleLayoutChange}
+                    placeholder="लेआउट निवडा"
+                    options={uniqueLayouts.map(l => ({ value: l, label: l }))}
+                />
+
+                <CustomDropdown
                     value={filterKhasra}
-                    onChange={setFilterKhasra}
-                    placeholder={filterWasti ? "खसरा निवडा" : "प्रथम वस्ती निवडा"}
+                    onChange={handleKhasraChange}
+                    placeholder="खसरा निवडा"
                     options={uniqueKhasras.map(k => {
                         const eng = normalizeDigits(String(k), false);
                         const mar = normalizeDigits(String(k), true);
                         return { value: k, label: mar === eng ? mar : `${mar} (${eng})` };
                     })}
-                    disabled={!filterWasti}
                 />
 
-                {/* Layout filter — only when Wasti is selected */}
-                {filterWasti && uniqueLayouts.length > 0 && (
-                    <CustomDropdown
-                        value={filterLayout}
-                        onChange={setFilterLayout}
-                        placeholder="लेआउट निवडा"
-                        options={uniqueLayouts.map((l, i) => ({ value: l, label: `${i + 1}. ${l}` }))}
-                    />
-                )}
+                <CustomDropdown
+                    value={filterPlotNo}
+                    onChange={setFilterPlotNo}
+                    placeholder="प्लॉट निवडा"
+                    options={uniquePlots.map(p => ({ value: p, label: p }))}
+                />
+
+                <CustomDropdown
+                    value={filterPropertyType}
+                    onChange={setFilterPropertyType}
+                    placeholder="प्रकार निवडा"
+                    options={[
+                        { value: '', label: 'सर्व प्रकार' },
+                        { value: 'rcc', label: 'आर.सी.सी.' },
+                        { value: 'khali_jaga', label: 'खाली जागा' },
+                        { value: 'vitamati', label: 'विटामाती / मातीचे' }
+                    ]}
+                />
 
                 <div className="flex items-center gap-3 ml-auto">
-                    {/* RCC / घर कर Smart Filter Button */}
-                    <button
-                        onClick={() => setFilterPropertyType(p => p === 'rcc' ? '' : 'rcc')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all border ${
-                            filterPropertyType === 'rcc'
-                                ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-sm'
-                                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                        }`}
-                        title="आर.सी.सी मालमत्ता दाखवा (नसल्यास घर कर)">
-                        <div className={`w-2 h-2 rounded-full ${filterPropertyType === 'rcc' ? 'bg-blue-600 animate-pulse' : 'bg-slate-300'}`} />
-                        आर.सी.सी / घर कर
-                        {filterPropertyType === 'rcc' && (
-                            <span className="ml-1 px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 text-[9px] font-black">
-                                {filteredRecords.some(r => (r.sections || []).some((s: any) => s.propertyType?.trim() === 'आर.सी.सी'))
-                                    ? 'RCC' : 'घर कर'}
-                            </span>
-                        )}
-                    </button>
                     <button
                         onClick={() => setShowOnlyUnpaid(!showOnlyUnpaid)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all border ${showOnlyUnpaid
@@ -331,7 +310,7 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
                     </button>
 
                     <button
-                        onClick={() => { setFilterWasti(''); setFilterKhasra(''); setFilterLayout(''); setSearchTerm(''); setShowOnlyUnpaid(true); setFilterPropertyType(''); }}
+                        onClick={() => { setFilterWasti(''); setFilterKhasra(''); setFilterLayout(''); setFilterPlotNo(''); setSearchTerm(''); setShowOnlyUnpaid(true); setFilterPropertyType(''); }}
                         className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                         title="रीसेट करा"
                     >
@@ -372,10 +351,10 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
                                             <span className="text-sm font-black text-slate-700 tracking-tight">{r.ownerName}</span>
                                         </td>
                                         <td className="px-6 py-4 text-right text-xs font-bold text-slate-900">
-                                            {MN((Number(r.totalTaxAmount) || 0) + (Number(r.arrearsAmount) || 0))}
+                                            {MN(Math.round((Number(r.totalTaxAmount) || 0) + (Number(r.arrearsAmount) || 0)))}
                                         </td>
                                         <td className="px-6 py-4 text-right text-xs font-bold text-emerald-600">
-                                            {MN(Number(r.paidAmount) || 0)}
+                                            {MN(Math.round(Number(r.paidAmount) || 0))}
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <span className={`px-2.5 py-1 rounded-lg text-xs font-black ${balance > 0 ? 'text-rose-600 bg-rose-50' : 'text-emerald-600 bg-emerald-50'}`}>

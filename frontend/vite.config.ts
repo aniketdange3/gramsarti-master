@@ -47,7 +47,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
     server: {
-      port: 3000,
+      port: 3001,
       host: '0.0.0.0',
     },
     plugins: [react(), base64Loader],
@@ -59,6 +59,27 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, './src'),
       }
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+                return 'vendor-core';
+              }
+              if (id.includes('lucide-react')) {
+                return 'vendor-icons';
+              }
+              if (id.includes('xlsx') || id.includes('jspdf') || id.includes('jspdf-autotable')) {
+                return 'vendor-pdf-excel';
+              }
+              return 'vendor-others';
+            }
+          }
+        }
+      },
+      chunkSizeWarningLimit: 1200
     }
   };
 });

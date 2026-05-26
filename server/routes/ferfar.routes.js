@@ -17,9 +17,9 @@ router.get('/', authenticate, ferfarController.getAllRequests);
 router.post('/apply', authenticate, ferfarController.applyFerfar);
 
 // फेरफार अर्ज मंजूर करणे (Admin Only)
-router.put('/approve/:id', authenticate, authorize('super_admin', 'gram_sevak'), ferfarController.approveFerfar);
+router.put('/approve/:id', authenticate, authorize('super_admin', 'gram_sevak', 'gram_sachiv'), ferfarController.approveFerfar);
 
 // फेरफार अर्ज नाकारणे (Admin Only)
-router.put('/reject/:id', authenticate, authorize('super_admin', 'gram_sevak'), ferfarController.rejectFerfar);
+router.put('/reject/:id', authenticate, authorize('super_admin', 'gram_sevak', 'gram_sachiv'), ferfarController.rejectFerfar);
 
 module.exports = router;

@@ -51,66 +51,9 @@ exports.approveRequest = async (req, res) => {
             await connection.rollback();
             return res.status(404).json({ error: 'प्रस्ताव सापडला नाही' });
         }
-        const request = reqRow[0];
-        const newData = JSON.parse(request.request_data);
-        const propId = request.property_id;
 
-        // Whitelist valid columns for the properties table
-        const PROPERTY_COLUMNS = [
-            'srNo', 'wardNo', 'khasraNo', 'layoutName', 'plotNo', 'ownerName', 'occupantName',
-            'hasConstruction', 'openSpace', 'propertyTax', 'openSpaceTax', 'streetLightTax',
-            'healthTax', 'generalWaterTax', 'specialWaterTax', 'wasteCollectionTax',
-            'totalTaxAmount', 'arrearsAmount', 'paidAmount', 'penaltyAmount', 'discountAmount',
-            'wastiName', 'contactNo', 'buildingUsage', 'receiptNo', 'receiptBook', 'paymentDate',
-            'billNo', 'lastBillDate', 'propertyId', 'constructionYear', 'propertyAge',
-            'readyReckonerLand', 'readyReckonerBuilding', 'readyReckonerComposite',
-            'depreciationAmount', 'remarksNotes', 'propertyLength', 'propertyWidth',
-            'totalAreaSqFt', 'totalAreaSqMt', 'status', 'createdAt', 'financial_year', 'created_by'
-        ];
-
-        const fields = [];
-        const values = [];
-        for (const [key, value] of Object.entries(newData)) {
-            // Only include valid database columns and ignore non-updatable fields
-            if (PROPERTY_COLUMNS.includes(key) && key !== 'id') {
-                fields.push(`${key} = ?`);
-                values.push(value);
-            }
-        }
-
-        if (fields.length > 0) {
-            values.push(propId);
-            const sql = `UPDATE properties SET ${fields.join(', ')} WHERE id = ?`;
-            console.log('[AUDIT] Executing SQL:', sql);
-            console.log('[AUDIT] With Values:', values);
-            await connection.query(sql, values);
-        }
-
-        // Properly update all section measurements and tax details
-        if (newData.sections && Array.isArray(newData.sections)) {
-            await connection.query('DELETE FROM property_sections WHERE propertyId = ?', [propId]);
-            for (const section of newData.sections) {
-                // Skip empty sections
-                if (!section.propertyType || section.propertyType === 'निवडा') continue;
-                
-                await connection.query(
-                    `INSERT INTO property_sections (
-                        propertyId, floorIndex, propertyType, lengthFt, widthFt, areaSqFt, areaSqMt,
-                        landRate, buildingRate, depreciationRate, weightage, buildingValue, openSpaceValue,
-                        buildingTaxRate, openSpaceTaxRate, buildingFinalValue, openSpaceFinalValue,
-                        description, constructionYear, propertyAge
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [
-                        propId, section.floorIndex, section.propertyType, section.lengthFt || 0, section.widthFt || 0,
-                        section.areaSqFt || 0, section.areaSqMt || 0, section.landRate || 0, section.buildingRate || 0,
-                        section.depreciationRate || 1.0, section.weightage || 1.0, section.buildingValue || 0,
-                        section.openSpaceValue || 0, section.buildingTaxRate || 0, section.openSpaceTaxRate || 0,
-                        section.buildingFinalValue || 0, section.openSpaceFinalValue || 0,
-                        section.description || null, section.constructionYear || null, section.propertyAge || 0
-                    ]
-                );
-            }
-        }
+        // केवळ प्रस्तावाची स्थिती मंजूर म्हणून नोंदवणे
+        // मूळ मालमत्ता नोंदवही (properties table) थेट बदलणे नाही
         await connection.query('UPDATE property_audit_requests SET status = "APPROVED" WHERE id = ?', [id]);
         await connection.commit();
         res.json({ message: 'प्रस्ताव मंजूर झाला.' });

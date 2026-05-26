@@ -114,7 +114,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
         };
         fetchSingle();
     }, [selectedId, records]);
-    
+
     // Dynamically update document title for PDF filename (Namuna 8)
     React.useEffect(() => {
         if (printRecord) {
@@ -133,9 +133,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
     const khasraFiltered = useMemo(() => filterKhasra ? layoutFiltered.filter(r => r.khasraNo === filterKhasra) : layoutFiltered, [layoutFiltered, filterKhasra]);
 
     const uniqueWastis = useMemo(() => {
-        const list = Array.from(new Set(records.map(r => r.wastiName).filter(Boolean))).sort();
-        console.log('Unique Wastis:', list);
-        return list;
+        return Array.from(new Set(records.map(r => r.wastiName).filter(Boolean))).sort();
     }, [records]);
     const uniqueLayouts = useMemo(() => Array.from(new Set(wastiFiltered.map(r => r.layoutName).filter(Boolean))).sort(), [wastiFiltered]);
 
@@ -149,9 +147,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
     };
 
     const uniqueKhasras = useMemo(() => {
-        const list = Array.from(new Set(layoutFiltered.map(r => r.khasraNo).filter(Boolean))).sort(sortKhasra);
-        console.log('Unique Khasras:', list);
-        return list;
+        return Array.from(new Set(layoutFiltered.map(r => r.khasraNo).filter(Boolean))).sort(sortKhasra);
     }, [layoutFiltered]);
     const uniquePlots = useMemo(() => Array.from(new Set(khasraFiltered.map(r => r.plotNo).filter(Boolean))).sort(sortKhasra), [khasraFiltered]);
 
@@ -167,7 +163,6 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
         Object.entries(mapping).forEach(([w, kSet]) => {
             counts[w] = kSet.size;
         });
-        console.log('Wasti-wise Unique Khasra Counts (N8):', counts);
         return counts;
     }, [records]);
 
@@ -202,12 +197,35 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
         if (searchTerm.trim()) {
             res = res.filter(r => matchesSearch(r, searchTerm));
         }
-        return res;
+        return [...res].sort((a, b) => {
+            if (filterLayout || filterKhasra) {
+                const plotCompare = sortKhasra(a.plotNo || '', b.plotNo || '');
+                if (plotCompare !== 0) return plotCompare;
+            }
+            const aNum = Number(a.srNo) || 0;
+            const bNum = Number(b.srNo) || 0;
+            if (aNum !== bNum) return aNum - bNum;
+            return String(a.srNo || '').localeCompare(String(b.srNo || ''), undefined, { numeric: true });
+        });
     }, [records, viewId, filterWasti, filterLayout, filterKhasra, filterPlotNo, filterPropertyId, filterPropertyType, searchTerm, fetchedRecord]);
 
     const selectedRecord = useMemo(() => records.find(r => r.id === viewId), [records, viewId]);
 
     const handleSave = async (updatedRecord: PropertyRecord) => {
+        // Duplicate check: wastiName, khasraNo, plotNo and ownerName same check
+        const isDuplicate = records.some(r =>
+            r.id !== updatedRecord.id &&
+            String(r.wastiName || '').trim().toLowerCase() === String(updatedRecord.wastiName || '').trim().toLowerCase() &&
+            String(r.khasraNo || '').trim().toLowerCase() === String(updatedRecord.khasraNo || '').trim().toLowerCase() &&
+            String(r.plotNo || '').trim().toLowerCase() === String(updatedRecord.plotNo || '').trim().toLowerCase() &&
+            String(r.ownerName || '').trim().toLowerCase() === String(updatedRecord.ownerName || '').trim().toLowerCase()
+        );
+
+        if (isDuplicate) {
+            alert("त्रुटी: या वस्ती, खसरा क्र., प्लॉट क्र. आणि मालकाच्या नावासह आधीच एक मालमत्ता नोंदणीकृत आहे!");
+            return;
+        }
+
         // Optimistic UI Update (लगेच UI मध्ये बदल)
         if (typeof onUpdateLocalRecord === 'function') {
             onUpdateLocalRecord(updatedRecord);
@@ -349,13 +367,7 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
                                 <Plus size={12} /> नवीन नोंद
                             </button>
                         )}
-                        <button
-                            onClick={() => exportToExcel(filteredRecords, 'Namuna8_Data')}
-                            className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg font-black uppercase tracking-wider hover:bg-indigo-600 hover:text-white shadow-sm transition-all text-[9px] active:scale-95"
-                            title="फिल्टर केलेला नमुना ८ एक्सपोर्ट करा"
-                        >
-                            <FileSpreadsheet size={12} /> एक्सपोर्ट (फिल्टर)
-                        </button>
+
 
                         <button onClick={fetchRecords} className="p-2 hover:bg-slate-50 rounded-lg border border-slate-200 transition-all active:scale-95">
                             <RotateCcw className="w-3.5 h-3.5 text-slate-400" />

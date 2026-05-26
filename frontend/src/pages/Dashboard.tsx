@@ -51,8 +51,12 @@ const sortKhasra = (a: string, b: string) => {
 };
 
 // --- Marathi Numerals ---
-const MN = (v: number | string | undefined) =>
-    String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
+const MN = (v: number | string | undefined) => {
+    if (v === undefined || v === null) return '०';
+    const rounded = typeof v === 'number' ? Math.round(v) : v;
+    const s = typeof rounded === 'number' ? rounded.toLocaleString('en-IN') : String(rounded);
+    return s.replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
+};
 
 // --- Animated Counter Hook ---
 const useCountUp = (end: number, duration: number = 1200) => {
@@ -165,28 +169,6 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
         loadMasters();
     }, [onAuthError]);
 
-    // --- Statistics Console Log ---
-    useEffect(() => {
-        if (records.length > 0) {
-            const wastiStats = Array.from(new Set(records.map(r => r.wastiName).filter(Boolean))).map(wasti => {
-                const wr = records.filter(r => r.wastiName === wasti);
-                const uniqueKhasras = Array.from(new Set(wr.map(r => r.khasraNo).filter(Boolean)));
-                const uniquePlots = Array.from(new Set(wr.map(r => r.plotNo).filter(Boolean)));
-                return {
-                    'Wasti Name': wasti,
-                    'Total Properties': wr.length,
-                    'Unique Khasras': uniqueKhasras.length,
-                    'Unique Plots': uniquePlots.length
-                };
-            }).sort((a, b) => b['Total Properties'] - a['Total Properties']);
-
-            console.group("📊 GramSarthi - Property Data Insights");
-            console.log("Total Records:", records.length);
-            console.table(wastiStats);
-            console.groupEnd();
-        }
-    }, [records]);
-
 
     const API_URL = `${API_BASE_URL}/api/properties`;
 
@@ -230,7 +212,16 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
             res = res.filter(r => (Number(r.totalTaxAmount) || 0) > 0);
         }
         if (searchTerm.trim()) res = res.filter(r => matchesSearch(r, searchTerm));
-        return res;
+        return [...res].sort((a, b) => {
+            if (filterLayout || filterKhasra) {
+                const plotCompare = sortKhasra(a.plotNo || '', b.plotNo || '');
+                if (plotCompare !== 0) return plotCompare;
+            }
+            const aNum = Number(a.srNo) || 0;
+            const bNum = Number(b.srNo) || 0;
+            if (aNum !== bNum) return aNum - bNum;
+            return String(a.srNo || '').localeCompare(String(b.srNo || ''), undefined, { numeric: true });
+        });
     }, [records, searchTerm, filterWasti, filterLayout, filterKhasra, filterPlotNo, filterPropertyType, filterNamuna]);
 
     // Reset page on filter/search change
@@ -254,10 +245,10 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
 
     const totalPages = Math.ceil(filteredRecords.length / ITEMS_PER_PAGE);
     const paginatedRecords = useMemo(() => {
-        if (showAll) return filteredRecords;
+        if (showAll || filterLayout || filterKhasra || filterPlotNo) return filteredRecords;
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredRecords.slice(start, start + ITEMS_PER_PAGE);
-    }, [filteredRecords, currentPage, showAll]);
+    }, [filteredRecords, currentPage, showAll, filterLayout, filterKhasra, filterPlotNo]);
 
     const existingLayouts = useMemo(() => {
         return Array.from(new Set(records.map(r => r.layoutName).filter(Boolean))).sort();
@@ -287,61 +278,44 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
     const animRecovery = useCountUp(Math.round(stats.recoveryRate * 10));
 
     const handleSave = async (record: PropertyRecord) => {
-        setSaving(true);
-        const isNew = !editingRecord;
+        // Duplicate check: wastiName, khasraNo, plotNo and ownerName same check
+        const isDuplicate = records.some(r =>
+            r.id !== record.id &&
+            String(r.wastiName || '').trim().toLowerCase() === String(record.wastiName || '').trim().toLowerCase() &&
+            String(r.khasraNo || '').trim().toLowerCase() === String(record.khasraNo || '').trim().toLowerCase() &&
+            String(r.plotNo || '').trim().toLowerCase() === String(record.plotNo || '').trim().toLowerCase() &&
+            String(r.ownerName || '').trim().toLowerCase() === String(record.ownerName || '').trim().toLowerCase()
+        );
 
-        // --- SOFT UPDATE WORKFLOW ---
-        // जर ही जुनी नोंद असेल, तर ती थेट अपडेट न करता 'Audit Request' म्हणून पाठवावी
-        if (!isNew) {
-            try {
-                const token = localStorage.getItem('gp_token');
-                const response = await fetch(`${API_BASE_URL}/api/audit/requests`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        property_id: record.id,
-                        request_data: record
-                    })
-                });
-                if (response.status === 401) {
-                    onAuthError?.();
-                    return;
-                }
-                if (response.ok) {
-                    setShowForm(false);
-                    setEditingRecord(null);
-                    addToast('दुरुस्तीचा प्रस्ताव सादर केला आहे! प्रशासकाच्या मान्यतेनंतर बदल लागू होतील.', 'info');
-                } else {
-                    const errData = await response.json();
-                    addToast(`त्रुटी: ${errData.error || 'Unknown error'}`, 'error');
-                }
-            } catch (error) {
-                addToast('सर्व्हरशी संपर्क करता आला नाही.', 'error');
-            } finally {
-                setSaving(false);
-            }
+        if (isDuplicate) {
+            addToast("त्रुटी: या वस्ती, खसरा क्र., प्लॉट क्र. आणि मालकाच्या नावासह आधीच एक मालमत्ता नोंदणीकृत आहे!", "error");
             return;
         }
+
+        setSaving(true);
+        const isNew = !editingRecord;
 
         const maxSrNo = records.reduce((max, r) => Math.max(max, Number(r.srNo) || 0), 0);
         const finalRecord = isNew ? {
             ...record,
             srNo: maxSrNo + 1,
-            id: record.id && record.id !== '' ? record.id : 'prop_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now()
+            id: record.id && record.id !== '' ? record.id : 'prop_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
+            isNewTemp: true
         } : record;
+
         try {
             const token = localStorage.getItem('gp_token');
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(finalRecord)
-            });
+            const response = await fetch(
+                isNew ? API_URL : `${API_URL}/${record.id}`,
+                {
+                    method: isNew ? 'POST' : 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(finalRecord)
+                }
+            );
             if (response.status === 401) {
                 onAuthError?.();
                 return;
@@ -350,7 +324,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                 onUpdateLocalRecord(finalRecord);
                 setShowForm(false);
                 setEditingRecord(null);
-                addToast('नवीन नोंद यशस्वीरित्या जतन केली!', 'success');
+                addToast(isNew ? 'नवीन नोंद यशस्वीरित्या जतन केली!' : 'नोंद यशस्वीरित्या सुधारली!', 'success');
             } else {
                 const errData = await response.json();
                 addToast(`त्रुटी: ${errData.error || 'Unknown error'}`, 'error');
@@ -543,13 +517,14 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
     }
 
     return (
-        <>
+        <div className="flex flex-col h-full bg-slate-50/50 overflow-hidden">
             <header className="no-print shrink-0 bg-white border-b border-slate-100 px-4 py-2">
                 <div className="flex items-center justify-between max-w-[1600px] mx-auto">
-                    <div className="flex items-center">
-                        <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100 shrink-0">
                             <LayoutDashboard className="w-4 h-4 text-indigo-600" />
                         </div>
+                        <span className="text-xs font-black text-slate-700 uppercase tracking-wider">मालमत्ता व्यवस्थापन</span>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -565,25 +540,12 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                             </button>
                         )}
                         {(canEdit || isAdmin) && (
-                            <>
-                                <label className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-all cursor-pointer text-[9px] font-black uppercase tracking-wider shadow-sm active:scale-95">
-                                    <FileUp size={12} /> आयात
-                                    <input type="file" className="hidden" accept=".xlsx, .xls" onChange={importFromExcel} />
-                                </label>
-                                <button
-                                    onClick={handleExport}
-                                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-all cursor-pointer text-[9px] font-black uppercase tracking-wider shadow-sm active:scale-95"
-                                >
-                                    <FileSpreadsheet size={12} /> एक्सपोर्ट
-                                </button>
-                                <button
-                                    onClick={() => { setEditingRecord(null); setVisibleFloorCount(1); setShowForm(true); }}
-                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-600 text-white rounded-lg font-black uppercase tracking-wider hover:bg-indigo-700 shadow-lg shadow-indigo-600/10 transition-all text-[9px] active:scale-95"
-                                >
-                                    <Plus size={12} /> नवीन नोंद
-                                </button>
-
-                            </>
+                            <button
+                                onClick={() => { setEditingRecord(null); setVisibleFloorCount(1); setShowForm(true); }}
+                                className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-600 text-white rounded-lg font-black uppercase tracking-wider hover:bg-indigo-700 shadow-lg shadow-indigo-600/10 transition-all text-[9px] active:scale-95"
+                            >
+                                <Plus size={12} /> नवीन नोंद
+                            </button>
                         )}
                     </div>
                 </div>
@@ -595,7 +557,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                 ) : (
                     <>
                         {/* Search & Filter Bar — Namuna 8 Style */}
-                        <div className="flex items-center gap-2  no-print flex-wrap lg:flex-nowrap shrink-0  text-Marathi">
+                        <div className="flex items-center gap-2  no-print flex-wrap lg:flex-nowrap shrink-0 shadow-sm text-Marathi">
                             {/* Search */}
                             <div className="relative w-[500px] shrink-0">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10" />
@@ -671,23 +633,16 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                             <div className="px-4 py-2 border-b border-slate-200 flex flex-wrap gap-2 items-center justify-between bg-white shrink-0 relative z-10">
                                 <h3 className="text-xs font-bold text-slate-900 tracking-tight">मालमत्ता सूची</h3>
                                 <div className="flex items-center gap-4">
-                                    <button
-                                        onClick={() => setShowAll(!showAll)}
-                                        className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border transition-all ${showAll
-                                            ? 'bg-indigo-600 text-white border-indigo-600'
-                                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                                            }`}
-                                    >
-                                        {showAll ? 'पृष्ठानुसार' : 'सर्व पहा'}
-                                    </button>
-                                    <p className="text-xs font-bold text-slate-400">
-                                        {searchTerm ? `"${searchTerm}" : ${filteredRecords.length} परिणाम सापडले` : `एकूण ${filteredRecords.length} नोंदणीकृत मालमत्ता`}
-                                    </p>
+                                    {searchTerm && (
+                                        <p className="text-xs font-bold text-slate-400">
+                                            "{searchTerm}" : {filteredRecords.length} परिणाम सापडले
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex-1 overflow-auto">
                                 <table className="w-full text-left border-collapse min-w-[900px]">
-                                    <thead className="sticky top-0 z-50 text-Marathi">
+                                    <thead className="sticky top-0 z-50 bg-white text-Marathi">
                                         <tr className="bg-slate-50/80 backdrop-blur-md border-b border-slate-200">
                                             <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[60px] text-center">अ.क्र.</th>
                                             <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[120px]">वस्ती</th>
@@ -695,11 +650,11 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                             <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[80px] text-center">मालमत्ता/प्लॉट</th>
                                             <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[180px]">मालकाचे नाव</th>
                                             <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[140px] text-center">प्रकार/क्षेत्रफळ</th>
-                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[100px] text-right">थकबाकी</th>
-                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[100px] text-right">मागणी</th>
-                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[100px] text-right">वसूल</th>
-                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[80px] text-right">सूट</th>
-                                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[100px] text-right">बाकी</th>
+                                            <th className="px-4 py-3 text-[10px] font-black text-amber-700 bg-amber-50/50 border-r border-slate-100/60 uppercase tracking-widest w-[100px] text-right">थकबाकी</th>
+                                            <th className="px-4 py-3 text-[10px] font-black text-blue-700 bg-blue-50/50 border-r border-slate-100/60 uppercase tracking-widest w-[100px] text-right">मागणी</th>
+                                            <th className="px-4 py-3 text-[10px] font-black text-emerald-700 bg-emerald-50/50 border-r border-slate-100/60 uppercase tracking-widest w-[100px] text-right">वसूल</th>
+                                            <th className="px-4 py-3 text-[10px] font-black text-purple-700 bg-purple-50/50 border-r border-slate-100/60 uppercase tracking-widest w-[80px] text-right">सूट</th>
+                                            <th className="px-4 py-3 text-[10px] font-black text-rose-700 bg-rose-50/50 uppercase tracking-widest w-[100px] text-right">बाकी</th>
                                             <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[120px] text-center">कृती</th>
                                         </tr>
                                     </thead>
@@ -711,9 +666,16 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                             return (
                                                 <tr key={record.id} className={`hover:bg-slate-50 transition-colors group ${isDuplicate ? 'bg-red-50/50' : ''}`}>
                                                     <td className="px-4 py-3 text-center">
-                                                        <span className="text-xs font-medium text-slate-400">
-                                                            {MN((showAll ? 0 : (currentPage - 1) * ITEMS_PER_PAGE) + idx + 1)}
-                                                        </span>
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            <span className="text-xs font-bold text-slate-500">
+                                                                {MN(((showAll || filterLayout || filterKhasra || filterPlotNo) ? 0 : (currentPage - 1) * ITEMS_PER_PAGE) + idx + 1)}
+                                                            </span>
+                                                            {record.isNewTemp && (
+                                                                <span className="text-[7.5px] font-black bg-emerald-50 text-emerald-700 border border-emerald-100 rounded px-1.5 py-0.5 uppercase tracking-wider leading-none text-center">
+                                                                    NEW
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <div className="flex flex-col">
@@ -734,45 +696,63 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 text-center">
-                                                        {record.sections?.filter(s => s.propertyType && s.propertyType !== 'निवडा').map((s, si) => (
-                                                            <div key={si} className="text-[10px] text-slate-500 font-medium">
-                                                                {s.propertyType} • {MN(s.areaSqFt)}चौ.फु
-                                                            </div>
-                                                        ))}
+                                                        {record.sections?.filter(s => s.propertyType && s.propertyType !== 'निवडा').map((s, si) => {
+                                                            const hasDim = s.lengthFt && s.widthFt && Number(s.lengthFt) > 0 && Number(s.widthFt) > 0;
+                                                            const calculatedArea = hasDim ? Number(s.lengthFt) * Number(s.widthFt) : Number(s.areaSqFt) || 0;
+                                                            return (
+                                                                <div key={si} className="text-[10px] text-slate-500 font-medium">
+                                                                    {s.propertyType} • {hasDim ? `${MN(s.lengthFt)} × ${MN(s.widthFt)} = ` : ''}{MN(calculatedArea)}चौ.फु
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <span className="text-xs font-bold text-slate-600">{MN(Number(record.arrearsAmount || 0))}</span>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <span className="text-xs font-bold text-indigo-600">{MN(Number(record.totalTaxAmount || 0))}</span>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <span className="text-xs font-bold text-emerald-600">{MN(Number(record.paidAmount || 0))}</span>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <span className="text-xs font-bold text-amber-600">
-                                                            {(() => {
-                                                                const base = (Number(record.propertyTax) || 0) + (Number(record.openSpaceTax) || 0);
-                                                                return MN(Number(record.discountAmount || (base * 0.05)));
-                                                            })()}
+                                                    <td className="px-4 py-3 text-right bg-amber-50/20 border-r border-slate-100/50">
+                                                        <span className="inline-block text-right min-w-[75px] px-2 py-1 rounded-lg text-xs font-black bg-amber-50 text-amber-700 border border-amber-100/60 font-sans">
+                                                            {MN(Math.round(Number(record.arrearsAmount || 0)))}
                                                         </span>
                                                     </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <span className="text-xs font-bold text-slate-900">
-                                                            {(() => {
-                                                                const curr = Number(record.totalTaxAmount || 0);
-                                                                const arr = Number(record.arrearsAmount || 0);
-                                                                const baseCurr = (Number(record.propertyTax) || 0) + (Number(record.openSpaceTax) || 0);
-                                                                const disc = Number(record.discountAmount || (baseCurr * 0.05));
-
-                                                                const prevBase = (Number(record.prev_breakdown?.propertyTax) || 0) + (Number(record.prev_breakdown?.openSpaceTax) || 0);
-                                                                const baseForPenalty = prevBase > 0 ? prevBase : arr;
-                                                                const pen = Number(record.penaltyAmount || (baseForPenalty * 0.05));
-
-                                                                const paid = Number(record.paidAmount || 0);
-                                                                return MN(curr + arr + pen - paid - disc);
-                                                            })()}
+                                                    <td className="px-4 py-3 text-right bg-blue-50/20 border-r border-slate-100/50">
+                                                        <span className="inline-block text-right min-w-[75px] px-2 py-1 rounded-lg text-xs font-black bg-blue-50 text-blue-700 border border-blue-100/60 font-sans">
+                                                            {MN(Math.round(Number(record.totalTaxAmount || 0)))}
                                                         </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right bg-emerald-50/20 border-r border-slate-100/50">
+                                                        <span className="inline-block text-right min-w-[75px] px-2 py-1 rounded-lg text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-100/60 font-sans">
+                                                            {MN(Math.round(Number(record.paidAmount || 0)))}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right bg-purple-50/20 border-r border-slate-100/50">
+                                                        {(() => {
+                                                            const base = (Number(record.propertyTax) || 0) + (Number(record.openSpaceTax) || 0);
+                                                            const discount = Math.round(Number(record.discountAmount || (base * 0.05)));
+                                                            return (
+                                                                <span className="inline-block text-right min-w-[75px] px-2 py-1 rounded-lg text-xs font-black bg-purple-50 text-purple-700 border border-purple-100/60 font-sans">
+                                                                    {MN(discount)}
+                                                                </span>
+                                                            );
+                                                        })()}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right bg-rose-50/20">
+                                                        {(() => {
+                                                            const curr = Number(record.totalTaxAmount || 0);
+                                                            const arr = Number(record.arrearsAmount || 0);
+                                                            const baseCurr = (Number(record.propertyTax) || 0) + (Number(record.openSpaceTax) || 0);
+                                                            const disc = Number(record.discountAmount || (baseCurr * 0.05));
+
+                                                            const prevBase = (Number(record.prev_breakdown?.propertyTax) || 0) + (Number(record.prev_breakdown?.openSpaceTax) || 0);
+                                                            const baseForPenalty = prevBase > 0 ? prevBase : arr;
+                                                            const pen = Number(record.penaltyAmount || (baseForPenalty * 0.05));
+
+                                                            const paid = Number(record.paidAmount || 0);
+                                                            const balance = Math.round(curr + arr + pen - paid - disc);
+
+                                                            const bgClass = balance > 0 ? 'bg-rose-50 text-rose-700 border-rose-100/60' : 'bg-slate-50 text-slate-400 border-slate-100/60';
+                                                            return (
+                                                                <span className={`inline-block text-right min-w-[75px] px-2 py-1 rounded-lg text-xs font-black border font-sans ${bgClass}`}>
+                                                                    {MN(balance)}
+                                                                </span>
+                                                            );
+                                                        })()}
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <div className="flex justify-center gap-1.5">
@@ -831,7 +811,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                             </div>
 
                             {/* Pagination Controls */}
-                            {totalPages > 1 && !showAll && (
+                            {totalPages > 1 && !showAll && !filterLayout && !filterKhasra && !filterPlotNo && (
                                 <div className="px-6 py-4 border-t border-slate-200 bg-white flex items-center justify-between shrink-0 relative z-10 w-full text-Marathi">
                                     <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                                         पृष्ठ <span className="text-slate-900">{MN(currentPage)}</span> पैकी <span className="text-slate-900">{MN(totalPages)}</span>
@@ -894,8 +874,6 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                     records={records}
                 />
             )}
-
-
-        </>
+        </div>
     );
 }

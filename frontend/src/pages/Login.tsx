@@ -8,7 +8,6 @@ interface LoginProps {
 
 export const ROLES = [
     { value: 'operator', label: 'डाटा एन्ट्री ऑपरेटर' },
-    { value: 'collection_officer', label: 'कर वसुली अधिकारी' },
     { value: 'clerk', label: 'लिपीक' },
     { value: 'bill_operator', label: 'बिल ऑपरेटर' },
     { value: 'gram_sachiv', label: 'ग्राम सचिव' },
@@ -129,7 +128,7 @@ export default function Login({ onLogin }: LoginProps) {
                             <div className="space-y-4 max-w-sm">
                                 {[
                                     { icon: <Building2 className="w-5 h-5" />, text: 'नमुना ८ आणि नमुना ९ अचूक नोंदणी' },
-                                    { icon: <Receipt className="w-5 h-5" />, text: 'डिजिटल मागणी बिले व कर वसुली' },
+                                    { icon: <Receipt className="w-5 h-5" />, text: 'डिजिटल मागणी बिले' },
                                 ].map((item, i) => (
                                     <div key={i} className="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl">
                                         <div className="text-primary-light">{item.icon}</div>

@@ -7,6 +7,7 @@ import { PLACEHOLDERS } from '../utils/constants';
 import { TransliterationInput } from './TransliterationInput';
 import { normalizeForSearch } from '../utils/transliterate';
 import { ComboTransliterationInput } from './ComboTransliterationInput';
+import { CustomDropdown } from './CustomDropdown';
 import { calculateTax, TaxRateMaster, DepreciationMaster, BuildingUsageMaster } from '../utils/taxUtils';
 
 interface PropertyFormProps {
@@ -645,15 +646,15 @@ const PropertyForm = ({
                                 </div>
                                 <div>
                                     <FieldLabel>{LABELS.layoutName}</FieldLabel>
-                                    <ComboTransliterationInput
+                                    <CustomDropdown
                                         value={formData.layoutName}
-                                        onChangeText={val => setFormData({ ...formData, layoutName: val })}
-                                        placeholder={PLACEHOLDERS.layoutName}
+                                        onChange={val => setFormData({ ...formData, layoutName: val })}
+                                        placeholder={PLACEHOLDERS.layoutName || "लेआउट निवडा"}
                                         options={Array.from(new Set([
                                             ...existingLayouts,
                                             ...dynamicMasters.LAYOUT.map(l => l.item_value_mr)
                                         ])).filter(Boolean).sort((a, b) => a.localeCompare(b, 'mr')).map(l => ({ value: l, label: l }))}
-                                        className={INPUT_CLASSES}
+                                        className="w-full font-black text-xs"
                                     />
                                 </div>
                             </div>

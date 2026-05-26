@@ -39,7 +39,14 @@ app.use(logger);
 app.use('/api', apiRoutes);
 
 // ४. स्टॅटिक फाईल्स होस्टिंग (React Frontend Hosting)
-const staticPath = path.join(__dirname, '../dist');
+const fs = require('fs');
+let staticPath = path.join(__dirname, '../dist');
+if (!fs.existsSync(path.join(staticPath, 'index.html'))) {
+    const fallbackPath = path.join(__dirname, '../frontend/dist');
+    if (fs.existsSync(path.join(fallbackPath, 'index.html'))) {
+        staticPath = fallbackPath;
+    }
+}
 app.use(express.static(staticPath));
 console.log(`[SYSTEM] Hosting static files from: ${staticPath}`);
 

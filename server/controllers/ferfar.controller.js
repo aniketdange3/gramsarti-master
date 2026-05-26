@@ -49,11 +49,10 @@ const clearFerfarCache = async () => {
  */
 exports.getAllRequests = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 2000); // Cap at 2000
     const offset = (page - 1) * limit;
 
-    // Create a unique cache key based on params
-    const cacheKey = `ferfar:all:p${page}:l${limit}`;
+    const cacheKey = `ferfar:all:p${page}:l${limit}:u${req.user.id}`;
 
     try {
         // Try to get from cache first (Safe-guarded)
@@ -73,10 +72,15 @@ exports.getAllRequests = async (req, res) => {
         const isPrivileged = ['super_admin', 'gram_sevak', 'sarpanch', 'gram_sachiv'].includes(req.user.role);
         
         const query = `
-            SELECT f.*, COALESCE(p.srNo, f.srNo) as srNo, COALESCE(p.wardNo, f.wardNo) as wardNo, 
-                   COALESCE(p.wastiName, f.wastiName) as wastiName, COALESCE(p.plotNo, f.plotNo) as plotNo 
+            SELECT f.*, 
+                   COALESCE(p.srNo, f.srNo) as srNo, 
+                   COALESCE(p.wardNo, f.wardNo) as wardNo, 
+                   COALESCE(p.wastiName, f.wastiName) as wastiName, 
+                   COALESCE(p.plotNo, f.plotNo) as plotNo,
+                   u.name as requester_user_name
             FROM ferfar_requests f 
             LEFT JOIN properties p ON f.property_id = p.id 
+            LEFT JOIN users u ON f.requested_by = u.id
             WHERE (? = TRUE OR f.requested_by = ?)
             ORDER BY f.created_at DESC
             LIMIT ? OFFSET ?
@@ -126,14 +130,13 @@ exports.applyFerfar = async (req, res) => {
     }
 
     try {
-        // १. मालमत्तेची थकबाकी तपासणे (Check for pending dues)
+        // Check for pending dues
         const [prop] = await db.query('SELECT ownerName, arrearsAmount, totalTaxAmount, paidAmount, srNo, wardNo, wastiName, plotNo FROM properties WHERE id = ?', [property_id]);
         if (prop.length === 0) return res.status(404).json({ error: 'मालमत्ता सापडली नाही' });
 
         const p = prop[0];
         const pendingDues = (Number(p.arrearsAmount) + Number(p.totalTaxAmount)) - Number(p.paidAmount);
         
-        // २. जर कर थकला असेल तर फेरफार नाकारणे (Zero dues policy)
         if (pendingDues > 0) {
             return res.status(400).json({ 
                 error: `फेरफार नोंद करण्यासाठी संपूर्ण कर भरणे आवश्यक आहे. (थकबाकी: ₹${pendingDues})`, 
@@ -141,9 +144,17 @@ exports.applyFerfar = async (req, res) => {
             });
         }
 
+        // Check for existing pending request on same property
+        const [existingPending] = await db.query(
+            'SELECT id FROM ferfar_requests WHERE property_id = ? AND status = "PENDING"',
+            [property_id]
+        );
+        if (existingPending.length > 0) {
+            return res.status(400).json({ error: 'या मालमत्तेचा फेरफार अर्ज आधीच प्रलंबित आहे' });
+        }
+
         cleanupOldRequests();
 
-        // ३. अर्ज नोंदवणे (Insert request)
         const [result] = await db.query(
             `INSERT INTO ferfar_requests 
             (property_id, old_owner_name, new_owner_name, applicant_name, applicant_mobile, ferfar_type, remarks, status, srNo, wardNo, wastiName, plotNo, requested_by) 
@@ -156,10 +167,11 @@ exports.applyFerfar = async (req, res) => {
             ]
         );
 
-        res.status(201).json({ message: 'फेरफार अर्ज यशस्वीरित्या स्वीकारला गेला', id: result.insertId });
         clearFerfarCache();
+        res.status(201).json({ message: 'फेरफार अर्ज यशस्वीरित्या स्वीकारला गेला', id: result.insertId });
     } catch (err) {
-        res.status(500).json({ error: 'अर्ज करताना तांत्रिक त्रुटी आली' });
+        console.error('[FERFAR] applyFerfar Error:', err.message);
+        res.status(500).json({ error: 'अर्ज करताना तांत्रिक त्रुटी आली: ' + err.message });
     }
 };
 

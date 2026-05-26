@@ -15,8 +15,12 @@ interface Props {
     onCalculate?: (record: PropertyRecord) => void;
 }
 
-const MN = (v: number | string | undefined) =>
-    String(v ?? 0).replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
+const MN = (v: number | string | undefined) => {
+    if (v === undefined || v === null) return '०';
+    const rounded = typeof v === 'number' ? Math.round(v) : v;
+    const s = typeof rounded === 'number' ? rounded.toLocaleString('en-IN') : String(rounded);
+    return s.replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
+};
 
 const PAGE_SIZE = 100;
 
@@ -169,9 +173,9 @@ export default function NamunaTable8({
                             <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center w-[80px]">प्लॉट</th>
                             <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-left min-w-[180px]">मालकाचे नाव</th>
                             <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[120px]">प्रकार / क्षेत्रफळ</th>
-                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[130px]">कराचा तपशील</th>
-                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[90px]">भांडवली मूल्य</th>
-                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[90px]">एकूण कर</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-amber-700 bg-amber-50/50 border-r border-slate-100/60 uppercase tracking-widest text-center min-w-[130px]">कराचा तपशील</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-purple-700 bg-purple-50/50 border-r border-slate-100/60 uppercase tracking-widest text-center min-w-[90px]">भांडवली मूल्य</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-blue-700 bg-blue-50/50 uppercase tracking-widest text-center min-w-[90px]">एकूण कर</th>
                             <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[110px]">शेरा</th>
                             {showActions && (
                                 <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center  z-100 right-0  bg-slate-50/80 backdrop-blur-md border-l border-slate-200 w-[120px]">
@@ -222,12 +226,19 @@ export default function NamunaTable8({
                                         <p className="text-[12px]">({r.occupantName || 'स्वतः'})</p>
                                     </td>
                                     <td className="hidden print:table-cell border border-black p-1 text-[8px]">
-                                        {activeSections.map((s, sIdx) => (
-                                            <div key={sIdx} className="mb-0.5">
-                                                <p>{s.propertyType}</p>
-                                                <p className="text-[7.5px] italic text-gray-500">{s.areaSqFt ? MN(s.areaSqFt) + ' चौ.फु.' : ''}</p>
-                                            </div>
-                                        ))}
+                                        {activeSections.map((s, sIdx) => {
+                                            const hasDim = s.lengthFt && s.widthFt && Number(s.lengthFt) > 0 && Number(s.widthFt) > 0;
+                                            const calculatedArea = hasDim ? Number(s.lengthFt) * Number(s.widthFt) : Number(s.areaSqFt) || 0;
+                                            return (
+                                                <div key={sIdx} className="mb-0.5">
+                                                    <p>{s.propertyType}</p>
+                                                    <p className="text-[7.5px] italic text-gray-500">
+                                                        {hasDim ? `${MN(s.lengthFt)} × ${MN(s.widthFt)} = ` : ''}
+                                                        {calculatedArea ? MN(calculatedArea) + ' चौ.फु.' : ''}
+                                                    </p>
+                                                </div>
+                                            );
+                                        })}
                                     </td>
                                     <td className="hidden print:table-cell border border-black p-1 text-center text-[8px]">
                                         {activeSections.map((s, sIdx) => (
@@ -289,17 +300,26 @@ export default function NamunaTable8({
                                         <div className="text-[9px] text-slate-500 font-semibold mt-0.5 opacity-60">({r.occupantName || 'स्वतः'})</div>
                                     </td>
                                     <td className="no-print px-3 py-2 text-center text-[12px]">
-                                        {activeSections.map((s, si) => (
-                                            <div key={si} className="mb-1.5 border-b border-slate-100 last:border-0 pb-1.5 leading-tight">
-                                                <div className="text-[10px] font-black text-slate-700 uppercase">{s.propertyType}</div>
-                                                <div className="flex items-center justify-center gap-1 mt-0.5">
-                                                    <span className="font-bold text-slate-900 text-[12px]">{MN(s.areaSqFt)}</span>
-                                                    <span className="text-[8px] text-slate-400 font-bold uppercase">चौ.फु</span>
+                                        {activeSections.map((s, si) => {
+                                            const hasDim = s.lengthFt && s.widthFt && Number(s.lengthFt) > 0 && Number(s.widthFt) > 0;
+                                            const calculatedArea = hasDim ? Number(s.lengthFt) * Number(s.widthFt) : Number(s.areaSqFt) || 0;
+                                            return (
+                                                <div key={si} className="mb-1.5 border-b border-slate-100 last:border-0 pb-1.5 leading-tight">
+                                                    <div className="text-[10px] font-black text-slate-700 uppercase">{s.propertyType}</div>
+                                                    {hasDim && (
+                                                        <div className="text-[10px] text-slate-400 font-bold mb-0.5">
+                                                            {MN(s.lengthFt)} × {MN(s.widthFt)}
+                                                        </div>
+                                                    )}
+                                                    <div className="flex items-center justify-center gap-1 mt-0.5">
+                                                        <span className="font-bold text-slate-900 text-[12px]">{MN(calculatedArea)}</span>
+                                                        <span className="text-[8px] text-slate-400 font-bold uppercase">चौ.फु</span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )) || '-'}
+                                            );
+                                        }) || '-'}
                                     </td>
-                                    <td className="no-print px-3 py-2 text-center">
+                                    <td className="no-print px-3 py-2 text-center bg-amber-50/30 border-r border-slate-100/60">
                                         <div className="text-[12px] space-y-0.5 text-slate-500 font-bold tracking-tight leading-none text-left inline-block">
                                             {Number(r.propertyTax) > 0 && <div>घरपट्टी: <span className="text-slate-900 font-black">₹{MN(Number(r.propertyTax).toFixed(0))}</span></div>}
                                             {Number(r.openSpaceTax) > 0 && <div>जागा: <span className="text-slate-900 font-black">₹{MN(Number(r.openSpaceTax).toFixed(0))}</span></div>}
@@ -310,8 +330,8 @@ export default function NamunaTable8({
                                             {Number(r.wasteCollectionTax) > 0 && <div>कचरागाडी: <span className="text-slate-900 font-black">₹{MN(Number(r.wasteCollectionTax).toFixed(0))}</span></div>}
                                         </div>
                                     </td>
-                                    <td className="no-print px-3 py-2 text-center font-black text-slate-900 text-[11px]">₹{MN(cap)}</td>
-                                    <td className="no-print px-3 py-2 text-center font-black text-indigo-700 text-[12px] bg-indigo-50/30">₹{MN(dTotal)}</td>
+                                    <td className="no-print px-3 py-2 text-center font-black text-purple-700 text-[12px] bg-purple-50/30 border-r border-slate-100/60">₹{MN(cap)}</td>
+                                    <td className="no-print px-3 py-2 text-center font-black text-blue-700 text-[12px] bg-blue-50/30">₹{MN(dTotal)}</td>
                                     <td className="no-print px-3 py-2 text-center text-[9px] text-slate-500 font-bold max-w-[150px] leading-tight whitespace-pre-wrap">{(r.remarksNotes || '-').replace(/फेरफार क्र:/g, 'फेरफार बुक क्र:') || '-'}</td>
                                     {showActions && (
                                         <td className="no-print px-3 py-2 text-center sticky right-0  bg-white border-l border-slate-200 shadow-[-4px_0_12px_-4px_rgba(0,0,0,0.05)]">
@@ -346,20 +366,20 @@ export default function NamunaTable8({
                     <tfoot>
                         <tr className="hidden print:table-row bg-white font-black text-[9px]">
                             <td colSpan={11} className="border border-black p-1 text-right uppercase">एकूण बेरीज</td>
-                            <td className="border border-black p-1 text-right">{MN(totals.prop)}</td>
-                            <td className="border border-black p-1 text-right">{MN(totals.lite)}</td>
-                            <td className="border border-black p-1 text-right">{MN((totals as any).hlth)}</td>
-                            <td className="border border-black p-1 text-right">{MN(totals.gwat)}</td>
-                            <td className="border border-black p-1 text-right">{MN(totals.swat)}</td>
-                            <td className="border border-black p-1 text-right">{MN(totals.waste)}</td>
-                            <td className="border border-black p-1 text-right">{MN(totals.dtot)}</td>
-                            <td className="border border-black p-1 text-right">{MN(totals.prop)}</td>
-                            <td className="border border-black p-1 text-right">{MN(totals.lite)}</td>
-                            <td className="border border-black p-1 text-right">{MN((totals as any).hlth)}</td>
-                            <td className="border border-black p-1 text-right">{MN(totals.gwat)}</td>
-                            <td className="border border-black p-1 text-right">{MN(totals.swat)}</td>
-                            <td className="border border-black p-1 text-right">{MN(totals.waste)}</td>
-                            <td className="border border-black p-1 text-right">{MN(totals.rtot)}</td>
+                            <td className="border border-black p-1 text-right">{MN(Math.round(totals.prop))}</td>
+                            <td className="border border-black p-1 text-right">{MN(Math.round(totals.lite))}</td>
+                            <td className="border border-black p-1 text-right">{MN(Math.round((totals as any).hlth))}</td>
+                            <td className="border border-black p-1 text-right">{MN(Math.round(totals.gwat))}</td>
+                            <td className="border border-black p-1 text-right">{MN(Math.round(totals.swat))}</td>
+                            <td className="border border-black p-1 text-right">{MN(Math.round(totals.waste))}</td>
+                            <td className="border border-black p-1 text-right">{MN(Math.round(totals.dtot))}</td>
+                            <td className="border border-black p-1 text-right">{MN(Math.round(totals.prop))}</td>
+                            <td className="border border-black p-1 text-right">{MN(Math.round(totals.lite))}</td>
+                            <td className="border border-black p-1 text-right">{MN(Math.round((totals as any).hlth))}</td>
+                            <td className="border border-black p-1 text-right">{MN(Math.round(totals.gwat))}</td>
+                            <td className="border border-black p-1 text-right">{MN(Math.round(totals.swat))}</td>
+                            <td className="border border-black p-1 text-right">{MN(Math.round(totals.waste))}</td>
+                            <td className="border border-black p-1 text-right">{MN(Math.round(totals.rtot))}</td>
                             <td className="border border-black p-1"></td>
                         </tr>
                     </tfoot>

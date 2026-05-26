@@ -121,7 +121,7 @@ export default function PaymentEntry({ records, fetchRecords, onUpdateLocalRecor
     const discountToApply = billDetails ? billDetails.discountAmount : 0;
 
     const balance = selectedProp
-        ? (Number(selectedProp.totalTaxAmount) || 0) + (Number(selectedProp.arrearsAmount) || 0) + penaltyToApply - discountToApply - (Number(selectedProp.paidAmount) || 0) - (Number((selectedProp as any).discountAmount) || 0)
+        ? Math.round((Number(selectedProp.totalTaxAmount) || 0) + (Number(selectedProp.arrearsAmount) || 0) + penaltyToApply - discountToApply - (Number(selectedProp.paidAmount) || 0) - (Number((selectedProp as any).discountAmount) || 0))
         : 0;
 
     return (

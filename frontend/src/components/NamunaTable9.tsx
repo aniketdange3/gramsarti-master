@@ -152,7 +152,6 @@ export default function NamunaTable9({
                         </button>
                     )}
                 </div>
-
             </div>
 
             {/* ── Table Container with Watermark ── */}
@@ -187,12 +186,12 @@ export default function NamunaTable9({
                             <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-left min-w-[150px]">मालकाचे नाव</th>
                             <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[120px]">प्रकार / क्षेत्रफळ</th>
                             <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-start min-w-[130px]">कराचा तपशील</th>
-                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[110px]">मागील थकबाकी</th>
-                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[80px]">चालू मागणी</th>
-                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[90px]">एकूण मागणी</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-amber-700 bg-amber-50/50 border-r border-slate-100/60 uppercase tracking-widest text-center min-w-[110px]">मागील थकबाकी</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-blue-700 bg-blue-50/50 border-r border-slate-100/60 uppercase tracking-widest text-center min-w-[80px]">चालू मागणी</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-indigo-700 bg-indigo-50/50 border-r border-slate-100/60 uppercase tracking-widest text-center min-w-[90px]">एकूण मागणी</th>
                             <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[90px]">पावती तपशील</th>
-                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[80px]">वसुली</th>
-                            <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[80px]">एकूण बाकी</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-emerald-700 bg-emerald-50/50 border-r border-slate-100/60 uppercase tracking-widest text-center min-w-[80px]">वसुली</th>
+                            <th className="px-2 py-2 text-[9px] font-black text-rose-700 bg-rose-50/50 uppercase tracking-widest text-center min-w-[80px]">एकूण बाकी</th>
                             {showActions && (
                                 <th className="px-2 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center sticky right-0 z-20 bg-slate-50/80 backdrop-blur-md border-l border-slate-200 w-[120px]">
                                     कृती
@@ -270,13 +269,13 @@ export default function NamunaTable9({
                                         </div>
                                     </td>
 
-                                    <td className="px-3 py-2 text-center">
-                                        <div className={`text-[12px] font-black ${arrears > 0 ? 'text-rose-600' : 'text-slate-400'}`}>₹{MN(arrears.toFixed(0))}</div>
+                                    <td className="px-3 py-2 text-center bg-amber-50/30 border-r border-slate-100/60">
+                                        <div className={`text-[12px] font-black ${arrears > 0 ? 'text-amber-700' : 'text-slate-400'}`}>₹{MN(arrears.toFixed(0))}</div>
                                     </td>
-                                    <td className="px-3 py-2 text-center">
-                                        <div className="text-[12px] font-black text-slate-900">₹{MN(current.toFixed(0))}</div>
+                                    <td className="px-3 py-2 text-center bg-blue-50/30 border-r border-slate-100/60">
+                                        <div className="text-[12px] font-black text-blue-700">₹{MN(current.toFixed(0))}</div>
                                     </td>
-                                    <td className="px-3 py-2 text-center bg-indigo-50/30">
+                                    <td className="px-3 py-2 text-center bg-indigo-50/30 border-r border-slate-100/60">
                                         <div className="text-[12px] font-black text-indigo-700">₹{MN(demand.toFixed(0))}</div>
                                     </td>
                                     {/* पावती तपशील col */}
@@ -327,11 +326,11 @@ export default function NamunaTable9({
                                         )}
                                     </td>
 
-                                    <td className="px-3 py-2 text-center bg-emerald-50/30">
-                                        <div className="text-[15px] font-black text-emerald-600">₹{MN(paid.toFixed(0))}</div>
+                                    <td className="px-3 py-2 text-center bg-emerald-50/30 border-r border-slate-100/60">
+                                        <div className="text-[12px] font-black text-emerald-700">₹{MN(paid.toFixed(0))}</div>
                                     </td>
                                     <td className="px-3 py-2 text-center bg-rose-50/30">
-                                        <div className="text-[15px] font-black text-rose-600">₹{MN(balance.toFixed(0))}</div>
+                                        <div className={`text-[12px] font-black ${balance > 0 ? 'text-rose-700' : 'text-slate-400'}`}>₹{MN(balance.toFixed(0))}</div>
                                     </td>
                                     {showActions && (
                                         <td className="no-print px-3 py-2 text-center sticky right-0  bg-white border-l border-slate-200 shadow-[-4px_0_15px_-4px_rgba(0,0,0,0.05)]">

@@ -15,7 +15,7 @@ export default function UserManagement({ onAuthError, addToast }: UserManagement
     const [userRequests, setUserRequests] = useState<any[]>([]);
     const [allUsers, setAllUsers] = useState<any[]>([]);
     const [fetchingRequests, setFetchingRequests] = useState(false);
-    const [userMasterTab, setUserMasterTab] = useState<'pending' | 'list'>('list');
+    const [userMasterTab, setUserMasterTab] = useState<'profile' | 'permissions' | 'pending'>('profile');
     const [editingManagedUser, setEditingManagedUser] = useState<any | null>(null);
     const [modalTab, setModalTab] = useState<'profile' | 'permissions'>('profile');
 
@@ -158,32 +158,201 @@ export default function UserManagement({ onAuthError, addToast }: UserManagement
         }
     };
 
-    const handleTogglePermission = async (userId: number, field: 'can_view' | 'can_edit' | 'can_delete', newValue: boolean) => {
+    const handleTablePermissionToggle = async (user: any, moduleId: string, action: 'view' | 'add' | 'edit' | 'delete', newValue: boolean) => {
+        let permsObj: Record<string, any> = {};
+        try {
+            if (user.allowed_modules?.startsWith('{')) {
+                permsObj = JSON.parse(user.allowed_modules);
+            } else {
+                const legacyMods = (user.allowed_modules || '').split(',');
+                legacyMods.forEach((m: string) => {
+                    const trimmed = String(m || '').trim();
+                    if (trimmed && trimmed !== 'payments') {
+                        permsObj[trimmed] = { view: true, add: false, edit: !!user.can_edit, delete: !!user.can_delete };
+                    }
+                });
+            }
+        } catch (e) { permsObj = {}; }
+
+        // Strip empty or invalid keys
+        delete permsObj[""];
+        delete permsObj["undefined"];
+
+        if (!permsObj[moduleId]) permsObj[moduleId] = { view: false, add: false, edit: false, delete: false };
+        permsObj[moduleId][action] = newValue;
+        if (newValue && (action === 'add' || action === 'edit' || action === 'delete')) {
+            permsObj[moduleId].view = true;
+        }
+
+        // Calculate aggregate legacy permissions
+        let anyView = false;
+        let anyEdit = false;
+        let anyDelete = false;
+        Object.values(permsObj).forEach((p: any) => {
+            if (p.view) anyView = true;
+            if (p.edit) anyEdit = true;
+            if (p.delete) anyDelete = true;
+        });
+
+        const updatedUser = {
+            ...user,
+            allowed_modules: JSON.stringify(permsObj),
+            can_view: anyView ? 1 : 0,
+            can_edit: anyEdit ? 1 : 0,
+            can_delete: anyDelete ? 1 : 0
+        };
+
+        // Optimistically update state
+        setAllUsers(prev => prev.map(usr => usr.id === user.id ? updatedUser : usr));
+
         try {
             const token = localStorage.getItem('gp_token');
-            const res = await fetch(`${API_BASE_URL}/api/auth/users/${userId}`, {
+            const res = await fetch(`${API_BASE_URL}/api/auth/users/${user.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ [field]: newValue })
+                body: JSON.stringify({
+                    allowed_modules: updatedUser.allowed_modules,
+                    can_view: updatedUser.can_view,
+                    can_edit: updatedUser.can_edit,
+                    can_delete: updatedUser.can_delete
+                })
             });
 
             if (res.status === 401 && onAuthError) {
                 onAuthError();
                 return;
             }
+
             if (res.ok) {
-                setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, [field]: newValue } : u));
-                const labels: Record<string, string> = { can_view: 'पहा', can_edit: 'संपादन', can_delete: 'हटवा' };
-                addToast(`${labels[field]} परवानगी ${newValue ? 'सक्रिय' : 'निष्क्रिय'} केली!`, 'success');
+                addToast('परवानगी यशस्वीरित्या अद्यतनित केली!', 'success');
             } else {
                 const data = await res.json();
                 addToast(`त्रुटी: ${data.error}`, 'error');
+                fetchAllUsers();
             }
         } catch (err) {
             addToast('सर्व्हरशी कनेक्ट होऊ शकत नाही', 'error');
+            fetchAllUsers();
+        }
+    };
+
+    const handleSelectAllPermissions = async (user: any) => {
+        const modules = ['dashboard', 'namuna8', 'namuna9', 'magani', 'reports', 'ferfar', 'taxMaster'];
+        const permsObj: Record<string, any> = {};
+        modules.forEach(modId => {
+            permsObj[modId] = { view: true, add: true, edit: true, delete: true };
+        });
+
+        const updatedUser = {
+            ...user,
+            allowed_modules: JSON.stringify(permsObj),
+            can_view: 1,
+            can_edit: 1,
+            can_delete: 1
+        };
+
+        // Optimistically update state
+        setAllUsers(prev => prev.map(usr => usr.id === user.id ? updatedUser : usr));
+
+        try {
+            const token = localStorage.getItem('gp_token');
+            const res = await fetch(`${API_BASE_URL}/api/auth/users/${user.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    allowed_modules: updatedUser.allowed_modules,
+                    can_view: updatedUser.can_view,
+                    can_edit: updatedUser.can_edit,
+                    can_delete: updatedUser.can_delete
+                })
+            });
+            if (res.status === 401 && onAuthError) {
+                onAuthError();
+                return;
+            }
+            if (res.ok) {
+                addToast('सर्व मॉड्यूल परवानग्या यशस्वीरित्या मंजूर केल्या!', 'success');
+                fetchAllUsers();
+            } else {
+                const data = await res.json();
+                addToast(`त्रुटी: ${data.error}`, 'error');
+                fetchAllUsers();
+            }
+        } catch (err) {
+            addToast('सर्व्हरशी कनेक्ट होऊ शकत नाही', 'error');
+            fetchAllUsers();
+        }
+    };
+
+    const handleTableRoleChange = async (user: any, newRole: string) => {
+        const updatedUser = { ...user, role: newRole };
+        setAllUsers(prev => prev.map(usr => usr.id === user.id ? updatedUser : usr));
+
+        try {
+            const token = localStorage.getItem('gp_token');
+            const res = await fetch(`${API_BASE_URL}/api/auth/users/${user.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ role: newRole })
+            });
+
+            if (res.status === 401 && onAuthError) {
+                onAuthError();
+                return;
+            }
+
+            if (res.ok) {
+                addToast('भूमिका यशस्वीरित्या अद्यतनित केली!', 'success');
+            } else {
+                const data = await res.json();
+                addToast(`त्रुटी: ${data.error}`, 'error');
+                fetchAllUsers();
+            }
+        } catch (err) {
+            addToast('सर्व्हरशी कनेक्ट होऊ शकत नाही', 'error');
+            fetchAllUsers();
+        }
+    };
+
+    const handleTableStatusChange = async (user: any, newStatus: string) => {
+        const updatedUser = { ...user, status: newStatus };
+        setAllUsers(prev => prev.map(usr => usr.id === user.id ? updatedUser : usr));
+
+        try {
+            const token = localStorage.getItem('gp_token');
+            const res = await fetch(`${API_BASE_URL}/api/auth/users/${user.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            if (res.status === 401 && onAuthError) {
+                onAuthError();
+                return;
+            }
+
+            if (res.ok) {
+                addToast('स्थिती यशस्वीरित्या अद्यतनित केली!', 'success');
+            } else {
+                const data = await res.json();
+                addToast(`त्रुटी: ${data.error}`, 'error');
+                fetchAllUsers();
+            }
+        } catch (err) {
+            addToast('सर्व्हरशी कनेक्ट होऊ शकत नाही', 'error');
+            fetchAllUsers();
         }
     };
 
@@ -195,18 +364,27 @@ export default function UserManagement({ onAuthError, addToast }: UserManagement
                         <h3 className="text-xl font-black text-slate-800 tracking-tight">मास्टर / वापरकर्ता व्यवस्थापन</h3>
                         <p className="text-xs font-bold text-slate-500 mt-1">येथे तुम्ही वापरकर्ता नोंदणी विनंत्या आणि सर्व वापरकर्त्यांचे व्यवस्थापन करू शकता.</p>
                     </div>
-                    <div className="flex bg-slate-100 p-1 rounded-xl">
+                    <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
                         <button
-                            onClick={() => setUserMasterTab('list')}
-                            className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${userMasterTab === 'list' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            type="button"
+                            onClick={() => setUserMasterTab('profile')}
+                            className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${userMasterTab === 'profile' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                         >
-                            मास्टर
+                            👤 प्रोफाइल माहिती (Profile Info)
                         </button>
                         <button
+                            type="button"
+                            onClick={() => setUserMasterTab('permissions')}
+                            className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${userMasterTab === 'permissions' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        >
+                            🔐 मॉड्यूल परवानग्या (Module Permissions)
+                        </button>
+                        <button
+                            type="button"
                             onClick={() => setUserMasterTab('pending')}
                             className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${userMasterTab === 'pending' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                         >
-                            विनंती
+                            📨 नोंदणी विनंत्या (Requests)
                         </button>
                     </div>
                 </div>
@@ -225,106 +403,127 @@ export default function UserManagement({ onAuthError, addToast }: UserManagement
                             <p className="text-sm font-black text-slate-400 uppercase tracking-widest">कोणतीही प्रलंबित विनंती नाही</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                            {userRequests.map((req) => (
-                                <div key={req.id} className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50/50 rounded-full -mr-12 -mt-12 group-hover:bg-indigo-100 transition-colors" />
-                                    <div className="flex items-start gap-4 mb-6 relative z-10">
-                                        <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 font-black text-xl">
-                                            {req.name?.charAt(0) || req.username?.charAt(0)}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="font-black text-slate-800 text-base truncate">{req.name}</h4>
-                                            <p className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1">@{req.username}</p>
-                                            <div className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-slate-100 text-slate-600 border border-slate-200 uppercase">
-                                                {ROLES.find(r => r.value === req.role)?.label || req.role}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3 mb-8 relative z-10">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">कर्मचारी आयडी</span>
-                                            <span className="text-[10px] font-black text-slate-800 bg-slate-100 px-2 py-0.5 rounded italic">{req.employee_id}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">संपर्क क्रमांक</span>
-                                            <span className="text-xs font-bold text-slate-700">{MN(req.mobile)}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">वय</span>
-                                            <span className="text-xs font-bold text-slate-700">{MN(req.age)} वर्षांचा</span>
-                                        </div>
-                                        <div className="pt-2">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">पत्ता</span>
-                                            <p className="text-xs font-bold text-slate-600 leading-relaxed line-clamp-2">{req.address}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-3 relative z-10">
-                                        <button onClick={() => handleUserAction(req.id, 'approve')} className="flex-1 py-3 bg-emerald-500 text-white rounded-2xl font-black text-xs hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
-                                            <CheckCircle2 className="w-4 h-4" /> मंजूर करा
-                                        </button>
-                                        <button onClick={() => handleUserAction(req.id, 'reject')} className="flex-1 py-3 bg-rose-50 text-rose-500 border border-rose-100 rounded-2xl font-black text-xs hover:bg-rose-500 hover:text-white active:scale-95 transition-all flex items-center justify-center gap-2">
-                                            <X className="w-4 h-4" /> नाकारा
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
+                        <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
+                            <div className="overflow-x-auto">
+                            <table className="w-full text-left min-w-[1100px]">
+                                <thead className="sticky top-0 z-20">
+                                    <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 shadow-sm">
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest">नाव व पत्ता</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest">वापरकर्तानाव</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest">ईमेल / संपर्क</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest">भूमिका</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest">वय</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-center">स्थिती</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-center">कृती</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-sm">
+                                    {userRequests.map((req) => (
+                                        <tr key={req.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="font-bold text-slate-800 text-sm">{req.name}</div>
+                                                {req.address && <div className="text-[10px] text-slate-400 font-medium mt-0.5 max-w-[240px] truncate" title={req.address}>{req.address}</div>}
+                                            </td>
+                                            <td className="px-6 py-4 text-indigo-500 font-bold text-xs">@{req.username}</td>
+                                            <td className="px-6 py-4">
+                                                <div className="text-xs font-bold text-slate-700">{req.mobile ? MN(req.mobile) : '-'}</div>
+                                                {req.email && <div className="text-[10px] text-slate-400 font-medium mt-0.5">{req.email}</div>}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-black bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase">
+                                                    {ROLES.find(r => r.value === req.role)?.label || req.role}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-xs font-bold text-slate-500">{req.age ? `${MN(req.age)} वर्षे` : '-'}</td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase border bg-amber-50 text-amber-600 border-amber-100">
+                                                    प्रलंबित
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex justify-center gap-2">
+                                                    <button 
+                                                        onClick={() => handleUserAction(req.id, 'approve')} 
+                                                        className="px-3 py-1.5 bg-emerald-500 text-white rounded-xl font-black text-xs hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                                                    >
+                                                        <CheckCircle2 className="w-3.5 h-3.5" /> मंजूर करा
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleUserAction(req.id, 'reject')} 
+                                                        className="px-3 py-1.5 bg-rose-50 text-rose-500 border border-rose-100 rounded-xl font-black text-xs hover:bg-rose-500 hover:text-white active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                                                    >
+                                                        <X className="w-3.5 h-3.5" /> नाकारा
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            </div>
                         </div>
                     )
-                ) : (
-                    <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
+                ) : userMasterTab === 'profile' ? (
+                    <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-300">
                         <div className="overflow-x-auto">
-                        <table className="w-full text-left min-w-[1100px]">
+                        <table className="w-full text-left min-w-[1000px] border-collapse">
                             <thead className="sticky top-0 z-20">
-                                <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 shadow-sm">
-                                    <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest">नाव</th>
-                                    <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest">वापरकर्तानाव</th>
-                                    <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest">ईमेल / संपर्क</th>
-                                    <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest">भूमिका</th>
-                                    <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest">कर्मचारी आयडी</th>
-                                    <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest text-center">स्थिती</th>
-                                    <th className="px-4 py-4 text-[10px] font-black uppercase tracking-widest text-center">कृती</th>
+                                <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 shadow-sm text-[10px] font-black uppercase tracking-widest">
+                                    <th className="px-6 py-4 text-left">नाव व संपर्क (Name & Contact)</th>
+                                    <th className="px-6 py-4 text-left">वापरकर्तानाव (Username)</th>
+                                    <th className="px-6 py-4 text-left">भूमिका (Role)</th>
+                                    <th className="px-6 py-4 text-center">खाते स्थिती (Account Status)</th>
+                                    <th className="px-6 py-4 text-center">कृती (Actions)</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 text-sm">
                                 {allUsers.map((user) => (
                                     <tr key={user.id} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-4 py-3">
+                                        <td className="px-6 py-4">
                                             <div className="font-bold text-slate-800 text-sm">{user.name}</div>
-                                            {user.address && <div className="text-[10px] text-slate-400 font-medium mt-0.5 max-w-[160px] truncate" title={user.address}>{user.address}</div>}
+                                            {user.mobile && <div className="text-[10px] text-slate-400 font-medium mt-0.5">{MN(user.mobile)}</div>}
+                                            {user.email && <div className="text-[10px] text-slate-400 font-medium">{user.email}</div>}
                                         </td>
-                                        <td className="px-4 py-3 text-indigo-500 font-bold text-xs">@{user.username}</td>
-                                        <td className="px-4 py-3">
-                                            <div className="text-xs font-bold text-slate-700">{user.email || '-'}</div>
-                                            <div className="text-[10px] text-slate-400 font-medium">{user.mobile || '-'}</div>
+                                        <td className="px-6 py-4 text-indigo-500 font-bold text-xs">@{user.username}</td>
+                                        <td className="px-6 py-4">
+                                            <select 
+                                                value={user.role} 
+                                                onChange={e => handleTableRoleChange(user, e.target.value)}
+                                                className="px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs focus:bg-white outline-none cursor-pointer"
+                                            >
+                                                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                                            </select>
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <span className="px-2 py-0.5 rounded text-[10px] font-black bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase">
-                                                {ROLES.find(r => r.value === user.role)?.label || user.role}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3 text-xs font-bold text-slate-500 italic">{user.employee_id}</td>
-                                        <td className="px-4 py-3">
-                                            <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${user.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                        <td className="px-6 py-4 text-center">
+                                            <select 
+                                                value={user.status} 
+                                                onChange={e => handleTableStatusChange(user, e.target.value)}
+                                                className={`px-2 py-1.5 border rounded-xl font-bold text-xs outline-none cursor-pointer ${
+                                                    user.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                                                     user.status === 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                                        'bg-rose-50 text-rose-600 border-rose-100'
-                                                }`}>
-                                                {user.status === 'APPROVED' ? 'मंजूर' : user.status === 'PENDING' ? 'प्रलंबित' : 'नाकारलेले'}
-                                            </span>
+                                                    'bg-rose-50 text-rose-600 border-rose-100'
+                                                }`}
+                                            >
+                                                <option value="APPROVED">मंजूर</option>
+                                                <option value="PENDING">प्रलंबित</option>
+                                                <option value="REJECTED">नाकारलेले</option>
+                                            </select>
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex justify-center gap-2">
+                                        <td className="px-6 py-4 text-center">
+                                            <div className="flex justify-center gap-1.5">
                                                 <button 
-                                                    onClick={() => setEditingManagedUser(user)}
+                                                    type="button"
+                                                    onClick={() => { setEditingManagedUser(user); setModalTab('profile'); }}
                                                     className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" 
-                                                    title="Edit"
+                                                    title="प्रोफाइल तपशीलवार संपादित करा"
                                                 >
                                                     <Edit2 className="w-4 h-4" />
                                                 </button>
                                                 <button 
+                                                    type="button"
                                                     onClick={() => handleDeleteUser(user.id)}
                                                     className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-all" 
-                                                    title="Delete"
+                                                    title="वापरकर्ता हटवा"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
@@ -332,6 +531,111 @@ export default function UserManagement({ onAuthError, addToast }: UserManagement
                                         </td>
                                     </tr>
                                 ))}
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-300">
+                        <div className="overflow-x-auto">
+                        <table className="w-full text-left min-w-[1300px] border-collapse">
+                            <thead className="sticky top-0 z-20">
+                                <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 shadow-sm text-[10px] font-black uppercase tracking-widest">
+                                    <th className="px-6 py-4 min-w-[200px] text-left">वापरकर्ता (User)</th>
+                                    <th className="px-3 py-4 text-center">डॅशबोर्ड</th>
+                                    <th className="px-3 py-4 text-center">नमुना ८</th>
+                                    <th className="px-3 py-4 text-center">नमुना ९</th>
+                                    <th className="px-3 py-4 text-center">मागणी बिल</th>
+                                    <th className="px-3 py-4 text-center">अहवाल</th>
+                                    <th className="px-3 py-4 text-center">फेरफार</th>
+                                    <th className="px-3 py-4 text-center">सेटिंग्ज</th>
+                                    <th className="px-6 py-4 text-center">तपशील (Details)</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 text-sm">
+                                {allUsers.map((user) => {
+                                    const modules = [
+                                        { id: 'dashboard', label: 'डॅशबोर्ड' },
+                                        { id: 'namuna8', label: 'नमुना ८' },
+                                        { id: 'namuna9', label: 'नमुना ९' },
+                                        { id: 'magani', label: 'मागणी बिल' },
+                                        { id: 'reports', label: 'अहवाल' },
+                                        { id: 'ferfar', label: 'फेरफार' },
+                                        { id: 'taxMaster', label: 'सेटिंग्ज' },
+                                    ];
+
+                                    let permsObj: Record<string, any> = {};
+                                    try {
+                                        if (user.allowed_modules?.startsWith('{')) {
+                                            permsObj = JSON.parse(user.allowed_modules);
+                                        } else {
+                                            const legacyMods = (user.allowed_modules || '').split(',');
+                                            legacyMods.forEach((m: string) => {
+                                                permsObj[m] = { view: true, add: false, edit: !!user.can_edit, delete: !!user.can_delete };
+                                            });
+                                        }
+                                    } catch (e) { permsObj = {}; }
+
+                                    return (
+                                        <tr key={user.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="font-bold text-slate-800 text-sm">{user.name}</div>
+                                                <div className="text-indigo-500 font-bold text-xs mt-0.5">@{user.username}</div>
+                                                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                                                    {ROLES.find(r => r.value === user.role)?.label || user.role}
+                                                </div>
+                                            </td>
+                                            {modules.map(mod => {
+                                                const modPerms = permsObj[mod.id] || { view: false, add: false, edit: false, delete: false };
+                                                return (
+                                                    <td key={mod.id} className="px-3 py-4 text-center border-l border-slate-100">
+                                                        <div className="flex flex-col items-center gap-1.5">
+                                                            <label className="flex items-center gap-1 cursor-pointer select-none">
+                                                                <input 
+                                                                    type="checkbox" 
+                                                                    checked={!!modPerms.view} 
+                                                                    onChange={e => handleTablePermissionToggle(user, mod.id, 'view', e.target.checked)} 
+                                                                    className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/20 cursor-pointer"
+                                                                />
+                                                                <span className="text-[10px] font-bold text-slate-500">पहा</span>
+                                                            </label>
+                                                            <label className="flex items-center gap-1 cursor-pointer select-none">
+                                                                <input 
+                                                                    type="checkbox" 
+                                                                    checked={!!modPerms.edit} 
+                                                                    onChange={e => handleTablePermissionToggle(user, mod.id, 'edit', e.target.checked)} 
+                                                                    className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/20 cursor-pointer"
+                                                                />
+                                                                <span className="text-[10px] font-bold text-slate-500">बदल</span>
+                                                            </label>
+                                                        </div>
+                                                    </td>
+                                                );
+                                            })}
+                                            <td className="px-6 py-4 text-center border-l border-slate-100">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => handleSelectAllPermissions(user)}
+                                                        className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-100 rounded-lg text-[9px] font-black transition-all active:scale-95 flex items-center gap-1 shrink-0"
+                                                        title="सर्व मॉड्यूल परवानग्या एकाच वेळी मंजूर करा (Full Access)"
+                                                    >
+                                                        <Shield className="w-3 h-3 text-indigo-600" />
+                                                        सर्व निवडा
+                                                    </button>
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => { setEditingManagedUser(user); setModalTab('permissions'); }}
+                                                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-all" 
+                                                        title="तपशीलवार परवानग्या संपादित करा"
+                                                    >
+                                                        <Edit2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                         </div>
@@ -424,7 +728,30 @@ export default function UserManagement({ onAuthError, addToast }: UserManagement
                                 </div>
                             ) : (
                                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
-                                    <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm">
+                                    <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm flex flex-col">
+                                        <div className="flex justify-between items-center px-8 py-4 bg-slate-50 border-b border-slate-200">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">मॉड्यूल परवानग्या (Module Permissions)</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const modules = ['dashboard', 'namuna8', 'namuna9', 'magani', 'reports', 'ferfar', 'taxMaster'];
+                                                    const newPerms: Record<string, any> = {};
+                                                    modules.forEach(modId => {
+                                                        newPerms[modId] = { view: true, add: true, edit: true, delete: true };
+                                                    });
+                                                    setEditingManagedUser({
+                                                        ...editingManagedUser,
+                                                        allowed_modules: JSON.stringify(newPerms),
+                                                        can_view: 1,
+                                                        can_edit: 1,
+                                                        can_delete: 1
+                                                    });
+                                                }}
+                                                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-all active:scale-95 flex items-center gap-1.5 shadow-lg shadow-indigo-600/10"
+                                            >
+                                                <Shield className="w-3.5 h-3.5 text-white" /> सर्व निवडा (Select All)
+                                            </button>
+                                        </div>
                                         <table className="w-full text-left border-collapse">
                                             <thead className="sticky top-0 z-20">
                                                 <tr className="bg-slate-50 border-b border-slate-200 shadow-sm">
@@ -433,7 +760,6 @@ export default function UserManagement({ onAuthError, addToast }: UserManagement
                                                     <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest text-center text-slate-500">Add</th>
                                                     <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest text-center text-slate-500">Edit</th>
                                                     <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest text-center text-slate-500">Delete</th>
-                                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-right text-indigo-600">गाळणी (Filter)</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
@@ -441,7 +767,6 @@ export default function UserManagement({ onAuthError, addToast }: UserManagement
                                                     ['dashboard', 'डैशबोर्ड (Dashboard)', 'from-violet-500 to-indigo-600'],
                                                     ['namuna8', 'नमुना ८ (Namuna 8)', 'from-sky-500 to-blue-600'],
                                                     ['namuna9', 'नमुना ९ (Namuna 9)', 'from-emerald-500 to-green-600'],
-                                                    ['payments', 'कर वसुली (Payments)', 'from-teal-500 to-cyan-600'],
                                                     ['magani', 'मागणी बिल (Magani)', 'from-rose-500 to-red-600'],
                                                     ['reports', 'अहवाल (Reports)', 'from-purple-500 to-fuchsia-600'],
                                                     ['taxMaster', 'सेटिंग्ज (Settings)', 'from-amber-500 to-orange-500'],
@@ -458,14 +783,31 @@ export default function UserManagement({ onAuthError, addToast }: UserManagement
                                                         }
                                                     } catch (e) { permsObj = {}; }
 
-                                                    const modPerms = permsObj[moduleId] || { view: false, add: false, edit: false, delete: false, filter: false };
+                                                    const modPerms = permsObj[moduleId] || { view: false, add: false, edit: false, delete: false };
 
-                                                    const updateModulePerm = (action: 'view'|'add'|'edit'|'delete'|'filter', value: boolean) => {
+                                                    const updateModulePerm = (action: 'view'|'add'|'edit'|'delete', value: boolean) => {
                                                         const newPerms = { ...permsObj };
-                                                        if (!newPerms[moduleId]) newPerms[moduleId] = { view: false, add: false, edit: false, delete: false, filter: false };
+                                                        if (!newPerms[moduleId]) newPerms[moduleId] = { view: false, add: false, edit: false, delete: false };
                                                         newPerms[moduleId][action] = value;
-                                                        if (value && (action === 'add' || action === 'edit' || action === 'delete' || action === 'filter')) newPerms[moduleId].view = true;
-                                                        setEditingManagedUser({ ...editingManagedUser, allowed_modules: JSON.stringify(newPerms) });
+                                                        if (value && (action === 'add' || action === 'edit' || action === 'delete')) newPerms[moduleId].view = true;
+                                                        
+                                                        // Calculate aggregate legacy permissions
+                                                        let anyView = false;
+                                                        let anyEdit = false;
+                                                        let anyDelete = false;
+                                                        Object.values(newPerms).forEach((p: any) => {
+                                                            if (p.view) anyView = true;
+                                                            if (p.edit) anyEdit = true;
+                                                            if (p.delete) anyDelete = true;
+                                                        });
+
+                                                        setEditingManagedUser({
+                                                            ...editingManagedUser,
+                                                            allowed_modules: JSON.stringify(newPerms),
+                                                            can_view: anyView ? 1 : 0,
+                                                            can_edit: anyEdit ? 1 : 0,
+                                                            can_delete: anyDelete ? 1 : 0
+                                                        });
                                                     };
 
                                                     return (
@@ -492,12 +834,6 @@ export default function UserManagement({ onAuthError, addToast }: UserManagement
                                                             </td>
                                                             <td className="px-4 py-4 text-center">
                                                                 <input type="checkbox" checked={modPerms.delete} onChange={e => updateModulePerm('delete', e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/20" />
-                                                            </td>
-                                                            <td className="px-8 py-4 text-right">
-                                                                <label className="inline-flex items-center gap-2 cursor-pointer">
-                                                                    <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">गाळणी</span>
-                                                                    <input type="checkbox" checked={modPerms.filter} onChange={e => updateModulePerm('filter', e.target.checked)} className="w-5 h-5 rounded-lg border-indigo-200 text-indigo-600 focus:ring-indigo-500/20" />
-                                                                </label>
                                                             </td>
                                                         </tr>
                                                     );

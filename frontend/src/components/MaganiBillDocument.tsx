@@ -19,14 +19,14 @@ export const BillContent = ({ record, copyLabel }: BillContentProps) => {
     const currYear = PANCHAYAT_CONFIG.financialYear;
 
     const taxMapping = [
-        { name: 'घर कर', arrears: Number(record.arrearsAmount) || 0, current: Number(record.propertyTax) || 0, field: 'propertyTax' },
-        { name: 'जमीन कर', arrears: 0, current: Number(record.openSpaceTax) || 0, field: 'openSpaceTax' },
-        { name: 'दिवाबत्ती कर', arrears: 0, current: Number(record.streetLightTax) || 0, field: 'streetLightTax' },
-        { name: 'आरोग्य कर', arrears: 0, current: Number(record.healthTax) || 0, field: 'healthTax' },
-        { name: 'इमला कर (अतिक्रमण)', arrears: 0, current: Number((record as any).surchargeTotal) || 0, field: 'surchargeTotal' },
-        { name: 'कचरा गाडी कर', arrears: 0, current: Number((record as any).wasteCollectionTax) || 0, field: 'wasteCollectionTax' },
-        { name: 'विशेष / सामान्य पाणी कर', arrears: 0, current: (Number(record.specialWaterTax) > 0 ? Number(record.specialWaterTax) : (Number(record.generalWaterTax) || 0)), field: 'waterTax' },
-        { name: '५% दंड थकीत रकमेवर', arrears: Number(calc.penaltyAmount) || 0, current: 0, field: 'penalty' },
+        { name: 'घर कर', arrears: Math.round(Number(record.arrearsAmount) || 0), current: Math.round(Number(record.propertyTax) || 0), field: 'propertyTax' },
+        { name: 'जमीन कर', arrears: 0, current: Math.round(Number(record.openSpaceTax) || 0), field: 'openSpaceTax' },
+        { name: 'दिवाबत्ती कर', arrears: 0, current: Math.round(Number(record.streetLightTax) || 0), field: 'streetLightTax' },
+        { name: 'आरोग्य कर', arrears: 0, current: Math.round(Number(record.healthTax) || 0), field: 'healthTax' },
+        { name: 'इमला कर (अतिक्रमण)', arrears: 0, current: Math.round(Number((record as any).surchargeTotal) || 0), field: 'surchargeTotal' },
+        { name: 'कचरा गाडी कर', arrears: 0, current: Math.round(Number((record as any).wasteCollectionTax) || 0), field: 'wasteCollectionTax' },
+        { name: 'विशेष / सामान्य पाणी कर', arrears: 0, current: Math.round(Number(record.specialWaterTax) > 0 ? Number(record.specialWaterTax) : (Number(record.generalWaterTax) || 0)), field: 'waterTax' },
+        { name: '५% दंड थकीत रकमेवर', arrears: Math.round(Number(calc.penaltyAmount) || 0), current: 0, field: 'penalty' },
     ];
 
     const currentTotal = taxMapping.reduce((acc, row) => acc + row.current, 0);

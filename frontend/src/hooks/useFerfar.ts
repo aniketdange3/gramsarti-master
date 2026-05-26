@@ -50,5 +50,8 @@ export const useFerfarRequests = (page: number, limit: number, villageId?: numbe
       }
       return response.json();
     },
+    staleTime: 0,               // Always refetch from server when explicitly called
+    gcTime: 5 * 60 * 1000,      // Keep in cache for 5 minutes
+    refetchOnWindowFocus: false, // Don't refetch when user switches windows
   });
 };

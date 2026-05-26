@@ -79,7 +79,13 @@ const initializeDatabase = async () => {
         ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
 
         // Migration for users
-        await addColumnIfNotExists(connection, 'users', 'allowed_modules', "VARCHAR(500) DEFAULT 'dashboard,namuna8,namuna9,payments,magani,reports,taxMaster'");
+        await addColumnIfNotExists(connection, 'users', 'allowed_modules', "TEXT DEFAULT NULL");
+        try {
+            await connection.query('ALTER TABLE users MODIFY COLUMN allowed_modules TEXT');
+            console.log('  [DB] Successfully migrated users.allowed_modules to TEXT');
+        } catch (alterErr) {
+            console.warn('  [DB] Migration warning allowed_modules:', alterErr.message);
+        }
         await addColumnIfNotExists(connection, 'users', 'email', "VARCHAR(255) DEFAULT NULL");
         await addColumnIfNotExists(connection, 'users', 'mobile', "VARCHAR(20) DEFAULT NULL");
         await addColumnIfNotExists(connection, 'users', 'gp_code', "VARCHAR(100) DEFAULT NULL");

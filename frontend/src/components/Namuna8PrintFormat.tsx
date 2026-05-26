@@ -29,37 +29,44 @@ export default function Namuna8PrintFormat({ records }: Props) {
     }
 
     return (
-        <div className="bg-gray-100 min-h-screen p-0 no-print-bg font-sans">
+        <div className="bg-white min-h-screen p-0 no-print-bg font-sans">
             <style dangerouslySetInnerHTML={{
                 __html: `
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
                 @media print {
                     @page {
                         size: legal landscape;
-                        margin: 0.5in;
+                        margin: 0.25in;
                     }
                     body, html {
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
                         color-adjust: exact !important;
-                        background: white !important;
                         width: 100%;
                         font-family: 'Inter', sans-serif;
                     }
+                    * {
+                        scrollbar-width: none !important;
+                    }
+                    ::-webkit-scrollbar {
+                        display: none !important;
+                    }
                     .page-container {
-                        page-break-after: always;
-                        break-after: page;
                         box-shadow: none !important;
                         margin: 0 !important;
                         padding: 10px !important;
                         width: 100% !important;
                         max-width: 100% !important;
-                        min-height: unset !important;
-                        height: auto !important;
+                        min-height: 95vh !important;
+                        height: 95vh !important;
                         position: relative !important;
-                        overflow: visible !important;
+                        overflow: hidden !important;
                         border: 3px double #800000 !important;
                         box-sizing: border-box !important;
+                    }
+                    .page-container:not(:last-child) {
+                        page-break-after: always;
+                        break-after: page;
                     }
                     .flower-corner { display: block !important; }
                     .no-print { display: none !important; }
@@ -100,6 +107,10 @@ export default function Namuna8PrintFormat({ records }: Props) {
                 table, th, td {
                     border: 1px solid #800000 !important;
                     border-collapse: collapse;
+                }
+                thead th, tbody td:not(.p-0), tbody td.p-0 > div {
+                    padding-top: 5px !important;
+                    padding-bottom: 5px !important;
                 }
                 thead th {
                     border: 1px solid #800000 !important;
@@ -234,24 +245,24 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                     <col style={{ width: '35px' }} />{/* सामान्य पाणी */}
                                     <col style={{ width: '35px' }} />{/* विशेष पाणी */}
                                     <col style={{ width: '35px' }} />{/* कचरागाडी */}
-                                    <col style={{ width: '45px' }} />{/* एकूण */}
-                                    <col style={{ width: '38px' }} />{/* शेरा */}
+                                    <col style={{ width: '30px' }} />{/* एकूण */}
+                                    <col style={{ width: '50px' }} />{/* शेरा */}
                                 </colgroup>
                                 <thead>
                                     <tr className="text-[#800000] bg-gray-100 text-center font-bold">
                                         <th rowSpan={2} className="p-1 w-[25px]">अ.क्र.</th>
                                         <th rowSpan={2} className="p-0 w-[70px]">
-                                            <div className="border-b border-red-900 p-1 text-[#800000]">वस्ती नाव</div>
+                                            <div className="border-b border-red-900 p-1 text-[#800000]">वस्तीचे नाव </div>
                                             <div className="p-1 text-[#800000]">खसरा क्र.</div>
                                         </th>
                                         <th rowSpan={2} className="p-0 w-[50px]">
-                                            <div className="border-b border-red-900 p-1 text-[#800000]">मालमत्ता</div>
+                                            <div className="border-b border-red-900 p-1 text-[#800000]">मालमत्ता क्र</div>
                                             <div className="p-1 text-[#800000]">प्लॉट क्र.</div>
                                         </th>
                                         <th rowSpan={2} className="p-0 w-[140px]">
                                             <div className="border-b border-red-900 p-1 text-[#800000]">मालकाचे नाव</div>
                                             <div className="border-b border-red-900 p-1 text-[#800000]">भोगवटादाराचे नाव</div>
-                                            <div className="p-1 text-[#800000]">संपर्क :</div>
+                                            <div className="p-1 text-[#800000]">संपर्क क्र:</div>
                                         </th>
                                         <th rowSpan={2} className="p-1 w-[40px] text-[#800000]">
                                             एकूण<br />क्षेत्रफळ
@@ -358,6 +369,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                             (Number(r.specialWaterTax) || 0));
 
                                         const totalArea = Number(r.totalAreaSqFt) > 0 ? Number(r.totalAreaSqFt) : activeSections.reduce((sum: number, s: any) => sum + (Number(s?.areaSqFt) || 0), 0);
+                                        const totalAreaSqMt = Number(r.totalAreaSqMt) > 0 ? Number(r.totalAreaSqMt) : activeSections.reduce((sum: number, s: any) => sum + (Number(s?.areaSqMt) || 0), 0);
                                         const srNo = chunkIdx * RECORDS_PER_PAGE + rIdx + 1;
 
                                         return (
@@ -386,10 +398,15 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                                             <OwnerNameDisplay name={r.ownerName || '-'} />
                                                                         </div>
                                                                         <div className="p-1 text-[9px] text-black border-b border-red-900">भोगवटादार: {r.occupantName || 'स्वतः'}</div>
-                                                                        <div className="p-1 text-[9px] text-black">संपर्क: {r.contactNo ? MN(r.contactNo) : '-'}</div>
+                                                                        <div className="p-1 text-[9px] text-black">संपर्क क्र: {r.contactNo ? MN(r.contactNo) : '-'}</div>
                                                                     </td>
-                                                                    <td rowSpan={rowCount} className="p-1 text-center font-black align-middle text-[#800000]">
-                                                                        {MN(r.totalAreaSqFt || totalArea)} <span className="text-[8px] font-bold ">चौ.फूट</span>
+                                                                    <td rowSpan={rowCount} className="p-0 text-center align-middle">
+                                                                        <div className="p-1 border-b border-red-900 font-black text-black">
+                                                                            {MN(r.totalAreaSqFt || totalArea)} <span className="text-[7.5px] font-bold">चौ.फूट</span>
+                                                                        </div>
+                                                                        <div className="p-1 font-black text-[#800000] text-[8.5px]">
+                                                                            {MN(r.totalAreaSqMt || totalAreaSqMt)} <span className="text-[7.5px] font-bold">चौ.मी</span>
+                                                                        </div>
                                                                     </td>
                                                                 </>
                                                             )}
@@ -412,10 +429,10 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                                 </div>
                                                             </td>
                                                             <td className="p-1 text-right font-bold text-black">
-                                                                {s?.propertyType === 'खाली जागा' ? MN(s.landRate || 0) : '-'}
+                                                                {s && s.propertyType === 'खाली जागा' ? MN(s.landRate || 0) : '-'}
                                                             </td>
                                                             <td className="p-1 text-right font-bold text-black">
-                                                                {s?.propertyType !== 'खाली जागा' ? MN(s.buildingRate || 0) : '-'}
+                                                                {s && s.propertyType !== 'खाली जागा' ? MN(s.buildingRate || 0) : '-'}
                                                             </td>
                                                             <td className="p-0 text-center font-black">
                                                                 <div className="p-1 border-b border-red-900 text-black">{s ? MN(details?.weightage || 0) : '-'}</div>
@@ -429,25 +446,27 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                                             </td>
                                                             <td className="p-0 text-right align-middle font-bold text-black">
                                                                 <div className="p-1 flex flex-col gap-1">
-                                                                    {(details?.sTaxB || 0) > 0 && (details?.sTaxO || 0) > 0 ? (
-                                                                        <div className="flex flex-col gap-0.5">
-                                                                            <div className="flex justify-between items-center text-[#800000]">
-                                                                                <span className="text-[7px] italic">इमारत:</span>
-                                                                                <span>{MN(details.sTaxB.toFixed(0))}</span>
+                                                                    {s ? (
+                                                                        (details?.sTaxB || 0) > 0 && (details?.sTaxO || 0) > 0 ? (
+                                                                            <div className="flex flex-col gap-0.5">
+                                                                                <div className="flex justify-between items-center text-[#800000]">
+                                                                                    <span className="text-[7px] italic">इमारत:</span>
+                                                                                    <span>{MN(details.sTaxB.toFixed(0))}</span>
+                                                                                </div>
+                                                                                <div className="flex justify-between items-center text-blue-700">
+                                                                                    <span className="text-[7px] italic">जागा:</span>
+                                                                                    <span>{MN(details.sTaxO.toFixed(0))}</span>
+                                                                                </div>
+                                                                                <div className="mt-1 pt-1 border-t border-red-900 text-center font-black text-[#800000]">
+                                                                                    {MN((details.sTaxB + details.sTaxO).toFixed(0))}
+                                                                                </div>
                                                                             </div>
-                                                                            <div className="flex justify-between items-center text-blue-700">
-                                                                                <span className="text-[7px] italic">जागा:</span>
-                                                                                <span>{MN(details.sTaxO.toFixed(0))}</span>
+                                                                        ) : (
+                                                                            <div className="text-center text-black">
+                                                                                {MN(((details?.sTaxB || 0) + (details?.sTaxO || 0)).toFixed(0))}
                                                                             </div>
-                                                                            <div className="mt-1 pt-1 border-t border-red-900 text-center font-black text-[#800000]">
-                                                                                {MN((details.sTaxB + details.sTaxO).toFixed(0))}
-                                                                            </div>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="text-center text-black">
-                                                                            {MN(((details?.sTaxB || 0) + (details?.sTaxO || 0)).toFixed(0))}
-                                                                        </div>
-                                                                    )}
+                                                                        )
+                                                                    ) : '-'}
                                                                 </div>
                                                             </td>
 
@@ -518,12 +537,12 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                 </tfoot>
                             </table>
                             <center>
-                                <p className="  Center font-bold text-[11px] whitespace-nowrap  ">
+                                <p className="  Center text-red-900 p-1 mt-1  w-fit rounded-sm font-bold text-[11px] whitespace-nowrap  ">
                                     नक्कल दिल्याची दिनांक : {MN(currentDate.toLocaleDateString('en-GB'))}</p>
                             </center>
                             {/* Footer Signatures and Notes */}
-                            <div className="mt-auto pt-24 flex w-full gap-8 items-end">
-                                <div className="w-[65%] border border-[#800000] rounded-xl p-3 bg-white">
+                            <div className="mt-28 flex w-full gap-5 items-end">
+                                <div className="w-[60%] border border-[#800000] rounded-xl p-3 bg-white">
                                     <p className="text-[#800000] font-bold text-[10px]  mb-1">
                                         टीप (१): सदरचा उतारा हा मालकी हक्काचा नसून कर आकारणीचा आहे. सदरच्या उताऱ्यावरून खरेदी-विक्रीचा व्यवहार झाल्यास त्यास ग्रामपंचायत जबाबदार राहणार नाही.
                                     </p>
@@ -531,9 +550,9 @@ export default function Namuna8PrintFormat({ records }: Props) {
                                         टीप (२): शासन परिपत्रक क्र. VTM2603/ प्र.क्र. २०६८/ पं.रा. ४ दि २० नोव्हेंबर २००३ नुसार ग्रामीण भागातील घरांची नोंदणी पती-पत्नी यांच्या संयुक्त नावे करण्याबाबत निर्देशित करण्यात आलेले आहेत.
                                     </p>
                                 </div>
-                                <div className="w-[30%] flex justify-between gap-4 px-2 pb-1">
-                                    <div className="flex-1 border-t border-[#800000] pt-1 text-[#800000] font-black text-[13px] text-center">लिपिक</div>
-                                    <div className="flex-1 border-t border-[#800000] pt-1 text-[#800000] font-black text-[13px] text-center">ग्राम पंचायत अधिकारी</div>
+                                <div className="w-[40%] flex justify-between gap-9 px-2 pb-1">
+                                    <div className="flex-1  pt-1 text-[#800000] font-black text-[13px] text-center">लिपिक</div>
+                                    <div className="flex-1  pt-1 text-[#800000] font-black text-[13px] text-center">ग्राम पंचायत अधिकारी</div>
                                 </div>
                             </div>
                         </div>

@@ -11,7 +11,8 @@ interface ReportsProps {
 
 const MN = (v: number | string | undefined | null): string => {
     if (v === undefined || v === null) return '०';
-    const s = typeof v === 'number' ? v.toLocaleString('en-IN') : v;
+    const rounded = typeof v === 'number' ? Math.round(v) : v;
+    const s = typeof rounded === 'number' ? rounded.toLocaleString('en-IN') : String(rounded);
     return s.replace(/[0-9]/g, d => '०१२३४५६७८९'[+d]);
 };
 
@@ -40,59 +41,59 @@ function SummaryCard({ label, value, icon, color }: { label: string; value: stri
 export default function Reports({ records }: ReportsProps) {
     const navigate = useNavigate();
     const stats = useMemo(() => {
-        const currentTax = records.reduce((s, r) => s + (Number(r.totalTaxAmount) || 0), 0);
-        const arrears = records.reduce((s, r) => s + (Number(r.arrearsAmount) || 0), 0);
+        const currentTax = Math.round(records.reduce((s, r) => s + (Number(r.totalTaxAmount) || 0), 0));
+        const arrears = Math.round(records.reduce((s, r) => s + (Number(r.arrearsAmount) || 0), 0));
         
         // Calculate dynamic discount (5% of base current: property + openSpace)
-        const totalCalculatedDiscount = records.reduce((s, r) => {
+        const totalCalculatedDiscount = Math.round(records.reduce((s, r) => {
             const base = (Number(r.propertyTax) || 0) + (Number(r.openSpaceTax) || 0);
             return s + (base * 0.05);
-        }, 0);
+        }, 0));
 
         // Calculate dynamic penalty (5% of base arrears if available, otherwise total arrears)
-        const totalCalculatedPenalty = records.reduce((s, r) => {
+        const totalCalculatedPenalty = Math.round(records.reduce((s, r) => {
             const originalArrears = Number(r.arrearsAmount) || 0;
             const prevBase = (Number(r.prev_breakdown?.propertyTax) || 0) + (Number(r.prev_breakdown?.openSpaceTax) || 0);
             const baseForPenalty = prevBase > 0 ? prevBase : originalArrears;
             return s + (baseForPenalty * 0.05);
-        }, 0);
+        }, 0));
         
-        const paid = records.reduce((s, r) => s + (Number(r.paidAmount) || 0), 0);
-        const demand = currentTax + arrears + totalCalculatedPenalty - totalCalculatedDiscount;
-        const balance = demand - paid;
+        const paid = Math.round(records.reduce((s, r) => s + (Number(r.paidAmount) || 0), 0));
+        const demand = Math.round(currentTax + arrears + totalCalculatedPenalty - totalCalculatedDiscount);
+        const balance = Math.round(demand - paid);
         const rate = demand > 0 ? (paid / demand * 100) : 0;
 
         const taxBreakdown = {
-            property: records.reduce((s, r) => s + (Number(r.propertyTax) || 0), 0),
-            openSpace: records.reduce((s, r) => s + (Number(r.openSpaceTax) || 0), 0),
-            water: records.reduce((s, r) => s + (Number(r.generalWaterTax) || 0) + (Number(r.specialWaterTax) || 0), 0),
-            light: records.reduce((s, r) => s + (Number(r.streetLightTax) || 0), 0),
-            health: records.reduce((s, r) => s + (Number(r.healthTax) || 0), 0),
-            other: records.reduce((s, r) => s + (Number((r as any).wasteCollectionTax) || 0), 0),
+            property: Math.round(records.reduce((s, r) => s + (Number(r.propertyTax) || 0), 0)),
+            openSpace: Math.round(records.reduce((s, r) => s + (Number(r.openSpaceTax) || 0), 0)),
+            water: Math.round(records.reduce((s, r) => s + (Number(r.generalWaterTax) || 0) + (Number(r.specialWaterTax) || 0), 0)),
+            light: Math.round(records.reduce((s, r) => s + (Number(r.streetLightTax) || 0), 0)),
+            health: Math.round(records.reduce((s, r) => s + (Number(r.healthTax) || 0), 0)),
+            other: Math.round(records.reduce((s, r) => s + (Number((r as any).wasteCollectionTax) || 0), 0)),
         };
 
         const wastiNames = Array.from(new Set(records.map(r => String(r.wastiName || '').trim()).filter(Boolean)));
         const wastiData = wastiNames.map(name => {
             const wr = records.filter(r => String(r.wastiName || '').trim() === name);
-            const wCurr = wr.reduce((s, r) => s + (Number(r.totalTaxAmount) || 0), 0);
-            const wArr = wr.reduce((s, r) => s + (Number(r.arrearsAmount) || 0), 0);
+            const wCurr = Math.round(wr.reduce((s, r) => s + (Number(r.totalTaxAmount) || 0), 0));
+            const wArr = Math.round(wr.reduce((s, r) => s + (Number(r.arrearsAmount) || 0), 0));
             
             // Per-wasti calculations
-            const wDisc = wr.reduce((s, r) => {
+            const wDisc = Math.round(wr.reduce((s, r) => {
                 const base = (Number(r.propertyTax) || 0) + (Number(r.openSpaceTax) || 0);
                 return s + (base * 0.05);
-            }, 0);
-            const wPen = wr.reduce((s, r) => {
+            }, 0));
+            const wPen = Math.round(wr.reduce((s, r) => {
                 const originalArrears = Number(r.arrearsAmount) || 0;
                 const prevBase = (Number(r.prev_breakdown?.propertyTax) || 0) + (Number(r.prev_breakdown?.openSpaceTax) || 0);
                 const baseForPenalty = prevBase > 0 ? prevBase : originalArrears;
                 return s + (baseForPenalty * 0.05);
-            }, 0);
+            }, 0));
             
-            const wPaid = wr.reduce((s, r) => s + (Number(r.paidAmount) || 0), 0);
+            const wPaid = Math.round(wr.reduce((s, r) => s + (Number(r.paidAmount) || 0), 0));
             
-            const wDemand = wCurr + wArr + wPen - wDisc;
-            const wBalance = wDemand - wPaid;
+            const wDemand = Math.round(wCurr + wArr + wPen - wDisc);
+            const wBalance = Math.round(wDemand - wPaid);
 
             return { 
                 name, 

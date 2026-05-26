@@ -131,11 +131,15 @@ exports.getMe = async (req, res) => {
 exports.getUsers = async (req, res) => {
     try {
         const { status } = req.query; // PENDING, APPROVED, all
-        let query = 'SELECT id, name, username, role, email, mobile, employee_id, status, is_active, created_at FROM users';
-        if (status) query += ` WHERE status = '${status}'`;
+        let query = 'SELECT id, name, username, role, email, mobile, age, address, employee_id, status, is_active, allowed_modules, can_view, can_edit, can_delete, created_at FROM users';
+        const queryParams = [];
+        if (status) {
+            query += ' WHERE status = ?';
+            queryParams.push(status);
+        }
         query += ' ORDER BY created_at DESC';
 
-        const [users] = await db.query(query);
+        const [users] = await db.query(query, queryParams);
         res.json(users);
     } catch (err) {
         res.status(500).json({ error: 'सर्व्हर त्रुटी' });
@@ -148,11 +152,65 @@ exports.getUsers = async (req, res) => {
  */
 exports.updateUserStatus = async (req, res) => {
     try {
-        const { action } = req.body; // APPROVE or REJECT
-        const status = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
+        const { action } = req.body; // approve/APPROVE or reject/REJECT
+        const actionUpper = (action || '').toUpperCase();
+        const status = actionUpper === 'APPROVE' ? 'APPROVED' : 'REJECTED';
         await db.query('UPDATE users SET status = ? WHERE id = ?', [status, req.params.id]);
         res.json({ success: true, message: 'स्थिती अपडेट झाली' });
     } catch (err) {
         res.status(500).json({ error: 'सर्व्हर त्रुटी' });
     }
 };
+
+/**
+ * Admin: Update User Profile & Module Access
+ * प्रशासक: वापरकर्ता अधिकार व माहिती अद्यतनित करा
+ */
+exports.updateUser = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const fieldsToUpdate = {};
+        
+        const allowedFields = ['name', 'role', 'email', 'mobile', 'status', 'age', 'address', 'allowed_modules', 'can_view', 'can_edit', 'can_delete', 'is_active'];
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                fieldsToUpdate[field] = req.body[field];
+            }
+        }
+        
+        if (Object.keys(fieldsToUpdate).length === 0) {
+            return res.status(400).json({ error: 'अद्ययावत करण्यासाठी कोणताही डेटा पुरवला नाही' });
+        }
+        
+        const queryParts = [];
+        const queryValues = [];
+        for (const [key, val] of Object.entries(fieldsToUpdate)) {
+            queryParts.push(`\`${key}\` = ?`);
+            queryValues.push(val);
+        }
+        queryValues.push(userId);
+        
+        const sql = `UPDATE users SET ${queryParts.join(', ')} WHERE id = ?`;
+        await db.query(sql, queryValues);
+        res.json({ success: true, message: 'वापरकर्ता यशस्वीरित्या अद्यतनित केला गेला!' });
+    } catch (err) {
+        console.error('updateUser Error:', err);
+        res.status(500).json({ error: 'सर्व्हर त्रुटी: ' + err.message });
+    }
+};
+
+/**
+ * Admin: Delete User
+ * प्रशासक: वापरकर्ता हटवा
+ */
+exports.deleteUser = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        await db.query('DELETE FROM users WHERE id = ?', [userId]);
+        res.json({ success: true, message: 'वापरकर्ता यशस्वीरित्या हटविला गेला.' });
+    } catch (err) {
+        console.error('deleteUser Error:', err);
+        res.status(500).json({ error: 'सर्व्हर त्रुटी: ' + err.message });
+    }
+};
+

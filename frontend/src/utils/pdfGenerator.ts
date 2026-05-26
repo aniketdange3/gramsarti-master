@@ -350,8 +350,8 @@ export const generateNamuna9PDF = async (records: PropertyRecord[], filterWasti 
         const totalCurrent = Number(r.totalTaxAmount) || 0;
         const penaltyOnArrears = Number(r.penaltyAmount) || Math.round(totalArrears * 0.05);
         const penaltyOnCurrent = Math.round(totalCurrent * 0.05); // Standard 5% for report breakdown
-        const paid = Number(r.paidAmount) || 0;
-        const balance = (totalArrears + totalCurrent + penaltyOnArrears + penaltyOnCurrent) - paid;
+        const paid = Math.round(Number(r.paidAmount) || 0);
+        const balance = Math.round((totalArrears + totalCurrent + penaltyOnArrears + penaltyOnCurrent) - paid);
 
         TAX_HEADS.forEach((head, hIdx) => {
             const row: any[] = [];
@@ -638,9 +638,9 @@ export const generateWastiReportPDF = async (wastiData: any[]) => {
         MN(i + 1),
         w.name,
         MN(w.count),
-        MN(w.demand),
-        MN(w.paid),
-        MN(w.balance),
+        MN(Math.round(w.demand)),
+        MN(Math.round(w.paid)),
+        MN(Math.round(w.balance)),
         `${MN(w.rate.toFixed(1))}%`
     ]);
 
@@ -669,9 +669,9 @@ export const generateKhasaraReportPDF = async (khasaraData: any[]) => {
         MN(i + 1),
         k.name,
         MN(k.count),
-        MN(k.demand),
-        MN(k.paid),
-        MN(k.balance)
+        MN(Math.round(k.demand)),
+        MN(Math.round(k.paid)),
+        MN(Math.round(k.balance))
     ]);
 
     autoTable(doc, {

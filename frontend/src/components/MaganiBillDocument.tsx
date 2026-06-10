@@ -15,7 +15,13 @@ const MN = (v: number | string | undefined) => {
 };
 
 export const BillContent = ({ record, copyLabel }: BillContentProps) => {
-    const calc = calculateBill(record.arrearsAmount || 0, record.totalTaxAmount || 0);
+    const calc = calculateBill(
+        record.arrearsAmount || 0,
+        record.totalTaxAmount || 0,
+        null,
+        record.propertyTax || 0,
+        record.openSpaceTax || 0
+    );
     const currYear = PANCHAYAT_CONFIG.financialYear;
 
     const taxMapping = [
@@ -34,8 +40,7 @@ export const BillContent = ({ record, copyLabel }: BillContentProps) => {
     const grandTotal = currentTotal + arrearsTotal;
 
     // 5% discount applies ONLY on घर कर (propertyTax) + जमीन कर (openSpaceTax)
-    const discountBase = (Number(record.propertyTax) || 0) + (Number(record.openSpaceTax) || 0);
-    const discountAmt = Math.round(discountBase * 0.05);
+    const discountAmt = calc.discountAmount;
 
     return (
         <div className="flex-1 p-4 print:p-2 relative h-full font-black border-r-2 border-dashed border-gray-400 last:border-r-0 overflow-hidden bg-white text-black">

@@ -22,7 +22,8 @@ const TAX_MAPPING = [
     { key: 'healthTax', label: 'आरोग्य कर', type: 'normal' },
     { key: 'surchargeTotal', label: 'इमला कर (अतिक्रमण)', type: 'normal' },
     { key: 'wasteCollectionTax', label: 'कचरा गाडी कर', type: 'normal' },
-    { key: 'specialWaterTax', label: 'विशेष/सामान्य पाणी कर', type: 'normal' },
+    { key: 'generalWaterTax', label: 'सामान्य पाणी कर', type: 'normal' },
+    { key: 'specialWaterTax', label: 'विशेष पाणी कर', type: 'normal' },
     { key: 'penaltyAmount', label: 'थकीत रकमेवर ५% दंड ', type: 'penalty' },
 ];
 
@@ -172,10 +173,13 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName, f
                     const cutoffDate = new Date(fyStart, 8, 30);
                     const effectivePaymentDate = r.paymentDate ? new Date(r.paymentDate) : today;
                     const isEligible = effectivePaymentDate <= cutoffDate;
-                    const finalDiscount = isEligible ? Number((baseForDiscount * 0.05).toFixed(0)) : 0;
+                    
+                    const paidAmount = Number(r.paidAmount) || 0;
+                    const finalDiscount = (r.discountAmount !== undefined && Number(r.discountAmount) > 0)
+                        ? Number(r.discountAmount)
+                        : (isEligible ? Number((baseForDiscount * 0.05).toFixed(0)) : 0);
 
                     const grandTotalWithDiscount = (combinedArrears + originalCurrentDemand) - finalDiscount;
-                    const paidAmount = Number(r.paidAmount) || 0;
                     const remainingBalance = grandTotalWithDiscount - paidAmount;
 
                     return {
@@ -253,11 +257,13 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName, f
                                     const effectivePaymentDate = r.paymentDate ? new Date(r.paymentDate) : today;
 
                                     const isEligible = effectivePaymentDate >= fyStartDate && effectivePaymentDate <= cutoffDate;
-                                    const finalDiscount = isEligible ? Number((baseForDiscount * 0.05).toFixed(0)) : 0;
+                                    const paidAmount = Number(r.paidAmount) || 0;
+                                    const finalDiscount = (r.discountAmount !== undefined && Number(r.discountAmount) > 0)
+                                        ? Number(r.discountAmount)
+                                        : (isEligible ? Number((baseForDiscount * 0.05).toFixed(0)) : 0);
 
                                     const grandTotalDemand = combinedArrears + originalCurrentDemand;
                                     const grandTotalWithDiscount = Number((grandTotalDemand - finalDiscount).toFixed(0));
-                                    const paidAmount = Number(r.paidAmount) || 0;
                                     const remainingBalance = Number((grandTotalWithDiscount - paidAmount).toFixed(0));
 
                                     // Base current demand for subtotal (excludes penalty)
@@ -303,10 +309,10 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName, f
                                                         {hIdx === 0 && (
                                                             <>
                                                                 {/* Column 1: Serial No */}
-                                                                <td className="text-center font-bold bg-transparent" rowSpan={11}>{MN(globalIdx)}</td>
+                                                                <td className="text-center font-bold bg-transparent" rowSpan={12}>{MN(globalIdx)}</td>
 
                                                                 {/* Column 2: Property Owner Details */}
-                                                                <td className=" text-left  font-bold leading-tight" rowSpan={11}>
+                                                                <td className=" text-left  font-bold leading-tight" rowSpan={12}>
                                                                     <div className=" p-2">{r.ownerName}</div>
                                                                     {r.occupantName && r.occupantName !== 'स्वतः' && (
                                                                         <div className="font-normal italic p-2 text-[10px]">भोगवटाधारक: <b>{r.occupantName}</b></div>
@@ -315,13 +321,13 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName, f
                                                                 </td>
 
                                                                 {/* Column 3: Plot/Property ID */}
-                                                                <td className="text-center p-0.5 font-bold bg-transparent" rowSpan={11}>
+                                                                <td className="text-center p-0.5 font-bold bg-transparent" rowSpan={12}>
                                                                     <div className="mb-0.5" style={{ fontSize: (r.propertyId || '').toString().length > 6 ? '9px' : '11px' }}>{r.propertyId ? MN(r.propertyId) : ''}</div>
                                                                     <div className="border-t border-slate-100 pt-0.5" style={{ fontSize: (r.plotNo || '').toString().length > 6 ? '9px' : '11px' }}>{r.plotNo ? MN(r.plotNo) : ''}</div>
                                                                 </td>
 
                                                                 {/* Column 4: Khasra Number (Arranged properly) */}
-                                                                <td className="text-center p-0.5 font-bold align-middle bg-transparent" rowSpan={11}>
+                                                                <td className="text-center p-0.5 font-bold align-middle bg-transparent" rowSpan={12}>
                                                                     <div className="flex flex-col gap-0.5 items-center justify-center h-full">
                                                                         {r.khasraNo ? r.khasraNo.split(',').map((k: string, ki: number) => (
                                                                             <div key={ki} className="px-1 py-0.5" style={{ fontSize: k.trim().length > 6 ? '9px' : '12px' }}>
@@ -354,14 +360,14 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName, f
                                                         {hIdx === 0 && (
                                                             <>
                                                                 {/* Column 9: Receipt Book/No */}
-                                                                <td className="text-center p-0.5 font-bold bg-transparent" rowSpan={11}>
+                                                                <td className="text-center p-0.5 font-bold bg-transparent" rowSpan={12}>
                                                                     <span className="screen-data">
                                                                         {r.receiptNo ? `${r.receiptBook || '—'}/${r.receiptNo}` : ''}
                                                                     </span>
                                                                 </td>
 
                                                                 {/* Column 10: Payment Date */}
-                                                                <td className="text-center p-0.5 font-bold" rowSpan={11}>
+                                                                <td className="text-center p-0.5 font-bold" rowSpan={12}>
                                                                     <span className="screen-data">
                                                                         {r.paymentDate ? new Date(r.paymentDate).toLocaleDateString('en-GB') : ''}
                                                                     </span>
@@ -399,7 +405,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName, f
 
                                                         {hIdx === 0 && (
                                                             /* Column 15: Balance (बाकी) - Blank in print */
-                                                            <td className="pr-2 font-black bg-transparent border-l border-slate-900 text-center" rowSpan={11}>
+                                                            <td className="pr-2 font-black bg-transparent border-l border-slate-900 text-center" rowSpan={12}>
                                                                 <span className="screen-data text-[14px]">₹ {MN(remainingBalance.toFixed(0))}</span>
                                                             </td>
                                                         )}

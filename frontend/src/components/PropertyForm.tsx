@@ -9,6 +9,7 @@ import { normalizeForSearch } from '../utils/transliterate';
 import { ComboTransliterationInput } from './ComboTransliterationInput';
 import { CustomDropdown } from './CustomDropdown';
 import { calculateTax, TaxRateMaster, DepreciationMaster, BuildingUsageMaster } from '../utils/taxUtils';
+import { calculateBill } from '../utils/billCalculations';
 
 interface PropertyFormProps {
     initialData?: PropertyRecord;
@@ -107,14 +108,22 @@ const PropertyForm = ({
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
 
+    const billDetails = calculateBill(
+        formData.arrearsAmount || 0,
+        formData.totalTaxAmount || 0,
+        formData.paymentDate ? new Date(formData.paymentDate) : null,
+        formData.propertyTax || 0,
+        formData.openSpaceTax || 0
+    );
+
     useEffect(() => {
         if (initialData?.remarksNotes) {
             const str = initialData.remarksNotes;
             if (str.includes('मासिक सभा')) {
                 setRemarksObj({
                     date: str.match(/(?:दिनांक:)\s*(.*?)(?=[,\n]\s*विषय:|$)/)?.[1]?.trim() || '',
-                    subject: str.match(/विषय:\s*(.*?)(?=[,\n]\s*फेरफार बुक क्र:|$)/)?.[1]?.trim() || '',
-                    ferfar: str.match(/फेरफार बुक  क्र:\s*(.*?)(?=[,\n]\s*पान क्र:|$)/)?.[1]?.trim() || '',
+                    subject: str.match(/विषय:\s*(.*?)(?=[,\n]\s*फेरफार बुक\s*क्र:|$)/)?.[1]?.trim() || '',
+                    ferfar: str.match(/फेरफार बुक\s*क्र:\s*(.*?)(?=[,\n]\s*पान क्र:|$)/)?.[1]?.trim() || '',
                     pan: str.match(/पान क्र:\s*(.*?)(?=[,\n]\s*अनु क्र:|$)/)?.[1]?.trim() || '',
                     anu: str.match(/अनु क्र:\s*(.*)$/)?.[1]?.trim() || '',
                 });
@@ -146,7 +155,7 @@ const PropertyForm = ({
 
         return records.some(r => {
             if (initialData && r.id === initialData.id) return false;
-            
+
             const owner = normalizeForSearch(r.ownerName);
             const khasra = normalizeForSearch(r.khasraNo);
             const wasti = normalizeForSearch(r.wastiName);
@@ -433,7 +442,12 @@ const PropertyForm = ({
     };
 
     const handleTaxChange = (field: keyof PropertyRecord, value: number) => {
-        const updatedData = { ...formData, [field]: value };
+        let updatedData = { ...formData, [field]: value };
+        if (field === 'generalWaterTax' && value > 0) {
+            updatedData.specialWaterTax = 0;
+        } else if (field === 'specialWaterTax' && value > 0) {
+            updatedData.generalWaterTax = 0;
+        }
         setFormData({ ...updatedData, totalTaxAmount: calculateTotalTax(updatedData) });
     };
 
@@ -461,7 +475,7 @@ const PropertyForm = ({
         }
 
         // 4. Overpayment Validation (User Request: Cannot pay more than total demand)
-        const totalDemand = (Number(formData.arrearsAmount) || 0) + (Number(formData.totalTaxAmount) || 0);
+        const totalDemand = billDetails.billTotal;
         if ((Number(formData.paidAmount) || 0) > totalDemand) {
             newErrors.paidAmount = `भरलेली रक्कम एकूण मागणीपेक्षा (₹${totalDemand}) जास्त असू शकत नाही.`;
         }
@@ -488,7 +502,13 @@ const PropertyForm = ({
         }
 
         setSaving(true);
-        try { await onSave(formData); } finally { setSaving(false); }
+        try {
+            await onSave({
+                ...formData,
+                discountAmount: billDetails.discountAmount,
+                penaltyAmount: billDetails.penaltyAmount
+            });
+        } finally { setSaving(false); }
     };
 
     const toggleFloor = (idx: number) => {
@@ -646,15 +666,15 @@ const PropertyForm = ({
                                 </div>
                                 <div>
                                     <FieldLabel>{LABELS.layoutName}</FieldLabel>
-                                    <CustomDropdown
+                                    <ComboTransliterationInput
                                         value={formData.layoutName}
-                                        onChange={val => setFormData({ ...formData, layoutName: val })}
+                                        onChangeText={val => setFormData({ ...formData, layoutName: val })}
                                         placeholder={PLACEHOLDERS.layoutName || "लेआउट निवडा"}
                                         options={Array.from(new Set([
                                             ...existingLayouts,
                                             ...dynamicMasters.LAYOUT.map(l => l.item_value_mr)
                                         ])).filter(Boolean).sort((a, b) => a.localeCompare(b, 'mr')).map(l => ({ value: l, label: l }))}
-                                        className="w-full font-black text-xs"
+                                        className={INPUT_CLASSES}
                                     />
                                 </div>
                             </div>
@@ -1020,7 +1040,7 @@ const PropertyForm = ({
                             <h3 className="text-[11px] font-black text-rose-600 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
                                 <Calculator className="w-3.5 h-3.5" /> आर्थिक माहिती (Financials)
                             </h3>
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                                 <div>
                                     <FieldLabel className="text-rose-600">मागील थकबाकी</FieldLabel>
                                     <FormInput
@@ -1030,7 +1050,7 @@ const PropertyForm = ({
                                         value={MN(formData.arrearsAmount || 0)}
                                         onChange={e => setFormData({ ...formData, arrearsAmount: Number(h2e(e.target.value).replace(/\D/g, '')) })}
                                     />
-                                    <p className="text-[9px] text-rose-400 font-bold mt-1">मागील वर्षाची थकबाकी</p>
+                                    <p className="text-[9px] text-rose-400 font-bold mt-1">मागील थकबाकी</p>
                                 </div>
 
                                 <div>
@@ -1038,28 +1058,44 @@ const PropertyForm = ({
                                     <div className={`${INPUT_CLASSES} bg-slate-50 flex items-center !h-[42px]`}>
                                         <span className="text-lg font-black text-slate-700">₹{MN(formData.totalTaxAmount || 0)}</span>
                                     </div>
-                                    <p className="text-[9px] text-slate-400 font-bold mt-1">या वर्षाची कर मागणी</p>
+                                    <p className="text-[9px] text-slate-400 font-bold mt-1">चालू वर्षाचा कर</p>
+                                </div>
+
+                                <div>
+                                    <FieldLabel className="text-rose-700">दंड (+५%)</FieldLabel>
+                                    <div className={`${INPUT_CLASSES} bg-rose-50 flex items-center !h-[42px]`}>
+                                        <span className="text-lg font-black text-rose-700">₹{MN(billDetails.penaltyAmount || 0)}</span>
+                                    </div>
+                                    <p className="text-[9px] text-rose-500 font-bold mt-1">थकबाकीवर ५% दंड</p>
+                                </div>
+
+                                <div>
+                                    <FieldLabel className="text-emerald-700">सूट (-५%)</FieldLabel>
+                                    <div className={`${INPUT_CLASSES} bg-emerald-50 flex items-center !h-[42px]`}>
+                                        <span className="text-lg font-black text-emerald-700">₹{MN(billDetails.discountAmount || 0)}</span>
+                                    </div>
+                                    <p className="text-[9px] text-emerald-600 font-bold mt-1">३० सप्टेंबरपूर्वी सवलत</p>
                                 </div>
 
                                 <div>
                                     <FieldLabel className="text-primary-dark">एकूण मागणी</FieldLabel>
                                     <div className={`${INPUT_CLASSES} bg-primary/5 flex items-center !h-[42px]`}>
-                                        <span className="text-lg font-black text-primary-dark">₹{MN((Number(formData.arrearsAmount) + Number(formData.totalTaxAmount)) || 0)}</span>
+                                        <span className="text-lg font-black text-primary-dark">₹{MN(billDetails.billTotal || 0)}</span>
                                     </div>
-                                    <p className="text-[9px] text-primary/40 font-bold mt-1">मागील + चालू</p>
+                                    <p className="text-[9px] text-primary/40 font-bold mt-1">एकूण देय रक्कम</p>
                                 </div>
 
                                 <div>
                                     <FieldLabel className="text-success-dark">भरलेली रक्कम</FieldLabel>
                                     <FormInput
                                         type="text"
-                                        className={`${INPUT_CLASSES} !text-lg !font-black !text-success-dark ${((Number(formData.paidAmount) || 0) > ((Number(formData.arrearsAmount) || 0) + (Number(formData.totalTaxAmount) || 0))) ? 'border-rose-500 ring-rose-500' : ''}`}
+                                        className={`${INPUT_CLASSES} !text-lg !font-black !text-success-dark ${((Number(formData.paidAmount) || 0) > billDetails.billTotal) ? 'border-rose-500 ring-rose-500' : ''}`}
                                         placeholder="०"
                                         value={MN(formData.paidAmount || 0)}
                                         onChange={e => setFormData({ ...formData, paidAmount: Number(h2e(e.target.value).replace(/\D/g, '')) })}
                                     />
-                                    {((Number(formData.paidAmount) || 0) > ((Number(formData.arrearsAmount) || 0) + (Number(formData.totalTaxAmount) || 0))) ? (
-                                        <p className="text-[9px] text-rose-600 font-bold mt-1 animate-pulse">एकूण मागणी रक्कमे पेक्षा जास्त भरू शकत नाही </p>
+                                    {((Number(formData.paidAmount) || 0) > billDetails.billTotal) ? (
+                                        <p className="text-[9px] text-rose-600 font-bold mt-1 animate-pulse">एकूण देय रक्कमे पेक्षा जास्त भरू शकत नाही </p>
                                     ) : (
                                         <p className="text-[9px] text-success/50 font-bold mt-1">आता जमा केलेली रक्कम</p>
                                     )}
@@ -1067,9 +1103,9 @@ const PropertyForm = ({
 
                                 <div>
                                     <FieldLabel className="text-slate-500">एकूण बाकी</FieldLabel>
-                                    <div className={`${INPUT_CLASSES} flex items-center !h-[42px] ${((Number(formData.arrearsAmount) + Number(formData.totalTaxAmount)) - Number(formData.paidAmount)) > 0 ? 'bg-rose-50' : 'bg-emerald-50'}`}>
-                                        <span className={`text-lg font-black ${((Number(formData.arrearsAmount) + Number(formData.totalTaxAmount)) - Number(formData.paidAmount)) > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                                            ₹{MN(Math.max(0, (Number(formData.arrearsAmount) + Number(formData.totalTaxAmount)) - Number(formData.paidAmount)) || 0)}
+                                    <div className={`${INPUT_CLASSES} flex items-center !h-[42px] ${(billDetails.billTotal - Number(formData.paidAmount || 0)) > 0 ? 'bg-rose-50' : 'bg-emerald-50'}`}>
+                                        <span className={`text-lg font-black ${(billDetails.billTotal - Number(formData.paidAmount || 0)) > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                            ₹{MN(Math.max(0, billDetails.billTotal - Number(formData.paidAmount || 0)) || 0)}
                                         </span>
                                     </div>
                                     <p className="text-[9px] text-slate-400 font-bold mt-1">शिल्लक राहणारी रक्कम</p>
@@ -1077,7 +1113,60 @@ const PropertyForm = ({
                             </div>
                         </div>
 
-                        {/* Section 7 removed */}
+                        {/* Section 6: Resolution Details */}
+                        <div className="bg-slate-50/50 rounded-2xl p-6 border border-slate-200">
+                            <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <div className="w-5 h-5 bg-slate-200 rounded-lg flex items-center justify-center text-slate-600 text-xs font-black">६</div>
+                                मासिक सभा / ठराव तपशील
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                <div>
+                                    <FieldLabel>ठराव दिनांक</FieldLabel>
+                                    <FormInput
+                                        type="date"
+                                        className={INPUT_CLASSES}
+                                        value={remarksObj.date || ''}
+                                        onChange={e => updateRemark('date', e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <FieldLabel>फेरफार बुक क्र.</FieldLabel>
+                                    <TransliterationInput
+                                        placeholder="उदा. ०००१"
+                                        className={INPUT_CLASSES}
+                                        value={remarksObj.ferfar || ''}
+                                        onChangeText={val => updateRemark('ferfar', val)}
+                                    />
+                                </div>
+                                <div className="md:col-span-1">
+                                    <FieldLabel>ठराव विषय</FieldLabel>
+                                    <TransliterationInput
+                                        placeholder="उदा. खरेदीखत मंजूर करणे"
+                                        className={INPUT_CLASSES}
+                                        value={remarksObj.subject || ''}
+                                        onChangeText={val => updateRemark('subject', val)}
+                                    />
+                                </div>
+                                <div>
+                                    <FieldLabel>पान क्र.</FieldLabel>
+                                    <TransliterationInput
+                                        placeholder="उदा. ०१"
+                                        className={INPUT_CLASSES}
+                                        value={remarksObj.pan || ''}
+                                        onChangeText={val => updateRemark('pan', val)}
+                                    />
+                                </div>
+                                <div>
+                                    <FieldLabel>अनु क्र.</FieldLabel>
+                                    <TransliterationInput
+                                        placeholder="उदा. ०१"
+                                        className={INPUT_CLASSES}
+                                        value={remarksObj.anu || ''}
+                                        onChangeText={val => updateRemark('anu', val)}
+                                    />
+                                </div>
+                            </div>
+                        </div>
 
                         {/* Section 8: Receipt Information */}
                         <div className="rounded-2xl p-5 border border-emerald-100 bg-emerald-50/30">

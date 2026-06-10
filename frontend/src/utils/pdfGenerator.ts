@@ -513,7 +513,13 @@ export const generateNamuna9PDF = async (records: PropertyRecord[], filterWasti 
 
 // ─── MAGANI BILL (DEMAND BILL) ────────────────────────────────────────────────
 const drawMaganiBillContent = (doc: jsPDF, record: PropertyRecord, startX: number, startY: number, width: number, copyLabel: string, logo: string | null) => {
-    const calc = calculateBill(record.arrearsAmount || 0, record.totalTaxAmount || 0);
+    const calc = calculateBill(
+        record.arrearsAmount || 0,
+        record.totalTaxAmount || 0,
+        null,
+        record.propertyTax || 0,
+        record.openSpaceTax || 0
+    );
     const currYear = PANCHAYAT_CONFIG.financialYear;
     const margin = 5;
     const innerWidth = width - 2 * margin;

@@ -39,13 +39,13 @@ exports.getAllProperties = async (req, res) => {
     res.setHeader('Expires', '0');
 
     // ETag तपासणी (Check for browser cache)
-    const currentEtag = getPropertiesEtag();
+    const currentEtag = await getPropertiesEtag();
     if (currentEtag && req.headers['if-none-match'] === currentEtag) {
         return res.status(304).end();
     }
 
     // मेमरी कॅशे तपासणी (Check Memory Cache)
-    const cachedData = getPropertiesCache();
+    const cachedData = await getPropertiesCache();
     if (cachedData) {
         res.setHeader('ETag', currentEtag);
         return res.json(cachedData);
@@ -165,7 +165,7 @@ exports.getAllProperties = async (req, res) => {
         });
 
         const propertiesArray = Object.values(propertiesMap);
-        const newEtag = setPropertiesCache(propertiesArray);
+        const newEtag = await setPropertiesCache(propertiesArray);
         res.setHeader('ETag', newEtag);
         res.json(propertiesArray);
     } catch (err) {
@@ -324,7 +324,7 @@ exports.saveProperty = async (req, res) => {
         }
 
         await connection.commit();
-        clearPropertiesCache();
+        await clearPropertiesCache();
         res.status(201).json({ message: 'मालमत्ता यशस्वीरित्या जतन केली गेली', id: finalId });
     } catch (err) {
         await connection.rollback();
@@ -393,7 +393,7 @@ exports.bulkImport = async (req, res) => {
         }
 
         await connection.commit();
-        clearPropertiesCache();
+        await clearPropertiesCache();
         res.status(201).json({ message: `${records.length} नोंदी यशस्वीरित्या इंपोर्ट झाल्या` });
     } catch (err) {
         await connection.rollback();
@@ -411,7 +411,7 @@ exports.bulkImport = async (req, res) => {
 exports.deleteProperty = async (req, res) => {
     try {
         await db.query('DELETE FROM properties WHERE id = ?', [req.params.id]);
-        clearPropertiesCache();
+        await clearPropertiesCache();
         res.json({ message: 'मालमत्ता यशस्वीरित्या हटवली गेली' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -449,7 +449,7 @@ exports.cleanupDuplicates = async (req, res) => {
         }
 
         await connection.commit();
-        if (removedCount > 0) clearPropertiesCache();
+        if (removedCount > 0) await clearPropertiesCache();
         res.json({ message: `${removedCount} दुप्पट नोंदी यशस्वीरित्या हटवल्या गेल्या`, removedCount });
     } catch (err) {
         await connection.rollback();
@@ -568,7 +568,7 @@ exports.bulkUpdateNormalTaxes = async (req, res) => {
         await connection.query(recalcQuery, [targetIds]);
 
         await connection.commit();
-        clearPropertiesCache();
+        await clearPropertiesCache();
 
         res.json({
             message: `${targetIds.length} मालमत्ता यशस्वीरित्या अपडेट केल्या गेल्या`,

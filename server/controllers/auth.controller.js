@@ -171,7 +171,12 @@ exports.updateUser = async (req, res) => {
         const userId = req.params.id;
         const fieldsToUpdate = {};
         
-        const allowedFields = ['name', 'role', 'email', 'mobile', 'status', 'age', 'address', 'allowed_modules', 'can_view', 'can_edit', 'can_delete', 'is_active'];
+        // Define admin-only fields check
+        const isAdmin = ['super_admin', 'gram_sachiv', 'gram_sevak'].includes(req.user.role);
+        const allowedFields = isAdmin
+            ? ['name', 'role', 'email', 'mobile', 'status', 'age', 'address', 'allowed_modules', 'can_view', 'can_edit', 'can_delete', 'is_active']
+            : ['name', 'email', 'mobile', 'age', 'address'];
+
         for (const field of allowedFields) {
             if (req.body[field] !== undefined) {
                 fieldsToUpdate[field] = req.body[field];

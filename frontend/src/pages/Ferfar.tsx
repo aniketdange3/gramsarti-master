@@ -9,7 +9,7 @@ import {
     ChevronLeft
 } from 'lucide-react';
 import { PropertyRecord, LABELS, PropertyAuditRequest } from '../types';
-import { matchesSearch } from '../utils/transliterate';
+import { matchesSearch, normalizeDigits, createSearchMatcher } from '../utils/transliterate';
 import { TransliterationInput } from '../components/TransliterationInput';
 import OwnerNameDisplay from '../components/OwnerNameDisplay';
 import { useFerfarRequests } from '../hooks/useFerfar';
@@ -69,7 +69,7 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
     const queryClient = useQueryClient();
 
     // Optimistic update: instantly change a request status in cache
-    const optimisticStatusUpdate = (id: number, status: 'APPROVED' | 'REJECTED') => {
+    const optimisticStatusUpdate = (id: number, status: 'APPROVED' | 'REJECTED' | 'PENDING') => {
         queryClient.setQueryData<any>(['ferfar', page, limit, undefined], (old: any) => {
             if (!old) return old;
             return {
@@ -127,12 +127,28 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
     const handleSearchChange = (val: string) => {
         setSearch(val);
         if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => setDebouncedSearch(val), 300);
+        debounceRef.current = setTimeout(() => setDebouncedSearch(val), 3000);
     };
 
     const filtered = useMemo(() => {
         if (!debouncedSearch.trim()) return records;
-        return records.filter(r => matchesSearch(r, debouncedSearch));
+        
+        const q = debouncedSearch.trim();
+        const enNum = normalizeDigits(q, false);
+        const isExactNum = /^\d+$/.test(enNum);
+
+        const matcher = createSearchMatcher(debouncedSearch);
+        let results = records.filter(r => matcher(r));
+
+        if (isExactNum) {
+            results.sort((a, b) => {
+                if (String(a.srNo) === enNum) return -1;
+                if (String(b.srNo) === enNum) return 1;
+                return 0;
+            });
+        }
+
+        return results.slice(0, 50);
     }, [records, debouncedSearch]);
 
     const displayRequests = requests.filter(r => {

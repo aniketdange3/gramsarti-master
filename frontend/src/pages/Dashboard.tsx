@@ -766,9 +766,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                                                     <Edit2 className="w-3.5 h-3.5" />
                                                                 </button>
                                                             )}
-                                                            <button onClick={() => setActiveBillRecord(record)} className="w-7 h-7 flex items-center justify-center text-emerald-500 bg-emerald-50 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100" title="मागणी बिल">
-                                                                <FileText className="w-3.5 h-3.5" />
-                                                            </button>
+
                                                             {/* Namuna 8 & 9 quick-view buttons */}
                                                             <button
                                                                 onClick={() => onViewRecord(record.id, 'namuna8')}

@@ -6,6 +6,7 @@
  */
 
 const db = require('../config/db.config');
+const { getCache, setCache, clearCache, CACHE_TTL_DEFAULT } = require('../utils/cache.util');
 
 /**
  * Get list of tax defaulters
@@ -13,6 +14,10 @@ const db = require('../config/db.config');
  */
 exports.getDefaulters = async (req, res) => {
     try {
+        const cacheKey = `magani:defaulters:u${req.user.id}`;
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
         const [rows] = await db.query(
             `SELECT p.id, p.srNo, p.ownerName, p.occupantName, p.wastiName, p.wardNo, p.plotNo,
                     p.totalTaxAmount, p.arrearsAmount, p.paidAmount,
@@ -23,6 +28,8 @@ exports.getDefaulters = async (req, res) => {
              ORDER BY balance DESC`,
              [req.user.id, req.user.role]
         );
+        
+        await setCache(cacheKey, rows, CACHE_TTL_DEFAULT);
         res.json(rows);
     } catch (err) {
         console.error('[MAGANI] Defaulters error:', err);
@@ -75,6 +82,8 @@ exports.generateBills = async (req, res) => {
             generated.push({ id: result.insertId, property_id: pid, total_due: totalDue });
         }
 
+        await clearCache('magani:*');
+
         res.status(201).json({ 
             count: generated.length, 
             bills: generated,
@@ -91,6 +100,10 @@ exports.generateBills = async (req, res) => {
  */
 exports.getAllBills = async (req, res) => {
     try {
+        const cacheKey = `magani:bills:u${req.user.id}`;
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
         const [rows] = await db.query(
             `SELECT m.*, p.ownerName, p.occupantName, p.wastiName, p.wardNo, p.srNo, p.plotNo, u.name as created_by_name
              FROM magani_bills m
@@ -100,6 +113,8 @@ exports.getAllBills = async (req, res) => {
              ORDER BY m.created_at DESC`,
              [req.user.id, req.user.role]
         );
+        
+        await setCache(cacheKey, rows, CACHE_TTL_DEFAULT);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: 'यादी मिळवण्यात त्रुटी आली' });
@@ -129,6 +144,8 @@ exports.advanceNotice = async (req, res) => {
             await db.query('UPDATE magani_bills SET status = ? WHERE id = ?', ['Legal', req.params.id]);
         }
 
+        await clearCache('magani:*');
+
         res.json({ success: true, newStage: nextStage, message: 'पुढील सूचनेचा स्तर अपडेट झाला' });
     } catch (err) {
         res.status(500).json({ error: 'अपडेट करताना त्रुटी आली' });
@@ -141,13 +158,21 @@ exports.advanceNotice = async (req, res) => {
  */
 exports.getReport = async (req, res) => {
     try {
+        const cacheKey = `magani:report`;
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
         const [summary] = await db.query(
             `SELECT status, COUNT(*) as count, SUM(total_due) as totalDue FROM magani_bills GROUP BY status`
         );
         const [byStage] = await db.query(
             `SELECT notice_stage, COUNT(*) as count FROM magani_bills WHERE status != 'Paid' GROUP BY notice_stage`
         );
-        res.json({ summary, byStage });
+        
+        const data = { summary, byStage };
+        await setCache(cacheKey, data, CACHE_TTL_DEFAULT);
+        
+        res.json(data);
     } catch (err) {
         res.status(500).json({ error: 'अहवाल मिळवण्यात त्रुटी आली' });
     }

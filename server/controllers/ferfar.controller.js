@@ -210,7 +210,7 @@ exports.approveFerfar = async (req, res) => {
         await connection.query('UPDATE ferfar_requests SET status = "APPROVED", approved_at = NOW() WHERE id = ?', [id]);
 
         await connection.commit();
-        clearPropertiesCache();
+        await clearPropertiesCache();
         clearFerfarCache();
         res.json({ message: 'फेरफार मंजूर झाला आणि मालकी हक्क बदलले गेले' });
     } catch (err) {

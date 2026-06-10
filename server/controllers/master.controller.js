@@ -6,6 +6,7 @@
  */
 
 const db = require('../config/db.config');
+const { getCache, setCache, clearCache, CACHE_TTL_LONG } = require('../utils/cache.util');
 
 /**
  * Get all categories
@@ -13,8 +14,12 @@ const db = require('../config/db.config');
  */
 exports.getAllCategories = async (req, res) => {
     try {
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        const cacheKey = 'master:categories';
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
         const [rows] = await db.query('SELECT * FROM master_categories ORDER BY name_mr ASC');
+        await setCache(cacheKey, rows, CACHE_TTL_LONG);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -27,13 +32,19 @@ exports.getAllCategories = async (req, res) => {
  */
 exports.getItemsByCategory = async (req, res) => {
     try {
+        const categoryCode = req.params.categoryCode;
+        const cacheKey = `master:items:cat:${categoryCode}`;
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
         const query = `
             SELECT i.* FROM master_items i
             JOIN master_categories c ON i.category_id = c.id
             WHERE c.code = ? AND i.is_active = TRUE
             ORDER BY i.sort_order ASC, i.item_value_mr ASC
         `;
-        const [rows] = await db.query(query, [req.params.categoryCode]);
+        const [rows] = await db.query(query, [categoryCode]);
+        await setCache(cacheKey, rows, CACHE_TTL_LONG);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -45,6 +56,10 @@ exports.getItemsByCategory = async (req, res) => {
  */
 exports.getAllItems = async (req, res) => {
     try {
+        const cacheKey = 'master:items:all';
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
         const query = `
             SELECT i.*, c.code as category_code, c.name_mr as category_name
             FROM master_items i
@@ -52,6 +67,7 @@ exports.getAllItems = async (req, res) => {
             ORDER BY c.code, i.sort_order
         `;
         const [rows] = await db.query(query);
+        await setCache(cacheKey, rows, CACHE_TTL_LONG);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -65,6 +81,7 @@ exports.addItem = async (req, res) => {
             'INSERT INTO master_items (category_id, item_value_mr, item_value_en, item_code, sort_order) VALUES (?, ?, ?, ?, ?)',
             [category_id, item_value_mr, item_value_en, item_code, sort_order || 0]
         );
+        await clearCache('master:items*');
         res.status(201).json({ id: result.insertId, message: 'आयटम यशस्वीरित्या जोडला गेला' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -78,6 +95,7 @@ exports.updateItem = async (req, res) => {
             'UPDATE master_items SET item_value_mr = ?, item_value_en = ?, item_code = ?, sort_order = ?, is_active = ? WHERE id = ?',
             [item_value_mr, item_value_en, item_code, sort_order, is_active, req.params.id]
         );
+        await clearCache('master:items*');
         res.json({ message: 'आयटम यशस्वीरित्या अपडेट झाला' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -87,6 +105,7 @@ exports.updateItem = async (req, res) => {
 exports.deleteItem = async (req, res) => {
     try {
         await db.query('DELETE FROM master_items WHERE id = ?', [req.params.id]);
+        await clearCache('master:items*');
         res.json({ message: 'आयटम यशस्वीरित्या हटवला गेला' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -98,7 +117,12 @@ exports.deleteItem = async (req, res) => {
  */
 exports.getDepreciationRates = async (req, res) => {
     try {
+        const cacheKey = 'master:depreciation';
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
         const [rows] = await db.query('SELECT * FROM depreciation_rates ORDER BY min_age ASC');
+        await setCache(cacheKey, rows, CACHE_TTL_LONG);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -110,7 +134,12 @@ exports.getDepreciationRates = async (req, res) => {
  */
 exports.getReadyReckonerRates = async (req, res) => {
     try {
+        const cacheKey = 'master:rr';
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
         const [rows] = await db.query('SELECT * FROM ready_reckoner_rates ORDER BY year_range DESC, id ASC');
+        await setCache(cacheKey, rows, CACHE_TTL_LONG);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -122,7 +151,12 @@ exports.getReadyReckonerRates = async (req, res) => {
  */
 exports.getBuildingUsage = async (req, res) => {
     try {
+        const cacheKey = 'master:building_usage';
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
         const [rows] = await db.query('SELECT * FROM building_usage_master ORDER BY id ASC');
+        await setCache(cacheKey, rows, CACHE_TTL_LONG);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -139,6 +173,7 @@ exports.addDepreciationRate = async (req, res) => {
             'INSERT INTO depreciation_rates (min_age, max_age, percentage) VALUES (?, ?, ?)',
             [min_age, max_age, percentage]
         );
+        await clearCache('master:depreciation');
         res.status(201).json({ id: result.insertId, message: 'घसारा दर जोडला गेला' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -150,6 +185,7 @@ exports.updateDepreciationRate = async (req, res) => {
             'UPDATE depreciation_rates SET min_age = ?, max_age = ?, percentage = ? WHERE id = ?',
             [min_age, max_age, percentage, req.params.id]
         );
+        await clearCache('master:depreciation');
         res.json({ message: 'अपडेट यशस्वी' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -157,6 +193,7 @@ exports.updateDepreciationRate = async (req, res) => {
 exports.deleteDepreciationRate = async (req, res) => {
     try {
         await db.query('DELETE FROM depreciation_rates WHERE id = ?', [req.params.id]);
+        await clearCache('master:depreciation');
         res.json({ message: 'हटवले गेले' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -168,6 +205,7 @@ exports.addReadyReckonerRate = async (req, res) => {
             'INSERT INTO ready_reckoner_rates (year_range, item_name_mr, valuation_rate, tax_rate, unit_mr) VALUES (?, ?, ?, ?, ?)',
             [year_range, item_name_mr, valuation_rate, tax_rate, unit_mr || 'चौ. मी.']
         );
+        await clearCache('master:rr');
         res.status(201).json({ id: result.insertId, message: 'रेडी रेकनर दर जोडला गेला' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -179,6 +217,7 @@ exports.updateReadyReckonerRate = async (req, res) => {
             'UPDATE ready_reckoner_rates SET year_range = ?, item_name_mr = ?, valuation_rate = ?, tax_rate = ?, unit_mr = ? WHERE id = ?',
             [year_range, item_name_mr, valuation_rate, tax_rate, unit_mr, req.params.id]
         );
+        await clearCache('master:rr');
         res.json({ message: 'अपडेट यशस्वी' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -186,6 +225,7 @@ exports.updateReadyReckonerRate = async (req, res) => {
 exports.deleteReadyReckonerRate = async (req, res) => {
     try {
         await db.query('DELETE FROM ready_reckoner_rates WHERE id = ?', [req.params.id]);
+        await clearCache('master:rr');
         res.json({ message: 'हटवले गेले' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -197,6 +237,7 @@ exports.addBuildingUsage = async (req, res) => {
             'INSERT INTO building_usage_master (usage_type_mr, usage_type_en, weightage) VALUES (?, ?, ?)',
             [usage_type_mr, usage_type_en, weightage]
         );
+        await clearCache('master:building_usage');
         res.status(201).json({ id: result.insertId, message: 'वापर प्रकार जोडला गेला' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -208,6 +249,7 @@ exports.updateBuildingUsage = async (req, res) => {
             'UPDATE building_usage_master SET usage_type_mr = ?, usage_type_en = ?, weightage = ? WHERE id = ?',
             [usage_type_mr, usage_type_en, weightage, req.params.id]
         );
+        await clearCache('master:building_usage');
         res.json({ message: 'अपडेट यशस्वी' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -215,6 +257,7 @@ exports.updateBuildingUsage = async (req, res) => {
 exports.deleteBuildingUsage = async (req, res) => {
     try {
         await db.query('DELETE FROM building_usage_master WHERE id = ?', [req.params.id]);
+        await clearCache('master:building_usage');
         res.json({ message: 'हटवले गेले' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -225,10 +268,14 @@ exports.deleteBuildingUsage = async (req, res) => {
  */
 exports.getSystemConfig = async (req, res) => {
     try {
+        const cacheKey = 'master:system_config';
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
         const [rows] = await db.query('SELECT config_key, config_value FROM system_config');
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         const config = {};
         rows.forEach(r => config[r.config_key] = r.config_value);
+        await setCache(cacheKey, config, CACHE_TTL_LONG);
         res.json(config);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -244,6 +291,7 @@ exports.updateSystemConfig = async (req, res) => {
                 [key, val, val]
             );
         }
+        await clearCache('master:system_config');
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -410,6 +458,7 @@ exports.migrateFinancialYear = async (req, res) => {
                 'INSERT INTO system_config (config_key, config_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE config_value = ?',
                 ['current_fy', newFY, newFY]
             );
+            await clearCache('master:system_config');
         }
 
         await connection.commit();

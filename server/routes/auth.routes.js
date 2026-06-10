@@ -20,7 +20,12 @@ router.get('/me', authenticate, authController.getMe);
 // प्रशासकीय युजर मॅनेजमेंट (Admin only)
 router.get('/users', authenticate, authorize('super_admin', 'gram_sachiv', 'gram_sevak'), authController.getUsers);
 router.put('/users/:id/action', authenticate, authorize('super_admin', 'gram_sachiv', 'gram_sevak'), authController.updateUserStatus);
-router.put('/users/:id', authenticate, authorize('super_admin', 'gram_sachiv', 'gram_sevak'), authController.updateUser);
+router.put('/users/:id', authenticate, (req, res, next) => {
+    if (String(req.user.id) === String(req.params.id)) {
+        return next();
+    }
+    authorize('super_admin', 'gram_sachiv', 'gram_sevak')(req, res, next);
+}, authController.updateUser);
 router.delete('/users/:id', authenticate, authorize('super_admin', 'gram_sachiv', 'gram_sevak'), authController.deleteUser);
 
 module.exports = router;

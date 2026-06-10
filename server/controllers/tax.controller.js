@@ -6,14 +6,9 @@
  */
 
 const db = require('../config/db.config');
+const { getCache, setCache, clearCache, CACHE_TTL_LONG } = require('../utils/cache.util');
 
-// कर दरांसाठी मेमरी कॅशे (Memory Cache for Tax Rates)
-let taxRatesCache = null;
-
-const clearTaxRatesCache = () => {
-    taxRatesCache = null;
-    console.log('[CACHE] Tax rates cache cleared.');
-};
+const CACHE_KEY = 'tax:rates';
 
 /**
  * Get all tax rates
@@ -21,13 +16,11 @@ const clearTaxRatesCache = () => {
  */
 exports.getAllTaxRates = async (req, res) => {
     try {
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        if (taxRatesCache) {
-            return res.json(taxRatesCache);
-        }
+        const cached = await getCache(CACHE_KEY);
+        if (cached) return res.json(cached);
 
         const [rows] = await db.query('SELECT * FROM tax_rates');
-        taxRatesCache = rows;
+        await setCache(CACHE_KEY, rows, CACHE_TTL_LONG);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -45,7 +38,7 @@ exports.addTaxRate = async (req, res) => {
             'INSERT INTO tax_rates (propertyType, wastiName, buildingRate, buildingTaxRate, landRate, openSpaceTaxRate) VALUES (?, ?, ?, ?, ?, ?)',
             [propertyType, wastiName, buildingRate, buildingTaxRate, landRate, openSpaceTaxRate]
         );
-        clearTaxRatesCache();
+        await clearCache(CACHE_KEY);
         res.status(201).json({ id: result.insertId, message: 'कर दर यशस्वीरित्या जोडला गेला' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -63,7 +56,7 @@ exports.updateTaxRate = async (req, res) => {
             'UPDATE tax_rates SET buildingRate = ?, buildingTaxRate = ?, landRate = ?, openSpaceTaxRate = ? WHERE id = ?',
             [buildingRate, buildingTaxRate, landRate, openSpaceTaxRate, req.params.id]
         );
-        clearTaxRatesCache();
+        await clearCache(CACHE_KEY);
         res.json({ message: 'कर दर यशस्वीरित्या अपडेट झाला' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -77,7 +70,7 @@ exports.updateTaxRate = async (req, res) => {
 exports.deleteTaxRate = async (req, res) => {
     try {
         await db.query('DELETE FROM tax_rates WHERE id = ?', [req.params.id]);
-        clearTaxRatesCache();
+        await clearCache(CACHE_KEY);
         res.json({ message: 'कर दर यशस्वीरित्या हटवला गेला' });
     } catch (err) {
         res.status(500).json({ error: err.message });

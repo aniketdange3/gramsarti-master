@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function GlobalLoader() {
   return (
-    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center font-sans animate-in fade-in duration-300">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center font-sans animate-in fade-in duration-300">
       <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm w-full mx-4 border border-slate-100">
         {/* GramSarthi Logo Element */}
         <div className="mb-6 flex flex-col items-center">

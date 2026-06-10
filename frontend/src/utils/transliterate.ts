@@ -262,45 +262,61 @@ export function getSearchVariations(input: string): string[] {
 }
 
 /**
+ * Create a highly optimized search matcher function that precomputes variations.
+ * This should be used when filtering large arrays to avoid repeated expensive operations.
+ */
+export function createSearchMatcher(searchTerm: string): (record: any) => boolean {
+    if (!searchTerm || !searchTerm.trim()) return () => true;
+
+    const variations = getSearchVariations(searchTerm);
+    // Pre-normalize variations once
+    const normalizedVariations = variations
+        .map(v => normalizeForSearch(v))
+        .filter(Boolean);
+
+    if (normalizedVariations.length === 0) return () => true;
+
+    return (record: any) => {
+        const fieldsToSearch = [
+            record.ownerName || '',
+            record.occupantName || '',
+            record.propertyId || '',
+            record.khasraNo || '',
+            record.plotNo || '',
+            record.srNo ? String(record.srNo) : '',
+            record.wardNo || '',
+            record.wastiName || '',
+            record.layoutName || '',
+            record.receiptNo || '',
+        ];
+
+        if (record.sections && Array.isArray(record.sections)) {
+            record.sections.forEach((s: any) => {
+                if (s.propertyType && s.propertyType !== 'निवडा') {
+                    fieldsToSearch.push(s.propertyType);
+                }
+            });
+        }
+
+        for (const field of fieldsToSearch) {
+            const fieldNormalized = normalizeForSearch(field);
+            if (!fieldNormalized) continue;
+            for (const varNormalized of normalizedVariations) {
+                if (fieldNormalized.includes(varNormalized)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    };
+}
+
+/**
  * Check if any field in a record matches any of the search variations
  */
 export function matchesSearch(record: any, searchTerm: string): boolean {
-    if (!searchTerm || !searchTerm.trim()) return true;
-
-    const variations = getSearchVariations(searchTerm);
-
-    // Collect all relevant fields for searching
-    const fieldsToSearch = [
-        record.ownerName || '',
-        record.occupantName || '',
-        record.propertyId || '',
-        record.khasraNo || '',
-        record.plotNo || '',
-        record.srNo ? String(record.srNo) : '',
-        record.wardNo || '',
-        record.wastiName || '',
-        record.layoutName || '',
-        record.receiptNo || '',
-    ];
-
-    // Optional: Include property types from sections
-    if (record.sections && Array.isArray(record.sections)) {
-        record.sections.forEach((s: any) => {
-            if (s.propertyType && s.propertyType !== 'निवडा') {
-                fieldsToSearch.push(s.propertyType);
-            }
-        });
-    }
-
-    for (const field of fieldsToSearch) {
-        const fieldNormalized = normalizeForSearch(field);
-        for (const variation of variations) {
-            const varNormalized = normalizeForSearch(variation);
-            if (varNormalized && fieldNormalized.includes(varNormalized)) {
-                return true;
-            }
-        }
-    }
-
-    return false;
+    // Note: For bulk filtering of arrays, it is highly recommended to use createSearchMatcher(searchTerm)
+    // to avoid recalculating variations for every record.
+    return createSearchMatcher(searchTerm)(record);
 }

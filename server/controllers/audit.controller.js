@@ -17,15 +17,44 @@ exports.submitRequest = async (req, res) => {
             'INSERT INTO property_audit_requests (property_id, request_data, requested_by) VALUES (?, ?, ?)',
             [property_id, JSON.stringify(request_data), req.user.id]
         );
+        clearAuditCache();
         res.status(201).json({ message: 'दुरुस्तीचा प्रस्ताव सादर केला आहे.' });
     } catch (err) {
         res.status(500).json({ error: 'सर्व्हर त्रुटी: ' + err.message });
     }
 };
 
+const redis = require('../config/redis.config');
+
+const clearAuditCache = async () => {
+    try {
+        const keys = await redis.keys('audit:*');
+        if (keys.length > 0) {
+            await redis.del(...keys);
+            console.log(`[REDIS] Cleared ${keys.length} audit cache keys.`);
+        }
+    } catch (err) {
+        console.error('[REDIS] Cache Clear Error:', err);
+    }
+};
+
 exports.getPendingRequests = async (req, res) => {
     try {
         const isPrivileged = ['super_admin', 'gram_sevak', 'sarpanch', 'gram_sachiv'].includes(req.user.role);
+        const cacheKey = `audit:pending:u${isPrivileged ? 'admin' : req.user.id}`;
+
+        let cachedData = null;
+        try {
+            if (redis && typeof redis.get === 'function') {
+                cachedData = await redis.get(cacheKey);
+            }
+        } catch (e) {
+            console.warn('[REDIS] Cache fetch failed:', e.message);
+        }
+
+        if (cachedData) {
+            return res.json(JSON.parse(cachedData));
+        }
 
         const query = `
             SELECT r.*, p.ownerName as old_owner_name, p.srNo, u.name as requester_name 
@@ -37,6 +66,13 @@ exports.getPendingRequests = async (req, res) => {
             ORDER BY r.created_at DESC
         `;
         const [requests] = await db.query(query, [isPrivileged, req.user.id]);
+        
+        try {
+            if (redis && typeof redis.setex === 'function') {
+                await redis.setex(cacheKey, 120, JSON.stringify(requests));
+            }
+        } catch (e) {}
+
         res.json(requests);
     } catch (err) { res.status(500).json({ error: 'सर्व्हर त्रुटी' }); }
 };
@@ -56,6 +92,7 @@ exports.approveRequest = async (req, res) => {
         // मूळ मालमत्ता नोंदवही (properties table) थेट बदलणे नाही
         await connection.query('UPDATE property_audit_requests SET status = "APPROVED" WHERE id = ?', [id]);
         await connection.commit();
+        clearAuditCache();
         res.json({ message: 'प्रस्ताव मंजूर झाला.' });
     } catch (err) {
         await connection.rollback();
@@ -71,6 +108,7 @@ exports.rejectRequest = async (req, res) => {
             'UPDATE property_audit_requests SET status = "REJECTED", admin_remarks = ? WHERE id = ?',
             [remarks || 'नाकारले', id]
         );
+        clearAuditCache();
         res.json({ message: 'प्रस्ताव नाकारला.' });
     } catch (err) { res.status(500).json({ error: 'सर्व्हर त्रुटी' }); }
 };

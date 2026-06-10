@@ -20,7 +20,9 @@ export interface BillCalculation {
 export const calculateBill = (
     arrearsAmount: number,
     currentTaxAmount: number,
-    referenceDate: Date = new Date()
+    referenceDate: Date | null = null,
+    propertyTax: number = 0,
+    openSpaceTax: number = 0
 ): BillCalculation => {
     const arrearsBase = Number(arrearsAmount) || 0;
     const currentTaxBase = Number(currentTaxAmount) || 0;
@@ -28,11 +30,17 @@ export const calculateBill = (
     // Arrears total is just the base amount as penalty is removed
     const arrearsTotal = arrearsBase;
 
-    // Check Discount Eligibility: Before or on September 30th of the current financial year
-    const month = referenceDate.getMonth(); // 0-indexed (0=Jan, 3=Apr, 8=Sep)
-    const isDiscountEligible = month >= 3 && month <= 8;
+    // Check Discount Eligibility: Before or on September 30th of the current financial year.
+    // If referenceDate is null, no discount date check is needed (always eligible).
+    const isDiscountEligible = referenceDate
+        ? (referenceDate.getMonth() >= 3 && referenceDate.getMonth() <= 8)
+        : true;
 
-    const discountAmount = isDiscountEligible ? Math.round(currentTaxBase * 0.05) : 0;
+    const discountBase = (Number(propertyTax) > 0 || Number(openSpaceTax) > 0)
+        ? (Number(propertyTax) || 0) + (Number(openSpaceTax) || 0)
+        : currentTaxBase;
+
+    const discountAmount = isDiscountEligible ? Math.round(discountBase * 0.05) : 0;
     
     // Penalty: 5% of Arrears (मागील थकबाकी) only as per Namuna 9 print logic
     const penaltyAmount = Math.round(arrearsBase * 0.05);

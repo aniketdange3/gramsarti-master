@@ -6,7 +6,7 @@
  */
 
 const db = require('../config/db.config');
-const { clearPropertiesCache } = require('../utils/cache.util');
+const { getCache, setCache, clearCache, CACHE_TTL_DEFAULT, clearPropertiesCache } = require('../utils/cache.util');
 
 /**
  * Record a new payment
@@ -62,7 +62,8 @@ exports.createPayment = async (req, res) => {
         );
 
         // Cache साफ करा जेणेकरून frontend ला नवीन data मिळेल
-        clearPropertiesCache();
+        await clearPropertiesCache();
+        await clearCache('payment:*');
 
         res.status(201).json({
             id: result.insertId,
@@ -84,6 +85,10 @@ exports.createPayment = async (req, res) => {
 exports.getAllPayments = async (req, res) => {
     try {
         const { property_id, date_from, date_to } = req.query;
+        const cacheKey = `payment:all:u${req.user.id}:p${property_id || ''}:df${date_from || ''}:dt${date_to || ''}`;
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
         let sql = `
             SELECT p.*, u.name as collector_name, pr.ownerName, pr.wastiName, pr.wardNo, pr.srNo
             FROM payments p
@@ -99,6 +104,7 @@ exports.getAllPayments = async (req, res) => {
         sql += ' ORDER BY p.created_at DESC';
 
         const [rows] = await db.query(sql, params);
+        await setCache(cacheKey, rows, CACHE_TTL_DEFAULT);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: 'पेमेंट यादी मिळवण्यात त्रुटी आली' });
@@ -111,6 +117,10 @@ exports.getAllPayments = async (req, res) => {
  */
 exports.getReceiptById = async (req, res) => {
     try {
+        const cacheKey = `payment:receipt:${req.params.id}`;
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
         const [rows] = await db.query(
             `SELECT p.*, u.name as collector_name, pr.ownerName, pr.occupantName, 
                     pr.wastiName, pr.wardNo, pr.plotNo, pr.srNo, pr.totalTaxAmount, pr.arrearsAmount
@@ -120,6 +130,8 @@ exports.getReceiptById = async (req, res) => {
              WHERE p.id = ?`, [req.params.id]
         );
         if (rows.length === 0) return res.status(404).json({ error: 'पावती सापडली नाही' });
+        
+        await setCache(cacheKey, rows[0], CACHE_TTL_DEFAULT);
         res.json(rows[0]);
     } catch (err) {
         res.status(500).json({ error: 'पावती तपशील मिळवण्यात त्रुटी आली' });
@@ -133,6 +145,10 @@ exports.getReceiptById = async (req, res) => {
 exports.getDailySummary = async (req, res) => {
     try {
         const date = req.query.date || new Date().toISOString().slice(0, 10);
+        const cacheKey = `payment:daily:${date}`;
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
         const [rows] = await db.query(
             `SELECT payment_mode, COUNT(*) as count, SUM(amount) as total
              FROM payments WHERE payment_date = ? GROUP BY payment_mode`, [date]
@@ -140,7 +156,11 @@ exports.getDailySummary = async (req, res) => {
         const [overall] = await db.query(
             `SELECT COUNT(*) as totalReceipts, SUM(amount) as totalAmount FROM payments WHERE payment_date = ?`, [date]
         );
-        res.json({ date, byMode: rows, total: overall[0] });
+        
+        const data = { date, byMode: rows, total: overall[0] };
+        await setCache(cacheKey, data, CACHE_TTL_DEFAULT);
+        
+        res.json(data);
     } catch (err) {
         res.status(500).json({ error: 'अहवाल जनरेट करण्यात त्रुटी आली' });
     }
@@ -163,8 +183,11 @@ exports.updateChequeStatus = async (req, res) => {
                     'UPDATE properties SET paidAmount = GREATEST(COALESCE(paidAmount, 0) - ?, 0) WHERE id = ?',
                     [payment[0].amount, payment[0].property_id]
                 );
+                await clearPropertiesCache();
             }
         }
+        
+        await clearCache('payment:*');
         res.json({ success: true, message: 'चेक स्टेटस अपडेट झाले' });
     } catch (err) {
         res.status(500).json({ error: 'स्टेटस अपडेट करण्यात त्रुटी आली' });

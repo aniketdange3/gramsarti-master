@@ -104,6 +104,9 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
     const uniqueKhasras = useMemo(() => Array.from(new Set(layoutFiltered.map(r => r.khasraNo).filter(Boolean))).sort(sortKhasra), [layoutFiltered]);
     const uniquePlots = useMemo(() => Array.from(new Set(khasraFiltered.map(r => r.plotNo).filter(Boolean))).sort(sortKhasra), [khasraFiltered]);
 
+    // Check if a specific layout or khasra filter is active (for sequential serial numbering)
+    const isFilteredView = !!(filterLayout || filterKhasra || filterPlotNo);
+
     const filteredRecords = useMemo(() => {
         let res = records;
         if (filterWasti) res = res.filter(r => r.wastiName === filterWasti);
@@ -145,6 +148,19 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
                     s.propertyType.includes('KUCHA')
                 )
             ));
+        }
+
+        // When layout or khasra filter is active, sort by plotNo/propertyId numerically for sequential display
+        // Otherwise sort by srNo as default
+        if (filterLayout || filterKhasra) {
+            return [...res].sort((a, b) => {
+                const aPlot = normalizeDigits(String(a.plotNo || a.propertyId || ''), false);
+                const bPlot = normalizeDigits(String(b.plotNo || b.propertyId || ''), false);
+                const aNum = parseFloat(aPlot) || 0;
+                const bNum = parseFloat(bPlot) || 0;
+                if (aNum !== bNum) return aNum - bNum;
+                return aPlot.localeCompare(bPlot, undefined, { numeric: true, sensitivity: 'base' });
+            });
         }
 
         // Robust sort numerically + alphabetically by srNo ascending
@@ -325,7 +341,16 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-white border-b border-slate-200  sticky top-0 z-10">
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-16 text-center">अ.क्र.</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-20 text-center">
+                                    <div className="flex flex-col items-center gap-1">
+                                        <span>अ.क्र.</span>
+                                        {isFilteredView && (
+                                            <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded-md text-[8px] font-black tracking-wide">
+                                                १ ते {MN(filteredRecords.length)}
+                                            </span>
+                                        )}
+                                    </div>
+                                </th>
                                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">वस्ती / खसरा / मालमत्ता क्र.</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">मालकाचे नाव</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">मागणी (₹)</th>
@@ -340,7 +365,15 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
                                 const actualIdx = (currentPage - 1) * pageSize + idx + 1;
                                 return (
                                     <tr key={r.id} className="hover:bg-slate-50/80 transition-colors group">
-                                        <td className="px-6 py-4 text-center text-xs font-bold text-slate-400">{MN(actualIdx)}</td>
+                                        <td className="px-6 py-4 text-center">
+                                            {isFilteredView ? (
+                                                <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100 text-xs font-black text-indigo-600">
+                                                    {MN(actualIdx)}
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs font-bold text-slate-400">{MN(actualIdx)}</span>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
                                                 <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{r.wastiName || '-'}</span>

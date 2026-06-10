@@ -98,10 +98,24 @@ export default function NamunaTable9({
         return pageRecords.reduce((acc, r) => {
             const arrears = Number(r.arrearsAmount) || 0;
             const current = Number(r.totalTaxAmount) || 0;
-            const discount = Number(r.discountAmount || (current * 0.05));
-            const penalty = Number(r.penaltyAmount || (arrears * 0.05));
-            const demand = current + arrears + penalty - discount;
             const paid = Number(r.paidAmount) || 0;
+
+            const discountBase = (Number(r.propertyTax) > 0 || Number(r.openSpaceTax) > 0)
+                ? (Number(r.propertyTax) || 0) + (Number(r.openSpaceTax) || 0)
+                : current;
+            
+            const isEligibleNow = new Date().getMonth() >= 3 && new Date().getMonth() <= 8;
+            const calculatedDiscount = isEligibleNow ? Math.round(discountBase * 0.05) : 0;
+
+            const discount = (r.discountAmount !== undefined && Number(r.discountAmount) > 0)
+                ? Number(r.discountAmount)
+                : calculatedDiscount;
+
+            const penalty = (paid > 0 || (r.penaltyAmount !== undefined && Number(r.penaltyAmount) > 0))
+                ? (Number(r.penaltyAmount) || 0)
+                : Math.round(arrears * 0.05);
+
+            const demand = current + arrears + penalty - discount;
             return {
                 prev: acc.prev + arrears,
                 curr: acc.curr + current,
@@ -204,10 +218,24 @@ export default function NamunaTable9({
                         {pageRecords.map((r, rIdx) => {
                             const arrears = Number(r.arrearsAmount) || 0;
                             const current = Number(r.totalTaxAmount) || 0;
-                            const discount = Number(r.discountAmount || (current * 0.05));
-                            const penalty = Number(r.penaltyAmount || (arrears * 0.05));
-                            const demand = current + arrears + penalty - discount;
                             const paid = Number(r.paidAmount) || 0;
+
+                            const discountBase = (Number(r.propertyTax) > 0 || Number(r.openSpaceTax) > 0)
+                                ? (Number(r.propertyTax) || 0) + (Number(r.openSpaceTax) || 0)
+                                : current;
+                            
+                            const isEligibleNow = new Date().getMonth() >= 3 && new Date().getMonth() <= 8;
+                            const calculatedDiscount = isEligibleNow ? Math.round(discountBase * 0.05) : 0;
+
+                            const discount = (r.discountAmount !== undefined && Number(r.discountAmount) > 0)
+                                ? Number(r.discountAmount)
+                                : calculatedDiscount;
+
+                            const penalty = (paid > 0 || (r.penaltyAmount !== undefined && Number(r.penaltyAmount) > 0))
+                                ? (Number(r.penaltyAmount) || 0)
+                                : Math.round(arrears * 0.05);
+
+                            const demand = current + arrears + penalty - discount;
                             const balance = demand - paid;
 
                             let remPScr = paid;

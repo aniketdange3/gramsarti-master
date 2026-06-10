@@ -95,7 +95,7 @@ export const TransliterationInput: React.FC<TransliterationInputProps> = ({
         if (word.length >= 1) {
             debounceTimerRef.current = setTimeout(() => {
                 fetchSuggestions(word);
-            }, 300);
+            }, 3000);
         } else {
             setSuggestions([]);
         }

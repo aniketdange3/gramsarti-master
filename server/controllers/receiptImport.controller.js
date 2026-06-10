@@ -180,7 +180,9 @@ exports.importReceipts = async (req, res) => {
             }
 
             await conn.commit();
-            clearPropertiesCache();
+            if (updated > 0) {
+                await clearPropertiesCache();
+            }
 
         } catch (dbErr) {
             await conn.rollback();

@@ -44,6 +44,7 @@ export default function PaymentEntry({ records, fetchRecords, onUpdateLocalRecor
     const [remarks, setRemarks] = useState('');
     const [saving, setSaving] = useState(false);
     const [payments, setPayments] = useState<any[]>([]);
+    const [paymentDate, setPaymentDate] = useState<string>(new Date().toISOString().slice(0, 10));
     const { addToast } = useUI();
 
     const currentUser = useMemo(() => JSON.parse(localStorage.getItem('gp_user') || '{}'), []);
@@ -75,7 +76,13 @@ export default function PaymentEntry({ records, fetchRecords, onUpdateLocalRecor
         }
         setSaving(true);
         try {
-            const billDetails = calculateBill(selectedProp.arrearsAmount || 0, selectedProp.totalTaxAmount || 0);
+            const billDetails = calculateBill(
+                selectedProp.arrearsAmount || 0,
+                selectedProp.totalTaxAmount || 0,
+                paymentDate ? new Date(paymentDate) : null,
+                selectedProp.propertyTax || 0,
+                selectedProp.openSpaceTax || 0
+            );
 
             const res = await fetch(`${BASE}/api/payments`, {
                 method: 'POST',
@@ -84,7 +91,7 @@ export default function PaymentEntry({ records, fetchRecords, onUpdateLocalRecor
                     property_id: selectedProp.id,
                     amount: Number(amount),
                     payment_mode: mode,
-                    payment_date: new Date().toISOString().slice(0, 10),
+                    payment_date: paymentDate,
                     cheque_no: chequeNo || undefined,
                     cheque_bank: chequeBank || undefined,
                     upi_ref: upiRef || undefined,
@@ -104,7 +111,8 @@ export default function PaymentEntry({ records, fetchRecords, onUpdateLocalRecor
             
             const updatedProp = {
                 ...selectedProp,
-                paidAmount: (Number(selectedProp.paidAmount) || 0) + Number(amount)
+                paidAmount: (Number(selectedProp.paidAmount) || 0) + Number(amount),
+                discountAmount: (Number(selectedProp.discountAmount) || 0) + (billDetails.discountAmount || 0)
             };
             onUpdateLocalRecord(updatedProp);
 
@@ -116,7 +124,15 @@ export default function PaymentEntry({ records, fetchRecords, onUpdateLocalRecor
         } finally { setSaving(false); }
     };
 
-    const billDetails = selectedProp ? calculateBill(selectedProp.arrearsAmount || 0, selectedProp.totalTaxAmount || 0) : null;
+    const billDetails = selectedProp
+        ? calculateBill(
+            selectedProp.arrearsAmount || 0,
+            selectedProp.totalTaxAmount || 0,
+            paymentDate ? new Date(paymentDate) : null,
+            selectedProp.propertyTax || 0,
+            selectedProp.openSpaceTax || 0
+          )
+        : null;
     const penaltyToApply = billDetails ? billDetails.penaltyAmount : 0;
     const discountToApply = billDetails ? billDetails.discountAmount : 0;
 
@@ -256,6 +272,11 @@ export default function PaymentEntry({ records, fetchRecords, onUpdateLocalRecor
                                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-500 outline-none" />
                                     </div>
                                 )}
+                                <div className="space-y-1.5 md:col-span-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">भरणा दिनांक (Payment Date)</label>
+                                    <input type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-500 outline-none" />
+                                </div>
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">पु.क्र. (Book No)</label>
                                     <TransliterationInput 

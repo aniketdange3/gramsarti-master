@@ -23,7 +23,7 @@ exports.getAllTaxRates = async (req, res) => {
         await setCache(CACHE_KEY, rows, CACHE_TTL_LONG);
         res.json(rows);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -41,7 +41,7 @@ exports.addTaxRate = async (req, res) => {
         await clearCache(CACHE_KEY);
         res.status(201).json({ id: result.insertId, message: 'कर दर यशस्वीरित्या जोडला गेला' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -59,7 +59,7 @@ exports.updateTaxRate = async (req, res) => {
         await clearCache(CACHE_KEY);
         res.json({ message: 'कर दर यशस्वीरित्या अपडेट झाला' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -73,6 +73,6 @@ exports.deleteTaxRate = async (req, res) => {
         await clearCache(CACHE_KEY);
         res.json({ message: 'कर दर यशस्वीरित्या हटवला गेला' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };

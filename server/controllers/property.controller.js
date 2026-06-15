@@ -23,7 +23,7 @@ exports.getKhasras = async (req, res) => {
         const khasras = rows.map(r => r.khasraNo);
         res.json(khasras);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -115,7 +115,7 @@ exports.searchProperties = async (req, res) => {
         res.json(response);
     } catch (err) {
         console.error('[PROPERTIES] searchProperties error:', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -266,7 +266,7 @@ exports.getAllProperties = async (req, res) => {
         res.json(propertiesArray);
     } catch (err) {
         console.error('[PROPERTIES] getAllProperties error:', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -343,7 +343,7 @@ exports.getPropertyById = async (req, res) => {
         res.json(property);
     } catch (err) {
         console.error('[PROPERTIES] getPropertyById error:', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -427,7 +427,7 @@ exports.saveProperty = async (req, res) => {
     } catch (err) {
         await connection.rollback();
         console.error('[PROPERTIES] Save error:', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     } finally {
         connection.release();
     }
@@ -494,8 +494,10 @@ exports.bulkImport = async (req, res) => {
         await clearPropertiesCache();
         res.status(201).json({ message: `${records.length} नोंदी यशस्वीरित्या इंपोर्ट झाल्या` });
     } catch (err) {
+        await connection.query('SET FOREIGN_KEY_CHECKS = 1'); // BUG-008 FIX: ensure FK always re-enabled
         await connection.rollback();
-        res.status(500).json({ error: err.message });
+        console.error('[BULK IMPORT] Error:', err);
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     } finally {
         await connection.query('SET FOREIGN_KEY_CHECKS = 1');
         connection.release();
@@ -512,7 +514,7 @@ exports.deleteProperty = async (req, res) => {
         await clearPropertiesCache();
         res.json({ message: 'मालमत्ता यशस्वीरित्या हटवली गेली' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -551,7 +553,7 @@ exports.cleanupDuplicates = async (req, res) => {
         res.json({ message: `${removedCount} दुप्पट नोंदी यशस्वीरित्या हटवल्या गेल्या`, removedCount });
     } catch (err) {
         await connection.rollback();
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     } finally {
         connection.release();
     }
@@ -675,7 +677,7 @@ exports.bulkUpdateNormalTaxes = async (req, res) => {
     } catch (err) {
         if (connection) await connection.rollback();
         console.error('[PROPERTIES] Bulk Update Error:', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     } finally {
         if (connection) connection.release();
     }
@@ -709,7 +711,7 @@ exports.getUniqueLayouts = async (req, res) => {
         res.json(layouts);
     } catch (err) {
         console.error('[PROPERTIES] Get Layouts Error:', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -729,6 +731,6 @@ exports.getUniquePlots = async (req, res) => {
         res.json(plots);
     } catch (err) {
         console.error('[PROPERTIES] Get Plots Error:', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };

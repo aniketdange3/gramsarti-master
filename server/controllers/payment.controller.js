@@ -13,6 +13,7 @@ const { getCache, setCache, clearCache, CACHE_TTL_DEFAULT, clearPropertiesCache 
  * नवीन कर भरणा नोंदवणे (Receipt Generation)
  */
 exports.createPayment = async (req, res) => {
+    const connection = await db.getConnection();
     try {
         const {
             property_id, amount, payment_mode, payment_date,
@@ -21,18 +22,23 @@ exports.createPayment = async (req, res) => {
         } = req.body;
 
         if (!property_id || !amount || !payment_mode || !payment_date) {
+            connection.release();
             return res.status(400).json({ error: 'महत्त्वाची माहिती (Property, Amount, Mode, Date) आवश्यक आहे' });
         }
 
-        // पावती क्रमांक तयार करणे: GP-YYYYMMDD-NNNN (Generate receipt number)
+        await connection.beginTransaction();
+
+        // BUG-006 FIX: Use FOR UPDATE to prevent race condition on receipt number
         const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const [countRows] = await db.query('SELECT COUNT(*) as cnt FROM payments WHERE DATE(created_at) = CURDATE()');
+        const [countRows] = await connection.query(
+            'SELECT COUNT(*) as cnt FROM payments WHERE DATE(created_at) = CURDATE() FOR UPDATE'
+        );
         const seq = String((countRows[0].cnt || 0) + 1).padStart(4, '0');
         const receipt_no = `GP-${dateStr}-${seq}`;
 
         const chequeStatus = payment_mode === 'Cheque' ? 'Pending' : null;
 
-        const [result] = await db.query(
+        const [result] = await connection.query(
             `INSERT INTO payments (
                 receipt_no, property_id, amount, payment_mode, payment_date, 
                 collector_id, cheque_no, cheque_bank, cheque_status, upi_ref, 
@@ -49,7 +55,7 @@ exports.createPayment = async (req, res) => {
         const disc = Number(discount_applied) || 0;
         const pen = Number(penalty_applied) || 0;
 
-        await db.query(
+        await connection.query(
             `UPDATE properties
              SET paidAmount      = COALESCE(paidAmount, 0) + ?,
                  discountAmount  = COALESCE(discountAmount, 0) + ?,
@@ -60,6 +66,8 @@ exports.createPayment = async (req, res) => {
              WHERE id = ?`,
             [amount, disc, pen, receipt_no, receipt_book || null, payment_date, property_id]
         );
+
+        await connection.commit();
 
         // Cache साफ करा जेणेकरून frontend ला नवीन data मिळेल
         await clearPropertiesCache();
@@ -73,8 +81,11 @@ exports.createPayment = async (req, res) => {
             message: 'पेमेंट यशस्वीरित्या नोंदवले गेले'
         });
     } catch (err) {
+        await connection.rollback();
         console.error('[PAYMENT] Create error:', err);
         res.status(500).json({ error: 'पेमेंट जतन करताना त्रुटी आली' });
+    } finally {
+        connection.release();
     }
 };
 

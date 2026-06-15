@@ -22,14 +22,53 @@ const PORT = process.env.PORT || 5000;
 
 // १. मिडलवेअर सेटअप (Middleware Setup)
 app.use(compression()); // डेटा कॉम्प्रेस करण्यासाठी (Performance)
+
+// BUG-003 FIX: Restrict CORS — allow localhost & LAN in dev, specific origin in production
+const FRONTEND_URL = process.env.FRONTEND_URL;
 app.use(cors({
-    origin: true,
+    origin: (origin, callback) => {
+        // Allow requests with no origin (Postman, mobile app, same-origin SSR)
+        if (!origin) return callback(null, true);
+        // In production: only allow the configured FRONTEND_URL
+        if (FRONTEND_URL && origin === FRONTEND_URL) return callback(null, true);
+        // In development: allow any localhost:* origin
+        if (/^http:\/\/localhost:\d+$/.test(origin)) return callback(null, true);
+        // In development: allow any local network IP (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+        if (/^http:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+):\d+$/.test(origin)) {
+            return callback(null, true);
+        }
+        // Block all other origins
+        console.warn(`[CORS] Blocked origin: ${origin}`);
+        return callback(new Error(`CORS: Origin '${origin}' not allowed`));
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));
-app.use(express.json({ limit: '200mb' }));
-app.use(express.urlencoded({ limit: '200mb', extended: true }));
+
+// BUG-002 FIX: Rate limit login to prevent brute-force attacks
+let loginLimiter = (req, res, next) => next(); // no-op fallback if package not installed
+try {
+    const rateLimit = require('express-rate-limit');
+    loginLimiter = rateLimit({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 15,                   // max 15 login attempts per IP per 15 min
+        standardHeaders: true,
+        legacyHeaders: false,
+        message: { error: 'खूप जास्त लॉगिन प्रयत्न. १५ मिनिटांनंतर पुन्हा प्रयत्न करा.' }
+    });
+    console.log('[SECURITY] Rate limiting active on /api/auth/login');
+} catch (e) {
+    console.warn('[SECURITY] express-rate-limit not installed. Run: npm install express-rate-limit');
+}
+app.use('/api/auth/login', loginLimiter);
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ limit: '5mb', extended: true }));
+
+// Health check endpoint for monitoring
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString(), uptime: process.uptime() });
+});
 
 
 // २. रिक्वेस्ट लॉगर (Request Logging)

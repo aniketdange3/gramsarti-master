@@ -53,6 +53,7 @@ frontend.zip
 *.sqlite
 server/*.sqlite
 docker-compose.override.yml
+*.rdb
 
 # Temporary Files
 tmp/

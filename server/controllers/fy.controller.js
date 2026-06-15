@@ -22,7 +22,7 @@ exports.getCurrent = async (req, res) => {
         await setCache(CACHE_KEY_CURRENT_FY, data, CACHE_TTL_LONG);
         res.json(data);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -40,7 +40,7 @@ exports.getPropertyFYData = async (req, res) => {
         await setCache(cacheKey, rows, CACHE_TTL_LONG);
         res.json(rows);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -52,7 +52,7 @@ exports.analyzeMigration = async (req, res) => {
         const [rows] = await db.query("SELECT COUNT(*) as count FROM properties WHERE status = 'active'");
         res.json({ propertyCount: rows[0].count });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -98,7 +98,7 @@ exports.executeMigration = async (req, res) => {
     } catch (err) {
         if (connection) await connection.rollback();
         console.error('[FY_MIGRATE] Error:', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     } finally {
         if (connection) connection.release();
     }
@@ -114,6 +114,6 @@ exports.updateChalu = async (req, res) => {
         await clearPropertiesCache();
         res.json({ success: true });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };

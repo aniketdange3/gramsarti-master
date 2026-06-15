@@ -22,7 +22,7 @@ exports.getAllCategories = async (req, res) => {
         await setCache(cacheKey, rows, CACHE_TTL_LONG);
         res.json(rows);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -47,7 +47,7 @@ exports.getItemsByCategory = async (req, res) => {
         await setCache(cacheKey, rows, CACHE_TTL_LONG);
         res.json(rows);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -70,7 +70,7 @@ exports.getAllItems = async (req, res) => {
         await setCache(cacheKey, rows, CACHE_TTL_LONG);
         res.json(rows);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -84,7 +84,7 @@ exports.addItem = async (req, res) => {
         await clearCache('master:items*');
         res.status(201).json({ id: result.insertId, message: 'आयटम यशस्वीरित्या जोडला गेला' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -98,7 +98,7 @@ exports.updateItem = async (req, res) => {
         await clearCache('master:items*');
         res.json({ message: 'आयटम यशस्वीरित्या अपडेट झाला' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -108,7 +108,7 @@ exports.deleteItem = async (req, res) => {
         await clearCache('master:items*');
         res.json({ message: 'आयटम यशस्वीरित्या हटवला गेला' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -125,7 +125,7 @@ exports.getDepreciationRates = async (req, res) => {
         await setCache(cacheKey, rows, CACHE_TTL_LONG);
         res.json(rows);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -142,7 +142,7 @@ exports.getReadyReckonerRates = async (req, res) => {
         await setCache(cacheKey, rows, CACHE_TTL_LONG);
         res.json(rows);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -159,7 +159,7 @@ exports.getBuildingUsage = async (req, res) => {
         await setCache(cacheKey, rows, CACHE_TTL_LONG);
         res.json(rows);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -175,7 +175,7 @@ exports.addDepreciationRate = async (req, res) => {
         );
         await clearCache('master:depreciation');
         res.status(201).json({ id: result.insertId, message: 'घसारा दर जोडला गेला' });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' }); }
 };
 
 exports.updateDepreciationRate = async (req, res) => {
@@ -187,7 +187,7 @@ exports.updateDepreciationRate = async (req, res) => {
         );
         await clearCache('master:depreciation');
         res.json({ message: 'अपडेट यशस्वी' });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' }); }
 };
 
 exports.deleteDepreciationRate = async (req, res) => {
@@ -195,7 +195,7 @@ exports.deleteDepreciationRate = async (req, res) => {
         await db.query('DELETE FROM depreciation_rates WHERE id = ?', [req.params.id]);
         await clearCache('master:depreciation');
         res.json({ message: 'हटवले गेले' });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' }); }
 };
 
 exports.addReadyReckonerRate = async (req, res) => {
@@ -207,7 +207,7 @@ exports.addReadyReckonerRate = async (req, res) => {
         );
         await clearCache('master:rr');
         res.status(201).json({ id: result.insertId, message: 'रेडी रेकनर दर जोडला गेला' });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' }); }
 };
 
 exports.updateReadyReckonerRate = async (req, res) => {
@@ -219,7 +219,7 @@ exports.updateReadyReckonerRate = async (req, res) => {
         );
         await clearCache('master:rr');
         res.json({ message: 'अपडेट यशस्वी' });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' }); }
 };
 
 exports.deleteReadyReckonerRate = async (req, res) => {
@@ -227,7 +227,7 @@ exports.deleteReadyReckonerRate = async (req, res) => {
         await db.query('DELETE FROM ready_reckoner_rates WHERE id = ?', [req.params.id]);
         await clearCache('master:rr');
         res.json({ message: 'हटवले गेले' });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' }); }
 };
 
 exports.addBuildingUsage = async (req, res) => {
@@ -239,7 +239,7 @@ exports.addBuildingUsage = async (req, res) => {
         );
         await clearCache('master:building_usage');
         res.status(201).json({ id: result.insertId, message: 'वापर प्रकार जोडला गेला' });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' }); }
 };
 
 exports.updateBuildingUsage = async (req, res) => {
@@ -251,7 +251,7 @@ exports.updateBuildingUsage = async (req, res) => {
         );
         await clearCache('master:building_usage');
         res.json({ message: 'अपडेट यशस्वी' });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' }); }
 };
 
 exports.deleteBuildingUsage = async (req, res) => {
@@ -259,7 +259,7 @@ exports.deleteBuildingUsage = async (req, res) => {
         await db.query('DELETE FROM building_usage_master WHERE id = ?', [req.params.id]);
         await clearCache('master:building_usage');
         res.json({ message: 'हटवले गेले' });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' }); }
 };
 
 
@@ -278,7 +278,7 @@ exports.getSystemConfig = async (req, res) => {
         await setCache(cacheKey, config, CACHE_TTL_LONG);
         res.json(config);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -294,7 +294,7 @@ exports.updateSystemConfig = async (req, res) => {
         await clearCache('master:system_config');
         res.json({ success: true });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 
@@ -318,7 +318,7 @@ exports.resetAndSeed = async (req, res) => {
         res.json({ message: 'सिस्टम यशस्वीरित्या रिसेट झाली' });
     } catch (err) {
         await connection.rollback();
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     } finally {
         await connection.query('SET FOREIGN_KEY_CHECKS = 1');
         connection.release();
@@ -421,7 +421,7 @@ exports.preAnalyzeFY = async (req, res) => {
         });
     } catch (err) {
         console.error('[ERROR] preAnalyzeFY:', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.' });
     }
 };
 

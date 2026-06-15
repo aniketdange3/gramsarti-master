@@ -9,8 +9,12 @@ const bcrypt = require('bcryptjs');
 const db = require('../config/db.config');
 const jwt = require('jsonwebtoken');
 
-// गुपित की (Secret Key for JWT)
-const JWT_SECRET = process.env.JWT_SECRET || 'gramsarthi_secret_key_2024';
+// गुपित की (Secret Key for JWT) — must be set in .env
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    console.error('[CRITICAL] JWT_SECRET is not set in .env file. Server cannot start securely.');
+    process.exit(1);
+}
 
 /**
  * Helper: Generate Employee ID based on role
@@ -91,6 +95,9 @@ exports.login = async (req, res) => {
 exports.register = async (req, res) => {
     try {
         const { name, username, password, role, email, mobile, gp_code, age, address } = req.body;
+        if (!name || !username || !password || !role) {
+            return res.status(400).json({ error: 'नाव, वापरकर्तानाव, पासवर्ड आणि भूमिका आवश्यक आहे' });
+        }
         const [existing] = await db.query('SELECT id FROM users WHERE username = ?', [username]);
         if (existing.length > 0) return res.status(409).json({ error: 'वापरकर्तानाव आधीपासूनच वापरात आहे' });
 

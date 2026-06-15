@@ -91,6 +91,12 @@ const isTokenExpired = (t: string | null): boolean => {
 };
 
 // ── Inner app (needs router context) ───────────────────────────────────────
+const TextIcon = ({ text, size, strokeWidth, className }: any) => (
+  <span className={`font-black flex items-center justify-center tracking-tighter leading-none ${className || ''}`} style={{ width: size || 20, height: size || 20, fontSize: '15px' }}>
+    {text}
+  </span>
+);
+
 function AppInner() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -333,8 +339,8 @@ function AppInner() {
 
   const navItems = [
     { id: 'dashboard' as ViewType, label: 'डैशबोर्ड', sublabel: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, color: 'from-violet-500 to-indigo-600', preload: Dashboard.preload },
-    { id: 'namuna8' as ViewType, label: 'नमुना ८', sublabel: 'Assessment Register', icon: <FileText className="w-5 h-5" />, color: 'from-sky-500 to-blue-600', preload: Namuna8.preload },
-    { id: 'namuna9' as ViewType, label: 'नमुना ९', sublabel: 'Tax Notice', icon: <Receipt className="w-5 h-5" />, color: 'from-emerald-500 to-green-600', preload: Namuna9.preload },
+    { id: 'namuna8' as ViewType, label: 'नमुना ८', sublabel: 'Assessment Register', icon: <TextIcon text="न८" />, color: 'from-sky-500 to-blue-600', preload: Namuna8.preload },
+    { id: 'namuna9' as ViewType, label: 'नमुना ९', sublabel: 'Tax Notice', icon: <TextIcon text="न९" />, color: 'from-emerald-500 to-green-600', preload: Namuna9.preload },
     { id: 'maganiBill' as ViewType, label: 'मागणी बिल', sublabel: 'Demand Bill', icon: <Printer className="w-5 h-5" />, color: 'from-indigo-500 to-violet-600', preload: MaganiBill.preload },
 
     { id: 'reports' as ViewType, label: 'अहवाल', sublabel: 'Reports', icon: <BarChart3 className="w-5 h-5" />, color: 'from-purple-500 to-fuchsia-600', allowedRoles: ['super_admin', 'gram_sevak', 'gram_sachiv'], preload: Reports.preload },

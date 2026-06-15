@@ -235,7 +235,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                     </svg>
                     {/* Watermark */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 1, opacity: 0.3 }}>
-                        <img src="/images/logo.jpeg" onError={(e: any) => { e.target.src = '/images/logo.png'; }} className="w-[450px] h-[450px] object-contain" alt="Watermark" />
+                        <img src="/images/logo.png" onError={(e: any) => { e.target.src = '/images/logo.png'; }} className="w-[450px] h-[450px] object-contain" alt="Watermark" />
                     </div>
 
                     <div className="relative w-full flex flex-col justify-start items-center" style={{ zIndex: 2 }}>
@@ -244,7 +244,7 @@ export default function Namuna8PrintFormat({ records }: Props) {
                             <div className="relative mb-3 mt-8 w-full flex justify-between items-start px-2">
                                 {/* Left: Logo */}
                                 <div className="flex-shrink-0">
-                                    <img src="/images/logo.jpeg" onError={(e: any) => { e.target.src = '/images/logo.png'; }} alt="GP Logo" className="w-[130px] h-[130px] object-contain" />
+                                    <img src="/images/logo.png" onError={(e: any) => { e.target.src = '/images/logo.png'; }} alt="GP Logo" className="w-[130px] h-[130px] object-contain" />
                                 </div>
 
                                 {/* Center: Titles */}

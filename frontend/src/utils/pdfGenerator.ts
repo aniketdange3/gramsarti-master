@@ -5,7 +5,7 @@ import { PANCHAYAT_CONFIG } from '../utils/panchayatConfig';
 import { calculateBill } from './billCalculations';
 import { registerFonts } from './fonts';
 // import logo from '../images';
-const logo = '/images/logo.jpeg';
+const logo = '/images/logo.png';
 
 // ─── Constants (Legal Landscape) ─────────────────────────────────────────────
 const PW = 355.6; // Legal width (landscape) mm
@@ -33,7 +33,7 @@ const loadLogo = async (): Promise<string | null> => {
     return logo;
 };
 
-const safeSetFont = (doc: jsPDF, font: string, style: string = 'normal') => {
+const safeSetFont = (doc: jsPDFType, font: string, style: string = 'normal') => {
     try {
         const fontList = (doc as any).getFontList();
         const hasFont = fontList && fontList[font];
@@ -53,7 +53,7 @@ const safeSetFont = (doc: jsPDF, font: string, style: string = 'normal') => {
  * Draw header on any page — light blue background, black text,
  * logo + GP details left, large bold title center, legal ref right.
  */
-const drawHeader = (doc: jsPDF, logo: string | null, title: string, subtitle: string, showBorder = true) => {
+const drawHeader = (doc: jsPDFType, logo: string | null, title: string, subtitle: string, showBorder = true) => {
     const pg = (doc as any).internal.getCurrentPageInfo?.()?.pageNumber ?? 1;
     const { height, width } = doc.internal.pageSize;
     const mtb = height * 0.04; // Use reduced margin <!-- id: a2 -->
@@ -119,7 +119,7 @@ const drawHeader = (doc: jsPDF, logo: string | null, title: string, subtitle: st
 /**
  * Draw header with exact Namuna 8 replica layout
  */
-const drawNamuna8Header = (doc: jsPDF, logo: string | null) => {
+const drawNamuna8Header = (doc: jsPDFType, logo: string | null) => {
     // 1. Watermark (Larger and centered, colorful)
     if (logo) {
         doc.saveGraphicsState();
@@ -158,7 +158,7 @@ const drawNamuna8Header = (doc: jsPDF, logo: string | null) => {
 };
 
 export const generateNamuna8PDF = async (records: PropertyRecord[], filterWasti = '') => {
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'legal' });
+    const doc = new (await loadPDFLibs()).jsPDF({ orientation: 'landscape', unit: 'mm', format: 'legal' });
     const logo = await loadLogo();
 
     registerFonts(doc);
@@ -239,7 +239,7 @@ export const generateNamuna8PDF = async (records: PropertyRecord[], filterWasti 
     const numberedRow = Array.from({ length: 18 }, (_, i) => MN(i + 1));
     body.unshift(numberedRow);
 
-    autoTable(doc, {
+    (await loadPDFLibs()).autoTable(doc, {
         head,
         body,
         startY: MTB + 42,
@@ -319,7 +319,7 @@ export const generateNamuna8PDF = async (records: PropertyRecord[], filterWasti 
 
 // ─── NAMUNA 9 ─────────────────────────────────────────────────────────────────
 export const generateNamuna9PDF = async (records: PropertyRecord[], filterWasti = '') => {
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'legal' });
+    const doc = new (await loadPDFLibs()).jsPDF({ orientation: 'landscape', unit: 'mm', format: 'legal' });
     const logo = await loadLogo();
     const T1 = 'नमुना ९';
     const T2 = `ग्रामपंचायत: ${PANCHAYAT_CONFIG.gpName}, तालुका: ${PANCHAYAT_CONFIG.taluka}`;
@@ -460,7 +460,7 @@ export const generateNamuna9PDF = async (records: PropertyRecord[], filterWasti 
         ]
     ];
 
-    autoTable(doc, {
+    (await loadPDFLibs()).autoTable(doc, {
         head: headN9,
         body,
         startY: mtb + 30,
@@ -512,7 +512,7 @@ export const generateNamuna9PDF = async (records: PropertyRecord[], filterWasti 
 };
 
 // ─── MAGANI BILL (DEMAND BILL) ────────────────────────────────────────────────
-const drawMaganiBillContent = (doc: jsPDF, record: PropertyRecord, startX: number, startY: number, width: number, copyLabel: string, logo: string | null) => {
+const drawMaganiBillContent = async (doc: jsPDFType, record: PropertyRecord, startX: number, startY: number, width: number, copyLabel: string, logo: string | null) => {
     const calc = calculateBill(
         record.arrearsAmount || 0,
         record.totalTaxAmount || 0,
@@ -560,7 +560,7 @@ const drawMaganiBillContent = (doc: jsPDF, record: PropertyRecord, startX: numbe
     doc.setFontSize(9);
     doc.text(`श्री ${record.ownerName || '-'} यांचेकडुन`, startX + margin + 3, startY + 37);
 
-    autoTable(doc, {
+    (await loadPDFLibs()).autoTable(doc, {
         body: [[`मौजा: ${record.wastiName || '-'}`, `खसरा: ${MN(record.khasraNo)}`, `प्लॉट: ${MN(record.plotNo)}`]],
         startY: startY + 40,
         margin: { left: startX + margin + 2, right: (297 - (startX + width - margin)) + 2 },
@@ -580,7 +580,7 @@ const drawMaganiBillContent = (doc: jsPDF, record: PropertyRecord, startX: numbe
         ['६. मागील थकबाकी', MN(record.arrearsAmount || 0), MN(0), MN(record.arrearsAmount || 0)],
     ];
 
-    autoTable(doc, {
+    (await loadPDFLibs()).autoTable(doc, {
         head: [['कराची नावे', 'मागील', 'चालू', 'एकुण']],
         body: [
             ...taxRows,
@@ -600,21 +600,21 @@ const drawMaganiBillContent = (doc: jsPDF, record: PropertyRecord, startX: numbe
 };
 
 export const generateMaganiBillPDF = async (record: PropertyRecord) => {
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const doc = new (await loadPDFLibs()).jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const logo = await loadLogo();
     registerFonts(doc);
     const L_MARGIN = 30.48; // 1.20 inches
     const R_MARGIN = 10;
     const billWidth = (297 - L_MARGIN - R_MARGIN) / 2;
 
-    drawMaganiBillContent(doc, record, L_MARGIN, 10, billWidth, 'कार्यालयीन प्रत', logo);
-    drawMaganiBillContent(doc, record, L_MARGIN + billWidth, 10, billWidth, 'करदात्याची प्रत', logo);
+    await drawMaganiBillContent(doc, record, L_MARGIN, 10, billWidth, 'कार्यालयीन प्रत', logo);
+    await drawMaganiBillContent(doc, record, L_MARGIN + billWidth, 10, billWidth, 'करदात्याची प्रत', logo);
 
     doc.save(`Magani_Bill_${record.srNo}.pdf`);
 };
 
 export const generateBulkMaganiBillsPDF = async (records: PropertyRecord[]) => {
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const doc = new (await loadPDFLibs()).jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const logo = await loadLogo();
     registerFonts(doc);
     const L_MARGIN = 30.48;
@@ -623,8 +623,8 @@ export const generateBulkMaganiBillsPDF = async (records: PropertyRecord[]) => {
 
     for (let i = 0; i < records.length; i++) {
         if (i > 0) doc.addPage();
-        drawMaganiBillContent(doc, records[i], L_MARGIN, 10, billWidth, 'कार्यालयीन प्रत', logo);
-        drawMaganiBillContent(doc, records[i], L_MARGIN + billWidth, 10, billWidth, 'करदात्याची प्रत', logo);
+        await drawMaganiBillContent(doc, records[i], L_MARGIN, 10, billWidth, 'कार्यालयीन प्रत', logo);
+        await drawMaganiBillContent(doc, records[i], L_MARGIN + billWidth, 10, billWidth, 'करदात्याची प्रत', logo);
     }
 
     doc.save(`Bulk_Magil_Bills_${new Date().getTime()}.pdf`);
@@ -632,7 +632,7 @@ export const generateBulkMaganiBillsPDF = async (records: PropertyRecord[]) => {
 
 // ─── WASTI REPORT PDF ────────────────────────────────────────────────────────
 export const generateWastiReportPDF = async (wastiData: any[]) => {
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const doc = new (await loadPDFLibs()).jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const logo = await loadLogo();
     registerFonts(doc);
 
@@ -650,7 +650,7 @@ export const generateWastiReportPDF = async (wastiData: any[]) => {
         `${MN(w.rate.toFixed(1))}%`
     ]);
 
-    autoTable(doc, {
+    (await loadPDFLibs()).autoTable(doc, {
         head: [['अ.क्र.', 'वस्तीचे नाव', 'मालमत्ता', 'एकूण मागणी', 'एकूण वसुली', 'थकबाकी', 'वसुली %']],
         body,
         startY: 45,
@@ -663,7 +663,7 @@ export const generateWastiReportPDF = async (wastiData: any[]) => {
 
 // ─── KHASARA REPORT PDF ──────────────────────────────────────────────────────
 export const generateKhasaraReportPDF = async (khasaraData: any[]) => {
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const doc = new (await loadPDFLibs()).jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const logo = await loadLogo();
     registerFonts(doc);
 
@@ -680,7 +680,7 @@ export const generateKhasaraReportPDF = async (khasaraData: any[]) => {
         MN(Math.round(k.balance))
     ]);
 
-    autoTable(doc, {
+    (await loadPDFLibs()).autoTable(doc, {
         head: [['अ.क्र.', 'खसरा क्र.', 'मालमत्ता', 'एकूण मागणी', 'एकूण वसुली', 'थकबाकी']],
         body,
         startY: 45,

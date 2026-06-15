@@ -46,7 +46,7 @@ export const BillContent = ({ record, copyLabel }: BillContentProps) => {
         <div className="flex-1 p-4 print:p-2 relative h-full font-black border-r-2 border-dashed border-gray-400 last:border-r-0 overflow-hidden bg-white text-black">
             {/* Watermark Logo */}
             <img
-                src="/images/logo.jpeg"
+                src="/images/logo.png"
                 alt="Watermark"
                 className="absolute  bg-transparent top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-55 h-55 opacity-[0.3] pointer-events-none p-10"
             />
@@ -65,7 +65,7 @@ export const BillContent = ({ record, copyLabel }: BillContentProps) => {
                 <div className="relative text-center border-b border-gray-600 pb-2 mb-4">
                     {/* Top Left Logo (Aligned with Header) */}
                     <img
-                        src="/images/logo.jpeg"
+                        src="/images/logo.png"
                         alt="Logo"
                         className="absolute top-0 left-0 w-[90px] h-[90px] object-contain"
                     />

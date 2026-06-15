@@ -6,7 +6,7 @@ import { PANCHAYAT_CONFIG } from '../utils/panchayatConfig';
 import NamunaTable8 from '../components/NamunaTable8';
 
 import PropertyForm from '../components/PropertyForm';
-import { matchesSearch, normalizeForSearch } from '../utils/transliterate';
+import { createSearchMatcher, normalizeForSearch } from '../utils/transliterate';
 import { TransliterationInput } from '../components/TransliterationInput';
 import Namuna8PrintFormat from '../components/Namuna8PrintFormat';
 import { hasModulePermission } from '../utils/permissions';
@@ -195,7 +195,8 @@ export default function Namuna8({ records, selectedId, onClearSelected, fetchRec
             res = res.filter(r => r.sections.some(s => s.propertyType === filterPropertyType));
         }
         if (searchTerm.trim()) {
-            res = res.filter(r => matchesSearch(r, searchTerm));
+            const matcher = createSearchMatcher(searchTerm);
+            res = res.filter(matcher);
         }
         return [...res].sort((a, b) => {
             if (filterLayout || filterKhasra) {

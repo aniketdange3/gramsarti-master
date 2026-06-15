@@ -26,9 +26,19 @@ try {
         }
     });
 
-    redis.on('connect', () => {
+    redis.on('connect', async () => {
         isRedisAvailable = true;
         console.log('[REDIS] Connected to Redis server.');
+
+        // Set eviction policy to LRU so Redis auto-evicts old keys when full
+        // This prevents OOM errors when memory limit is reached
+        try {
+            await redis.config('SET', 'maxmemory-policy', 'allkeys-lru');
+            console.log('[REDIS] Eviction policy set to allkeys-lru (auto-evict on OOM).');
+        } catch (configErr) {
+            // Managed Redis (like redis.io) may not allow CONFIG SET — that's fine
+            console.warn('[REDIS] Could not set eviction policy (managed Redis). OOM errors will be handled gracefully.');
+        }
     });
 
     redis.on('error', (err) => {
@@ -43,7 +53,10 @@ try {
                 redis.keys = async () => [];
             }
         } else {
-            console.error('[REDIS] Redis error:', err.message);
+            // Only log non-OOM errors (OOM is handled in setCache gracefully)
+            if (!err.message.includes('OOM')) {
+                console.error('[REDIS] Redis error:', err.message);
+            }
         }
     });
 

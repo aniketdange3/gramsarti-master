@@ -64,7 +64,8 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
     const [filterWasti, setFilterWasti] = useState('');
 
     const { data: ferfarData, isLoading: ferfarLoading, refetch: refetchFerfar } = useFerfarRequests(page, limit);
-    const requests = ferfarData?.data || [];
+    // Stable reference - prevents cascading re-renders when ferfarData object changes
+    const requests = useMemo(() => ferfarData?.data || [], [ferfarData]);
 
     const queryClient = useQueryClient();
 
@@ -112,6 +113,9 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
 
     const fetchAuditRequests = async () => {
         try {
+            // API: GET /api/audit/pending
+            // Returns: PropertyAuditRequest[] — all pending edit/correction requests
+            // Auth: Bearer token required
             const res = await fetch(`${BASE}/api/audit/pending`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -127,7 +131,7 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
     const handleSearchChange = (val: string) => {
         setSearch(val);
         if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => setDebouncedSearch(val), 3000);
+        debounceRef.current = setTimeout(() => setDebouncedSearch(val), 200);
     };
 
     const filtered = useMemo(() => {
@@ -151,18 +155,24 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
         return results.slice(0, 50);
     }, [records, debouncedSearch]);
 
-    const displayRequests = requests.filter(r => {
+    // Memoized so filtering only runs when deps actually change (not on every render)
+    const displayRequests = useMemo(() => requests.filter(r => {
         const matchesStatus = statusFilter === 'ALL' || r.status === statusFilter;
         const matchesWard = !filterWard || String(r.wardNo) === String(filterWard);
         const matchesWasti = !filterWasti || r.wastiName === filterWasti;
         return matchesStatus && matchesWard && matchesWasti;
-    });
-    const historyRequests = requests.filter(r => {
+    }), [requests, statusFilter, filterWard, filterWasti]);
+
+    const historyRequests = useMemo(() => requests.filter(r => {
         const matchesStatus = r.status === 'APPROVED';
         const matchesWard = !filterWard || String(r.wardNo) === String(filterWard);
         const matchesWasti = !filterWasti || r.wastiName === filterWasti;
         return matchesStatus && matchesWard && matchesWasti;
-    });
+    }), [requests, filterWard, filterWasti]);
+
+    // Precompute unique ward/wasti lists once (not inside JSX on every render)
+    const uniqueWards = useMemo(() => [...new Set(records.map(r => r.wardNo))].sort(), [records]);
+    const uniqueWastis = useMemo(() => [...new Set(records.map(r => r.wastiName))].sort(), [records]);
 
     const displayAuditRequests = useMemo(() => {
         return auditRequests.filter(r => {
@@ -179,9 +189,32 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
         requests.find(r => r.property_id === selectedProp?.id && r.status === 'PENDING'),
         [requests, selectedProp]);
 
-    const pendingDues = selectedProp
-        ? (Number(selectedProp.totalTaxAmount) || 0) + (Number(selectedProp.arrearsAmount) || 0) - (Number(selectedProp.paidAmount) || 0)
-        : 0;
+    const pendingDues = useMemo(() => {
+        if (!selectedProp) return 0;
+        
+        const arrears = Number(selectedProp.arrearsAmount) || 0;
+        const current = Number(selectedProp.totalTaxAmount) || 0;
+        const paid = Number(selectedProp.paidAmount) || 0;
+
+        const discountBase = (Number(selectedProp.propertyTax) > 0 || Number(selectedProp.openSpaceTax) > 0)
+            ? (Number(selectedProp.propertyTax) || 0) + (Number(selectedProp.openSpaceTax) || 0)
+            : current;
+        
+        const isEligibleNow = new Date().getMonth() >= 3 && new Date().getMonth() <= 8;
+        const calculatedDiscount = isEligibleNow ? Math.round(discountBase * 0.05) : 0;
+
+        const discount = (selectedProp.discountAmount !== undefined && Number(selectedProp.discountAmount) > 0)
+            ? Number(selectedProp.discountAmount)
+            : calculatedDiscount;
+
+        const penalty = (paid > 0 || (selectedProp.penaltyAmount !== undefined && Number(selectedProp.penaltyAmount) > 0))
+            ? (Number(selectedProp.penaltyAmount) || 0)
+            : Math.round(arrears * 0.05);
+
+        const demand = current + arrears + penalty - discount;
+        return Math.max(0, demand - paid);
+    }, [selectedProp]);
+
 
     const handleApply = async () => {
         if (!selectedProp || !newOwnerName) {
@@ -212,6 +245,10 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
 
         setLoading(true);
         try {
+            // API: POST /api/ferfar/apply
+            // Body: { property_id, new_owner_name, applicant_name, applicant_mobile, ferfar_type, remarks }
+            // Returns: { id, status: 'PENDING', ... } — creates a new mutation (ferfar) request
+            // Auth: Bearer token required
             const res = await fetch(`${BASE}/api/ferfar/apply`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -276,6 +313,9 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
         // Optimistic: instantly show APPROVED in UI
         optimisticStatusUpdate(id, 'APPROVED');
         try {
+            // API: PUT /api/ferfar/approve/:id
+            // Approves a pending ferfar request; appends new owner name to ownerName field
+            // Auth: gram_sachiv / gram_sevak / super_admin only
             const res = await fetch(`${BASE}/api/ferfar/approve/${id}`, {
                 method: 'PUT',
                 headers: { Authorization: `Bearer ${token}` }
@@ -307,6 +347,9 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
         if (!confirm('तुम्ही हा बदल मंजूर करू इच्छिता? मालमत्तेचा मूळ डेटा अपडेट होईल.')) return;
         setProcessingId(id);
         try {
+            // API: PUT /api/audit/approve/:id
+            // Approves a pending audit/edit request and applies changes to the property record
+            // Auth: gram_sachiv / super_admin only
             const res = await fetch(`${BASE}/api/audit/approve/${id}`, {
                 method: 'PUT',
                 headers: { Authorization: `Bearer ${token}` }
@@ -323,6 +366,9 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
 
     const handleRejectAudit = async (id: number, reason: string) => {
         try {
+            // API: PUT /api/audit/reject/:id
+            // Body: { remarks: string } — rejects the audit/edit request with a reason
+            // Auth: Bearer token required
             const res = await fetch(`${BASE}/api/audit/reject/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -341,6 +387,9 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
         optimisticStatusUpdate(id, 'REJECTED');
         setRejectionModal({ id: 0, open: false });
         try {
+            // API: PUT /api/ferfar/reject/:id
+            // Body: { remarks: string } — rejects a pending ferfar request with a reason
+            // Auth: Bearer token required
             const res = await fetch(`${BASE}/api/ferfar/reject/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -433,7 +482,7 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                                         className="w-full pl-11 pr-5 py-2.5 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all bg-white shadow-sm"
                                     />
                                 </div>
-                                {search && !selectedProp && (
+                                {debouncedSearch && !selectedProp && (
                                     <div className="mt-2 max-h-[30vh] overflow-y-auto border border-slate-200 rounded-xl bg-white shadow-xl relative z-20 animate-in fade-in max-w-2xl">
                                         {filtered.map(r => (
                                             <button key={r.id} onClick={() => { setSelectedProp(r); setSearch(r.ownerName + ' - ' + r.srNo); }}
@@ -768,7 +817,7 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                                                     className="bg-transparent border-none text-[10px] font-black uppercase outline-none px-2 py-1 text-slate-500 focus:text-indigo-600"
                                                 >
                                                     <option value="">सर्व वॉर्ड</option>
-                                                    {[...new Set(records.map(r => r.wardNo))].sort().map(w => <option key={w} value={w}>वॉर्ड {MN(w)}</option>)}
+                                                    {uniqueWards.map(w => <option key={w} value={w}>वॉर्ड {MN(w)}</option>)}
                                                 </select>
                                                 <div className="w-px h-4 bg-slate-100 self-center"></div>
                                                 <select 
@@ -777,7 +826,7 @@ export default function Ferfar({ records, fetchRecords, onAuthError }: Props) {
                                                     className="bg-transparent border-none text-[10px] font-black uppercase outline-none px-2 py-1 text-slate-500 focus:text-indigo-600"
                                                 >
                                                     <option value="">सर्व वस्ती</option>
-                                                    {[...new Set(records.map(r => r.wastiName))].sort().map(w => <option key={w} value={w}>{w}</option>)}
+                                                    {uniqueWastis.map(w => <option key={w} value={w}>{w}</option>)}
                                                 </select>
                                             </div>
                                             <div className="flex gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-inner">

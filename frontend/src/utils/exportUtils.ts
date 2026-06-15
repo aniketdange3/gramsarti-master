@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx';
 import { PropertyRecord, DEFAULT_SECTION } from '../types';
 import { EXCEL_HEADERS } from './constants';
 
@@ -41,10 +40,12 @@ export const exportToExcel = (records: PropertyRecord[], fileNamePrefix: string 
         return row;
     });
 
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([EXCEL_HEADERS, ...wsData]);
-    XLSX.utils.book_append_sheet(wb, ws, "Property Records");
-    
-    const fileName = `${fileNamePrefix}_${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+    import('xlsx').then(XLSX => {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([EXCEL_HEADERS, ...wsData]);
+        XLSX.utils.book_append_sheet(wb, ws, "Property Records");
+        
+        const fileName = `${fileNamePrefix}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+    });
 };

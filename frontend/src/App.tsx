@@ -50,9 +50,9 @@ const Login = lazyWithPreload(() => import('./pages/Login'));
 
 
 // ── Route map ──────────────────────────────────────────────────────────────
-export type ViewType = 'dashboard' | 'namuna8' | 'namuna9' | 'maganiBill' | 'taxMaster' | 'reports' | 'roleAccess' | 'ferfar';
+type ViewType = 'dashboard' | 'namuna8' | 'namuna9' | 'maganiBill' | 'taxMaster' | 'reports' | 'roleAccess' | 'ferfar';
 
-export const VIEW_TO_PATH: Record<ViewType, string> = {
+const VIEW_TO_PATH: Record<ViewType, string> = {
   dashboard: '/dashboard',
   namuna8: '/namuna8',
   namuna9: '/namuna9',
@@ -63,7 +63,7 @@ export const VIEW_TO_PATH: Record<ViewType, string> = {
   roleAccess: '/role-access',
 };
 
-export const PATH_TO_VIEW: Record<string, ViewType> = {
+const PATH_TO_VIEW: Record<string, ViewType> = {
   '/dashboard': 'dashboard',
   '/namuna8': 'namuna8',
   '/namuna9': 'namuna9',
@@ -195,6 +195,9 @@ function AppInner() {
       return;
     }
     try {
+      // API: GET /api/attendance/status
+      // Returns: { checkedIn: boolean, checkInTime: string | null }
+      // Auth: Bearer token required
       const res = await fetch(`${BASE}/api/attendance/status`, { headers: authHeaders() });
       if (res.status === 401) { handleLogout(); return; }
       const data = await res.json();
@@ -211,6 +214,9 @@ function AppInner() {
     setAttendanceLoading(true);
     try {
       const endpoint = checkedIn ? '/api/attendance/check-out' : '/api/attendance/check-in';
+      // API: POST /api/attendance/check-in  OR  POST /api/attendance/check-out
+      // Toggles attendance status for the logged-in user
+      // Auth: Bearer token required
       const res = await fetch(`${BASE}${endpoint}`, { method: 'POST', headers: authHeaders() });
       if (res.status === 401) { handleLogout(); return; }
       if (res.ok) fetchAttendanceStatus();
@@ -254,7 +260,10 @@ function AppInner() {
     }
     setProfileSaving(true);
     try {
-      const res = await fetch(`${BASE}/api/auth/users/${user.id}`, {
+      // API: PUT /api/auth/users/:id
+      // Updates current user's profile (name, email, mobile, age, address)
+      // Auth: Bearer token required
+      const res = await fetch(`${BASE}/api/auth/users/${user?.id}`, {
         method: 'PUT',
         headers: authHeaders(),
         body: JSON.stringify({

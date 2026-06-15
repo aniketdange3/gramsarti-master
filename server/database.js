@@ -54,7 +54,7 @@ const initializeDatabase = async () => {
     try {
         console.log('[DB] Initializing Schema...');
         await connection.query('SET FOREIGN_KEY_CHECKS = 0');
-        console.log('  [DB] Foreign key checks disabled.');
+        console.log('  [DB] Foreign key checks temporarily disabled for schema sync.');
 
         await connection.query(`CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -275,6 +275,10 @@ const initializeDatabase = async () => {
         await addColumnIfNotExists(connection, 'payments', 'financial_year', 'VARCHAR(10) DEFAULT NULL');
         await addColumnIfNotExists(connection, 'payments', 'created_by', 'INT DEFAULT NULL');
         await connection.query('ALTER TABLE payments ADD CONSTRAINT fk_payments_created_by FOREIGN KEY IF NOT EXISTS (created_by) REFERENCES users(id) ON DELETE SET NULL').catch(() => { });
+        // Composite index for fast latest-payment lookup (used in getAllProperties subquery)
+        await addIndexIfNotExists(connection, 'payments', 'idx_pay_property_id', 'property_id');
+        await addIndexIfNotExists(connection, 'payments', 'idx_pay_property_id_id', 'property_id, id');
+
 
         // 5. TAX RATES - कर दर संरचना
         await connection.query(`CREATE TABLE IF NOT EXISTS tax_rates (
@@ -486,6 +490,8 @@ const initializeDatabase = async () => {
         await addIndexIfNotExists(connection, 'ferfar_requests', 'idx_ferfar_village', 'village_id');
         await addIndexIfNotExists(connection, 'ferfar_requests', 'idx_ferfar_status', 'status');
         await addIndexIfNotExists(connection, 'ferfar_requests', 'idx_ferfar_created', 'created_at');
+        await addIndexIfNotExists(connection, 'ferfar_requests', 'idx_ferfar_requested_by', 'requested_by');
+        await addIndexIfNotExists(connection, 'ferfar_requests', 'idx_ferfar_property_id', 'property_id');
 
         // 11. MAGANI BILLS - मागणी बिल (Demand Notices)
         await connection.query(`CREATE TABLE IF NOT EXISTS magani_bills (
@@ -583,11 +589,14 @@ const initializeDatabase = async () => {
         }
 
         await connection.query('SET FOREIGN_KEY_CHECKS = 1');
+        console.log('  [DB] Foreign key checks re-enabled.');
         console.log('[SUCCESS] Database tables and migrations verified.');
     } catch (err) {
         console.error('[CRITICAL] Database Init Error:', err.message);
         throw err;
     } finally {
+        // Always re-enable FK checks even if an error occurred
+        try { await connection.query('SET FOREIGN_KEY_CHECKS = 1'); } catch (_) {}
         connection.release();
     }
 };

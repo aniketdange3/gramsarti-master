@@ -95,7 +95,7 @@ export default function NamunaTable8({
             {/* ── Official Header (Visible only in Print) ── */}
             <div className="hidden print:flex items-start justify-between px-6 py-4 bg-[#ecfccb] border-b-2 border-black text-black mb-4">
                 <div className="flex items-center gap-4">
-                    <img src="/images/logo.jpeg" alt="Logo" className="w-20 h-20 object-contain" />
+                    <img src="/images/logo.png" alt="Logo" className="w-20 h-20 object-contain" />
                     <div className="flex flex-col text-[12px] uppercase font-bold">
                         <p>ग्रामपंचायत: {PANCHAYAT_CONFIG.gpName}</p>
                         <p>तालुका: {PANCHAYAT_CONFIG.taluka}</p>
@@ -119,7 +119,7 @@ export default function NamunaTable8({
             <div className="w-full flex-1 overflow-auto relative print:mt-4 print:overflow-visible">
                 {/* Print Watermark */}
                 <div className="hidden print:block absolute inset-0 pointer-events-none z-0 opacity-[0.08]"
-                    style={{ backgroundImage: 'url("/images/logo.jpeg")', backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: '500px' }}>
+                    style={{ backgroundImage: 'url("/images/logo.png")', backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: '500px' }}>
                 </div>
 
                 <table className="w-full border-collapse text-[12px] relative z-10">
@@ -138,7 +138,7 @@ export default function NamunaTable8({
                             <th rowSpan={2} className="border border-black p-1">कराचा प्रकार <br /> (पैसे)</th>
                             <th colSpan={7} className="border border-black p-1">आकारणी केलेल्या करांची रक्कम (मागणी)</th>
                             <th colSpan={7} className="border border-black p-1">वसूल केलेल्या करांची रक्कम (वसुली)</th>
-                            <th rowSpan={2} className="border border-black p-1">शेरा</th>
+                            <th rowSpan={2} className="border border-black p-1 w-[120px] min-w-[120px]">शेरा</th>
                         </tr>
                         <tr className="hidden print:table-row bg-[#ecfccb] text-black text-center text-[12px] font-bold">
                             <th className="border border-black p-1">जमीन</th>

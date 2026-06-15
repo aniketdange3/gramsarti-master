@@ -1,61 +1,88 @@
+/**
+ * @file db.ts
+ * @description IndexedDB caching layer for PropertyRecord[] data.
+ * Provides instant UI loading from local cache while fresh data loads from the server.
+ *
+ * DB Name : gp_db
+ * Store   : records
+ * Key     : 'all' (single bulk-store strategy)
+ */
 
-const DB_NAME = 'GramSarthiDB';
-const STORE_NAME = 'records_cache';
+import { PropertyRecord } from '../types';
+
+const DB_NAME = 'gp_db';
+const STORE_NAME = 'records';
 const DB_VERSION = 1;
 
-export async function openDB() {
-  return new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    request.onupgradeneeded = (event: any) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
-      }
-    };
-  });
-}
-
-export async function saveRecordsToDB(records: any[]) {
-  try {
-    const db = await openDB();
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    store.put(records, 'gp_records');
+// Opens (or creates) the IndexedDB database
+function openDB(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
-      tx.oncomplete = () => resolve(true);
-      tx.onerror = () => reject(tx.error);
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME);
+            }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
     });
-  } catch (err) {
-    console.error('IndexedDB Save Error:', err);
-    return false;
-  }
 }
 
-export async function loadRecordsFromDB(): Promise<any[] | null> {
-  try {
-    const db = await openDB();
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const store = tx.objectStore(STORE_NAME);
-    const request = store.get('gp_records');
-    return new Promise((resolve, reject) => {
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => reject(request.error);
-    });
-  } catch (err) {
-    console.error('IndexedDB Load Error:', err);
-    return null;
-  }
+/**
+ * Saves all property records to IndexedDB under the key 'all'.
+ * Call this after fetching fresh records from the server.
+ */
+export async function saveRecordsToDB(records: PropertyRecord[]): Promise<void> {
+    try {
+        const db = await openDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(records, 'all');
+        await new Promise<void>((res, rej) => {
+            tx.oncomplete = () => res();
+            tx.onerror = () => rej(tx.error);
+        });
+        db.close();
+    } catch (e) {
+        console.warn('[DB] saveRecordsToDB failed:', e);
+    }
 }
 
-export async function clearRecordsDB() {
-  try {
-    const db = await openDB();
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    store.delete('gp_records');
-  } catch (err) {
-    console.error('IndexedDB Clear Error:', err);
-  }
+/**
+ * Loads property records from IndexedDB.
+ * Returns null if the cache is empty or on any error.
+ */
+export async function loadRecordsFromDB(): Promise<PropertyRecord[] | null> {
+    try {
+        const db = await openDB();
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const req = tx.objectStore(STORE_NAME).get('all');
+        return await new Promise<PropertyRecord[] | null>((res, rej) => {
+            req.onsuccess = () => res(req.result ?? null);
+            req.onerror = () => rej(req.error);
+            tx.oncomplete = () => db.close();
+        });
+    } catch (e) {
+        console.warn('[DB] loadRecordsFromDB failed:', e);
+        return null;
+    }
+}
+
+/**
+ * Clears all cached records from IndexedDB.
+ * Call this on logout to prevent stale data from showing for the next user.
+ */
+export async function clearRecordsDB(): Promise<void> {
+    try {
+        const db = await openDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).clear();
+        await new Promise<void>((res, rej) => {
+            tx.oncomplete = () => res();
+            tx.onerror = () => rej(tx.error);
+        });
+        db.close();
+    } catch (e) {
+        console.warn('[DB] clearRecordsDB failed:', e);
+    }
 }

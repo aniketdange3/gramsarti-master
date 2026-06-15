@@ -334,30 +334,26 @@ export default function TaxMaster({
                 typeRes,
                 khasraRes,
             ] = await Promise.all([
+                // API: GET /api/tax-rates — all property tax rate configs (% per category)
                 fetch(`${API_BASE_URL}/api/tax-rates`, { headers: authHeaders() }),
-                fetch(`${API_BASE_URL}/api/master/categories`, {
-                    headers: authHeaders(),
-                }),
-                fetch(`${API_BASE_URL}/api/master/depreciation`, {
-                    headers: authHeaders(),
-                }),
-                fetch(`${API_BASE_URL}/api/master/building-usage`, {
-                    headers: authHeaders(),
-                }),
-                fetch(`${API_BASE_URL}/api/master/ready-reckoner`, {
-                    headers: authHeaders(),
-                }),
+                // API: GET /api/master/categories — dynamic master categories (WASTI, PROPERTY_TYPE, etc.)
+                fetch(`${API_BASE_URL}/api/master/categories`, { headers: authHeaders() }),
+                // API: GET /api/master/depreciation — depreciation rate table by property age
+                fetch(`${API_BASE_URL}/api/master/depreciation`, { headers: authHeaders() }),
+                // API: GET /api/master/building-usage — building usage factor table
+                fetch(`${API_BASE_URL}/api/master/building-usage`, { headers: authHeaders() }),
+                // API: GET /api/master/ready-reckoner — ready reckoner land/building valuation rates
+                fetch(`${API_BASE_URL}/api/master/ready-reckoner`, { headers: authHeaders() }),
+                // API: GET /api/auth/users — list of all registered users (admin only)
                 fetch(`${API_BASE_URL}/api/auth/users`, { headers: authHeaders() }),
+                // API: GET /api/master/config — panchayat config (current_fy, name, etc.)
                 fetch(`${API_BASE_URL}/api/master/config`, { headers: authHeaders() }),
-                fetch(`${API_BASE_URL}/api/properties/unique-layouts`, {
-                    headers: authHeaders(),
-                }),
-                fetch(`${API_BASE_URL}/api/master/items/PROPERTY_TYPE`, {
-                    headers: authHeaders(),
-                }),
-                fetch(`${API_BASE_URL}/api/properties/khasras`, {
-                    headers: authHeaders(),
-                }),
+                // API: GET /api/properties/unique-layouts — distinct layout names for dropdown
+                fetch(`${API_BASE_URL}/api/properties/unique-layouts`, { headers: authHeaders() }),
+                // API: GET /api/master/items/PROPERTY_TYPE — property type master list items
+                fetch(`${API_BASE_URL}/api/master/items/PROPERTY_TYPE`, { headers: authHeaders() }),
+                // API: GET /api/properties/khasras — all distinct khasra numbers in the system
+                fetch(`${API_BASE_URL}/api/properties/khasras`, { headers: authHeaders() }),
             ]);
 
             // टोकन अवैध असल्यास लॉगिनवर पाठवणे
@@ -405,6 +401,10 @@ export default function TaxMaster({
     const fetchProperties = useCallback(async () => {
         setLoadingProperties(true);
         try {
+            // API: GET /api/properties
+            // Returns: PropertyRecord[] — all properties (no pagination, full list)
+            // Used for: Bulk Tax Update, Import/Export stats
+            // Auth: Bearer token required
             const res = await fetch(`${API_BASE_URL}/api/properties`, {
                 headers: authHeaders(),
             });
@@ -2153,59 +2153,86 @@ export default function TaxMaster({
 
                                 {/* ====== विभाग ७: डेटा आयात / एक्सपोर्ट पॅनेल ====== */}
                                 {activeTab === "import" && (
-                                    <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
-                                        <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-xl p-8">
-                                            <div className="flex items-center gap-4 mb-8">
+                                    <div className="space-y-6 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+
+                                        {/* Stats Bar */}
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {[
+                                                {
+                                                    label: 'एकूण नोंदी', value: MN(properties.length),
+                                                    sub: 'Total Records', color: 'indigo',
+                                                    icon: '🏘️'
+                                                },
+                                                {
+                                                    label: 'एकूण मागणी', value: `₹${MN(Math.round(properties.reduce((s, r) => s + (Number(r.totalTaxAmount) || 0), 0)))}`,
+                                                    sub: 'Total Tax Demand', color: 'amber',
+                                                    icon: '📋'
+                                                },
+                                                {
+                                                    label: 'थकबाकी', value: `₹${MN(Math.round(properties.reduce((s, r) => s + (Number(r.arrearsAmount) || 0), 0)))}`,
+                                                    sub: 'Total Arrears', color: 'rose',
+                                                    icon: '⚠️'
+                                                },
+                                                {
+                                                    label: 'भरणा झाला', value: `₹${MN(Math.round(properties.reduce((s, r) => s + (Number(r.paidAmount) || 0), 0)))}`,
+                                                    sub: 'Total Paid', color: 'emerald',
+                                                    icon: '✅'
+                                                },
+                                            ].map((stat) => (
+                                                <div key={stat.label} className={`bg-white border border-slate-100 rounded-2xl p-5 shadow-sm flex flex-col gap-1.5`}>
+                                                    <span className="text-xl">{stat.icon}</span>
+                                                    <p className={`text-xl font-black tracking-tight ${stat.color === 'indigo' ? 'text-indigo-700' : stat.color === 'amber' ? 'text-amber-700' : stat.color === 'rose' ? 'text-rose-600' : 'text-emerald-700'}`}>{stat.value}</p>
+                                                    <p className="text-[10px] font-black text-slate-700 uppercase tracking-wider leading-none">{stat.label}</p>
+                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{stat.sub}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Main Export / Import Card */}
+                                        <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-xl overflow-hidden">
+                                            {/* Header */}
+                                            <div className="flex items-center gap-4 p-8 border-b border-slate-100 bg-slate-50/40">
                                                 <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shrink-0">
                                                     <FileUp className="w-6 h-6" />
                                                 </div>
                                                 <div>
                                                     <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
-                                                        डेटा आयात / एक्सपोर्ट (Data Import & Export Center)
+                                                        डेटा आयात / एक्सपोर्ट (Data Import &amp; Export Center)
                                                     </h3>
                                                     <p className="text-[10px] text-indigo-500 font-bold uppercase mt-1 tracking-widest">
-                                                        Excel फाईलद्वारे डेटा आयात करा किंवा एक्सपोर्ट करा
+                                                        सर्व डेटा एकाच ठिकाणी — Excel फाईलद्वारे आयात किंवा डाउनलोड करा
                                                     </p>
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                {/* Namuna 8 Card */}
-                                                <div className="bg-slate-50/50 border border-slate-100 rounded-3xl p-6 flex flex-col justify-between gap-4">
-                                                    <div>
-                                                        <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-100/60 inline-block mb-3">
-                                                            नमुना ८ (Assessment Register)
+                                            {/* Single All-Data Action Section */}
+                                            <div className="p-8 space-y-6">
+                                                <div className="bg-gradient-to-br from-indigo-50/60 to-slate-50/60 border border-indigo-100/60 rounded-3xl p-7 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                                    <div className="space-y-2">
+                                                        <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-700 border border-indigo-200 inline-block">
+                                                            सर्व डेटा (All Data — नमुना ८ + ९)
                                                         </span>
-                                                        <h4 className="text-sm font-black text-slate-800">नमुना ८ डेटा आयात आणि एक्सपोर्ट</h4>
-                                                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                                                            नवीन मालमत्ता आणि कर आकारणी नोंदी एक्सल फाईलद्वारे आयात करा किंवा चालू नोंदी बॅकअपसाठी डाउनलोड करा.
+                                                        <h4 className="text-base font-black text-slate-900">संपूर्ण मालमत्ता व कर माहिती</h4>
+                                                        <p className="text-xs text-slate-500 leading-relaxed max-w-md">
+                                                            मालमत्ता नोंदी, कर आकारणी (नमुना ८) आणि मागणी बिल, थकबाकी माहिती (नमुना ९) — सर्व एकाच Excel फाईलमध्ये आयात किंवा एक्सपोर्ट करा.
                                                         </p>
+                                                        <div className="flex flex-wrap gap-3 pt-1">
+                                                            <span className="flex items-center gap-1.5 text-[10px] font-black text-slate-500 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm">
+                                                                🏘️ <span>{MN(properties.length)} नोंदी तयार</span>
+                                                            </span>
+                                                            <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-xl shadow-sm">
+                                                                ✅ <span>₹{MN(Math.round(properties.reduce((s, r) => s + (Number(r.paidAmount) || 0), 0)))} भरणा</span>
+                                                            </span>
+                                                            <span className="flex items-center gap-1.5 text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-xl shadow-sm">
+                                                                ⚠️ <span>₹{MN(Math.round(properties.reduce((s, r) => s + (Number(r.arrearsAmount) || 0), 0)))} थकबाकी</span>
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                    <div className="border-t border-slate-100 pt-4 mt-2">
+                                                    <div className="shrink-0">
                                                         <ExcelActions
                                                             records={properties}
                                                             onImportSuccess={fetchProperties}
                                                             type="namuna8"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                {/* Namuna 9 Card */}
-                                                <div className="bg-slate-50/50 border border-slate-100 rounded-3xl p-6 flex flex-col justify-between gap-4">
-                                                    <div>
-                                                        <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-100/60 inline-block mb-3">
-                                                            नमुना ९ (Demand Register)
-                                                        </span>
-                                                        <h4 className="text-sm font-black text-slate-800">नमुना ९ डेटा आयात आणि एक्सपोर्ट</h4>
-                                                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                                                            मागणी बिल आणि मागील थकबाकीची माहिती एक्सल फाईलद्वारे आयात करा किंवा चालू डेटा बॅकअपसाठी डाउनलोड करा.
-                                                        </p>
-                                                    </div>
-                                                    <div className="border-t border-slate-100 pt-4 mt-2">
-                                                        <ExcelActions
-                                                            records={properties}
-                                                            onImportSuccess={fetchProperties}
-                                                            type="namuna9"
                                                         />
                                                     </div>
                                                 </div>

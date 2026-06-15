@@ -6,7 +6,7 @@ import { Search, Printer, FileText, X, RotateCcw, LayoutDashboard, IndianRupee, 
 import { PropertyRecord, DEFAULT_SECTION } from '../types';
 import { CustomDropdown } from '../components/CustomDropdown';
 import { TransliterationInput } from '../components/TransliterationInput';
-import { matchesSearch, normalizeForSearch, normalizeDigits } from '../utils/transliterate';
+import { createSearchMatcher, normalizeForSearch, normalizeDigits } from '../utils/transliterate';
 import MaganiBillDocument from '../components/MaganiBillDocument';
 
 const MN = (v: number | string | undefined) =>
@@ -119,7 +119,10 @@ export default function MaganiBill({ records, onAuthError }: MaganiBillProps) {
             const normalizedPlot = normalizeForSearch(filterPlotNo);
             res = res.filter(r => normalizeForSearch(r.plotNo) === normalizedPlot);
         }
-        if (searchTerm.trim()) res = res.filter(r => matchesSearch(r, searchTerm));
+        if (searchTerm.trim()) {
+            const matcher = createSearchMatcher(searchTerm);
+            res = res.filter(matcher);
+        }
 
         if (showOnlyUnpaid) {
             res = res.filter(r => {

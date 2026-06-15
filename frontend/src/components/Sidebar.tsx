@@ -40,7 +40,7 @@ export default function Sidebar({ user, activeView, onNavClick, totalRecords, na
   return (
     <aside className={`h-full flex flex-col bg-[#1f1c4f] bg-gradient-to-b from-[#1f1c4f] via-[#1f1c4f] to-[#1f1c4f] no-print border-r border-white/10 font-sans transition-all duration-300 relative z-[100] ${isCollapsed ? 'w-22' : 'w-full'}`}>
       <div className={`p-4 relative transition-all duration-300 ${isCollapsed ? 'px-2' : 'px-6'}`}>
-        <div className="flex items-center group cursor-pointer">
+        <div className="flex items-center gap-3 group cursor-pointer">
           {!isCollapsed && (
             <div className="min-w-0 flex-1 animate-in fade-in slide-in-from-left-4 duration-500">
               <h1 className="font-black text-white text-3xl tracking-tight leading-none uppercase drop-shadow-[0_2px_10px_rgba(99,102,241,0.2)]">
@@ -59,9 +59,9 @@ export default function Sidebar({ user, activeView, onNavClick, totalRecords, na
         {/* Collapse Toggle Button */}
         <button
           onClick={onToggleCollapse}
-          className="absolute -right-3.5 top-8 w-7 h-7 bg-[#050508] text-indigo-300 rounded-full flex items-center justify-center shadow-lg border border-white/10 hover:bg-indigo-500 hover:text-white transition-all z-50 md:flex hidden"
+          className="absolute -right-3.5 top-2 w-9 h-9 bg-[#050508] text-indigo-300 rounded-full flex items-center justify-center shadow-lg border border-white/10 hover:bg-indigo-500 hover:text-white transition-all z-50 md:flex hidden"
         >
-          {isCollapsed ? <ChevronRight size={14} strokeWidth={3} /> : <ChevronLeft size={14} strokeWidth={3} />}
+          {isCollapsed ? <ChevronRight size={20} strokeWidth={3} /> : <ChevronLeft size={14} strokeWidth={3} />}
         </button>
       </div>
 

@@ -1,22 +1,21 @@
 /**
  * LOGGER MIDDLEWARE - लॉगिंग आणि विनंती पडताळणी (Logging & Request Monitoring)
- * 
- * या फाईलमध्ये सर्व येणाऱ्या API विनंत्यांचा वेळ (Timestamp), 
- * पद्धत (Method), आणि पत्ता (URL) लॉग केला जातो.
+ *
+ * प्रत्येक API विनंतीचा method, URL, status code, आणि response time (ms) लॉग करतो.
+ * Request येताना नाही — Response पाठवल्यानंतर एकदाच लॉग होते (no duplicate logs).
  */
 
 const logger = (req, res, next) => {
-    const timestamp = new Date().toISOString();
+    const start = Date.now();
     const method = req.method;
     const url = req.originalUrl || req.url;
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
-    console.log(`[${timestamp}] ${method} ${url} | IP: ${ip}`);
-
-    // विनंती पूर्ण झाल्यावर प्रतिसाद कोड तपासणे (Check response status after completion)
+    // Log ONCE after response is sent — avoids double-logging
     res.on('finish', () => {
-        const statusCode = res.statusCode;
-        console.log(`[${timestamp}] ${method} ${url} | Status: ${statusCode}`);
+        const ms = Date.now() - start;
+        const status = res.statusCode;
+        const color = status >= 500 ? '\x1b[31m' : status >= 400 ? '\x1b[33m' : '\x1b[32m';
+        console.log(`${color}[API] ${method} ${url} → ${status} (${ms}ms)\x1b[0m`);
     });
 
     next();

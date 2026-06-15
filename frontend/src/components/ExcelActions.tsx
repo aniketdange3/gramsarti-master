@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import * as XLSX from 'xlsx';
 import { FileUp, FileSpreadsheet, CheckCircle2 } from 'lucide-react';
 import { PropertyRecord, DEFAULT_SECTION } from '../types';
 import { EXCEL_HEADERS } from '../utils/constants';
@@ -73,10 +72,12 @@ export default function ExcelActions({ records, onImportSuccess, type }: ExcelAc
             return row;
         });
 
-        const ws = XLSX.utils.json_to_sheet(data, { header: EXCEL_HEADERS });
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "PropertyData");
-        XLSX.writeFile(wb, `${type}_data_${new Date().toISOString().split('T')[0]}.xlsx`);
+        import('xlsx').then(XLSX => {
+            const ws = XLSX.utils.json_to_sheet(data, { header: EXCEL_HEADERS });
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "PropertyData");
+            XLSX.writeFile(wb, `${type}_data_${new Date().toISOString().split('T')[0]}.xlsx`);
+        });
     };
 
     const importFromExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,6 +86,7 @@ export default function ExcelActions({ records, onImportSuccess, type }: ExcelAc
         const reader = new FileReader();
         reader.onload = async (evt) => {
             try {
+                const XLSX = await import('xlsx');
                 const bstr = evt.target?.result;
                 const wb = XLSX.read(bstr, { type: 'binary' });
                 const ws = wb.Sheets[wb.SheetNames[0]];

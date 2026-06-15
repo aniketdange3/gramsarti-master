@@ -7,8 +7,8 @@ export default function GlobalLoader() {
         {/* GramSarthi Logo Element */}
         <div className="mb-6 flex flex-col items-center">
           <img
-            src="/logo.png"
-            onError={(e) => { e.currentTarget.src = '/images/logo.jpeg'; }}
+            src="./logo.png"
+            onError={(e) => { e.currentTarget.src = '/images/logo.png'; }}
             alt="GramSarthi Logo"
             className="w-20  h-20 object-contain bg-transparent mb-3 "
           />

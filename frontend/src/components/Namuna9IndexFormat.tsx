@@ -144,7 +144,7 @@ export default function Namuna9IndexFormat({
                     <div key={chunkIdx} className="page-container p-2 text-Marathi relative">
                         {/* High Fidelity Watermark Logo */}
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.15] z-0">
-                            <img src="/images/logo.jpeg" className="w-[550px] h-[550px] object-contain" alt="Watermark" />
+                            <img src="/images/logo.png" className="w-[550px] h-[550px] object-contain" alt="Watermark" />
                         </div>
 
                         <div className="relative z-10">

@@ -1,14 +1,19 @@
 /**
  * CACHE UTILITY - मेमरी कॅशे व्यवस्थापन (Redis Cache Management)
  * 
- * या फाईलमध्ये डेटा Redis मध्ये जतन करण्यासाठी फक्शन्स आहेत.
+ * या फाईलमध्ये डेटा Redis मध्ये जतन करण्यासाठी फंक्शन्स आहेत.
  * यामुळे डेटाबेसवरील ताण कमी होतो आणि रिपोर्ट जलद लोड होतात.
  */
 
 const redis = require('../config/redis.config');
 
-const CACHE_TTL_DEFAULT = 300; // 5 minutes
-const CACHE_TTL_LONG = 86400; // 24 hours
+const CACHE_TTL_DEFAULT = 120; // 2 minutes (reduced from 5min to save Redis memory)
+const CACHE_TTL_LONG = 3600;   // 1 hour (reduced from 24h)
+
+/**
+ * Check if error is OOM (out of memory) — treat as cache miss, not crash
+ */
+const isOOMError = (err) => err && err.message && err.message.includes('OOM');
 
 // Generic Cache Methods
 const getCache = async (key) => {
@@ -18,7 +23,9 @@ const getCache = async (key) => {
             return data ? JSON.parse(data) : null;
         }
     } catch (e) {
-        console.warn(`[REDIS] Cache fetch failed for ${key}:`, e.message);
+        if (!isOOMError(e)) {
+            console.warn(`[REDIS] Cache fetch failed for ${key}:`, e.message);
+        }
     }
     return null;
 };
@@ -29,7 +36,12 @@ const setCache = async (key, data, ttl = CACHE_TTL_DEFAULT) => {
             await redis.setex(key, ttl, JSON.stringify(data));
         }
     } catch (e) {
-        console.warn(`[REDIS] Cache set failed for ${key}:`, e.message);
+        if (isOOMError(e)) {
+            // Redis memory full — silently skip caching (app works without cache)
+            // No log spam — OOM is expected on small managed Redis plans
+        } else {
+            console.warn(`[REDIS] Cache set failed for ${key}:`, e.message);
+        }
     }
 };
 
@@ -43,7 +55,9 @@ const clearCache = async (pattern) => {
             }
         }
     } catch (e) {
-        console.warn(`[REDIS] Cache clear failed for pattern ${pattern}:`, e.message);
+        if (!isOOMError(e)) {
+            console.warn(`[REDIS] Cache clear failed for pattern ${pattern}:`, e.message);
+        }
     }
 };
 
@@ -85,10 +99,11 @@ const setPropertiesCache = async (data) => {
 };
 
 /**
- * Clear and invalidate the cache
+ * Clear and invalidate the cache (properties + search)
  */
 const clearPropertiesCache = async () => {
     await clearCache('properties:*');
+    await clearCache('prop:search:*'); // ← search cache पण साफ (bug fix)
     console.log('[CACHE] Properties cache invalidated (Global Cleanup).');
 };
 

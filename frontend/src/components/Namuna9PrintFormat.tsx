@@ -199,7 +199,7 @@ export default function Namuna9PrintFormat({ records, pageSize = 3, wastiName, f
                 return (
                     <div key={chunkIdx} className="page-container relative overflow-visible shadow-sm print:shadow-none bg-white mb-8 print:mb-0">
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.25]">
-                            <img src="/images/logo.jpeg" className="w-[500px] h-[500px] object-contain" alt="Watermark" />
+                            <img src="/images/logo.png" className="w-[500px] h-[500px] object-contain" alt="Watermark" />
                         </div>
 
                         <div className="relative z-10">

@@ -20,9 +20,9 @@ import { PropertyRecord, PropertySection, DEFAULT_SECTION, FLOOR_NAMES, PROPERTY
 import { ROLES } from './Login';
 import { EXCEL_HEADERS, PLACEHOLDERS } from '../utils/constants';
 import { LABELS } from "../types";
-import * as XLSX from 'xlsx';
 import { matchesSearch, normalizeForSearch } from '../utils/transliterate';
 import { TransliterationInput } from '../components/TransliterationInput';
+import { usePropertySearch } from '../hooks/usePropertySearch';
 import PropertyForm from '../components/PropertyForm';
 import { generateMaganiBillPDF } from '../utils/pdfGenerator';
 import MaganiBillDocument from '../components/MaganiBillDocument';
@@ -131,6 +131,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
     const [activeTab, setActiveTab] = useState<'dashboard' | 'user_requests'>(initialTab || 'dashboard');
     const [activeBillRecord, setActiveBillRecord] = useState<PropertyRecord | null>(null);
     const { addToast } = useUI();
+    const { results: searchResults, loading: searchLoading, search: runSearch, clearSearch } = usePropertySearch();
 
     const currentUser = useMemo(() => JSON.parse(localStorage.getItem('gp_user') || '{}'), []);
     const isAdmin = currentUser.role === 'super_admin' || currentUser.role === 'gram_sachiv' || currentUser.role === 'gram_sevak';
@@ -146,7 +147,9 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                 const token = localStorage.getItem('gp_token');
                 const headers = { 'Authorization': `Bearer ${token}` };
                 const [wRes, pRes] = await Promise.all([
+                    // API: GET /api/master/items/WASTI — fetch all wasti (settlement) names
                     fetch(`${API_BASE_URL}/api/master/items/WASTI`, { headers }),
+                    // API: GET /api/master/items/PROPERTY_TYPE — fetch all property type labels
                     fetch(`${API_BASE_URL}/api/master/items/PROPERTY_TYPE`, { headers })
                 ]);
 
@@ -188,58 +191,65 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
     const handleLayoutChange = (v: string) => { setFilterLayout(v); setFilterKhasra(''); setFilterPlotNo(''); };
     const handleKhasraChange = (v: string) => { setFilterKhasra(v); setFilterPlotNo(''); };
 
+    // Trigger backend search whenever any filter/search changes
+    useEffect(() => {
+        const hasAnyFilter = searchTerm.trim() || filterWasti || filterLayout || filterKhasra || filterPlotNo;
+        if (hasAnyFilter) {
+            runSearch({
+                q: searchTerm.trim() || undefined,
+                wasti: filterWasti || undefined,
+                khasra: filterKhasra || undefined,
+                plotNo: filterPlotNo || undefined,
+                layout: filterLayout || undefined,
+                page: currentPage,
+                limit: ITEMS_PER_PAGE,
+            });
+        } else {
+            clearSearch();
+        }
+    }, [searchTerm, filterWasti, filterLayout, filterKhasra, filterPlotNo, currentPage]);
+
     const filteredRecords = useMemo(() => {
+        // If backend search returned results, use those
+        if (searchResults && searchResults.data) {
+            let res = searchResults.data as PropertyRecord[];
+            // Apply local-only filters that backend doesn't handle
+            if (filterPropertyType) {
+                res = res.filter(r => (r as any).sections?.some((s: any) => s.propertyType === filterPropertyType));
+            }
+            if (filterNamuna === 'namuna8') {
+                res = res.filter(r => (r as any).hasConstruction || (r as any).sections?.some((s: any) => s.propertyType && ((s.areaSqFt || 0) > 0)));
+            }
+            if (filterNamuna === 'namuna9') {
+                res = res.filter(r => (Number((r as any).totalTaxAmount) || 0) > 0);
+            }
+            return res;
+        }
+
+        // Fallback: no active filter → show all cached records with local sort
         let res = records;
-        if (filterWasti) res = res.filter(r => r.wastiName === filterWasti);
-        if (filterLayout) res = res.filter(r => r.layoutName === filterLayout);
-        if (filterKhasra) {
-            const normalizedKhasra = normalizeForSearch(filterKhasra);
-            res = res.filter(r => normalizeForSearch(r.khasraNo) === normalizedKhasra);
-        }
-        if (filterPlotNo) {
-            const normalizedPlot = normalizeForSearch(filterPlotNo);
-            res = res.filter(r => normalizeForSearch(r.plotNo) === normalizedPlot);
-        }
         if (filterPropertyType) {
             res = res.filter(r => r.sections.some(s => s.propertyType === filterPropertyType));
         }
-        // Namuna 8: properties with construction (sections with area > 0)
         if (filterNamuna === 'namuna8') {
             res = res.filter(r => r.hasConstruction || r.sections?.some(s => s.propertyType && (s.areaSqFt || 0) > 0));
         }
-        // Namuna 9: properties with any tax demand (milled for recovery)
         if (filterNamuna === 'namuna9') {
             res = res.filter(r => (Number(r.totalTaxAmount) || 0) > 0);
         }
-        if (searchTerm.trim()) res = res.filter(r => matchesSearch(r, searchTerm));
         return [...res].sort((a, b) => {
-            if (filterLayout || filterKhasra) {
-                const plotCompare = sortKhasra(a.plotNo || '', b.plotNo || '');
-                if (plotCompare !== 0) return plotCompare;
-            }
             const aNum = Number(a.srNo) || 0;
             const bNum = Number(b.srNo) || 0;
             if (aNum !== bNum) return aNum - bNum;
             return String(a.srNo || '').localeCompare(String(b.srNo || ''), undefined, { numeric: true });
         });
-    }, [records, searchTerm, filterWasti, filterLayout, filterKhasra, filterPlotNo, filterPropertyType, filterNamuna]);
+    }, [records, searchResults, filterPropertyType, filterNamuna]);
 
     // Reset page on filter/search change
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, filterWasti, filterLayout, filterKhasra, filterPlotNo, filterPropertyType, filterNamuna]);
 
-
-    // Highlight duplicate records (same Khasra, Wasti, and Owner Name)
-    const duplicateMap = useMemo(() => {
-        const counts = new Map<string, number>();
-
-        records.forEach(r => {
-            const key = `${normalizeForSearch(r.khasraNo)}|${normalizeForSearch(r.wastiName)}|${normalizeForSearch(r.ownerName)}`;
-            counts.set(key, (counts.get(key) || 0) + 1);
-        });
-        return counts;
-    }, [records]);
 
 
 
@@ -351,6 +361,8 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
             if (response.ok) {
                 onRemoveLocalRecord(id);
                 addToast('नोंद हटवली गेली.', 'info');
+            } else {
+                addToast('नोंद हटवण्यात त्रुटी आली.', 'error');
             }
         } catch (error) {
             addToast('हटवताना त्रुटी आली.', 'error');
@@ -377,6 +389,7 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
         const reader = new FileReader();
         reader.onload = async (evt) => {
             try {
+                const XLSX = await import('xlsx');
                 const bstr = evt.target?.result;
                 const wb = XLSX.read(bstr, { type: 'binary' });
                 const ws = wb.Sheets[wb.SheetNames[0]];
@@ -560,7 +573,10 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                         <div className="flex items-center gap-2  no-print flex-wrap lg:flex-nowrap shrink-0 shadow-sm text-Marathi">
                             {/* Search */}
                             <div className="relative w-[500px] shrink-0">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10" />
+                                {searchLoading
+                                    ? <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-3.5 h-3.5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                                    : <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 z-10" />
+                                }
                                 <TransliterationInput
                                     placeholder="शोधा..."
                                     className="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400"
@@ -568,11 +584,12 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                     onChangeText={setSearchTerm}
                                 />
                                 {searchTerm && (
-                                    <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-1 hover:bg-rose-50 rounded-lg transition-colors">
+                                    <button onClick={() => { setSearchTerm(''); clearSearch(); }} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-1 hover:bg-rose-50 rounded-lg transition-colors">
                                         <X className="w-4 h-4 text-slate-400 hover:text-rose-500" />
                                     </button>
                                 )}
                             </div>
+
 
                             {/* Filters Group */}
                             <div className="flex items-center gap-2 flex-wrap flex-1 justify-end">
@@ -660,11 +677,8 @@ export default function Dashboard({ records, fetchRecords, onUpdateLocalRecord, 
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
                                         {paginatedRecords.length > 0 ? paginatedRecords.map((record, idx) => {
-                                            const dKey = `${normalizeForSearch(record.khasraNo)}|${normalizeForSearch(record.wastiName)}|${normalizeForSearch(record.ownerName)}`;
-                                            const isDuplicate = (duplicateMap.get(dKey) || 0) > 1;
-
                                             return (
-                                                <tr key={record.id} className={`hover:bg-slate-50 transition-colors group ${isDuplicate ? 'bg-red-50/50' : ''}`}>
+                                                <tr key={record.id} className="hover:bg-slate-50 transition-colors group">
                                                     <td className="px-4 py-3 text-center">
                                                         <div className="flex items-center justify-center gap-1">
                                                             <span className="text-xs font-bold text-slate-500">

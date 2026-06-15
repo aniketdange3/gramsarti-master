@@ -28,11 +28,107 @@ exports.getKhasras = async (req, res) => {
 };
 
 /**
+ * Search / Filter properties server-side (for quick retrieval)
+ * Backend-side search: name, wasti, khasra, plotNo, wardNo
+ * Usage: GET /api/properties/search?q=राम&wasti=&khasra=&page=1&limit=25
+ */
+const redis = require('../config/redis.config');
+const SEARCH_CACHE_TTL = 60; // 60 seconds
+
+exports.searchProperties = async (req, res) => {
+    const q        = (req.query.q || '').trim();
+    const wasti    = (req.query.wasti || '').trim();
+    const khasra   = (req.query.khasra || '').trim();
+    const plotNo   = (req.query.plotNo || '').trim();
+    const wardNo   = (req.query.wardNo || '').trim();
+    const layout   = (req.query.layout || '').trim();
+    const page     = Math.max(1, parseInt(req.query.page) || 1);
+    const limit    = Math.min(parseInt(req.query.limit) || 25, 200);
+    const offset   = (page - 1) * limit;
+
+    // Build cache key from all params
+    const cacheKey = `prop:search:${q}:${wasti}:${khasra}:${plotNo}:${wardNo}:${layout}:p${page}:l${limit}`;
+
+    try {
+        // Try Redis cache first
+        try {
+            if (redis && typeof redis.get === 'function') {
+                const cached = await redis.get(cacheKey);
+                if (cached) return res.json(JSON.parse(cached));
+            }
+        } catch (_) { /* ignore cache errors */ }
+
+        // Build WHERE conditions dynamically
+        const conditions = [];
+        const params = [];
+
+        if (q) {
+            // Search across ownerName, occupantName, khasraNo, plotNo
+            conditions.push('(p.ownerName LIKE ? OR p.occupantName LIKE ? OR p.khasraNo LIKE ? OR p.plotNo LIKE ? OR p.wastiName LIKE ?)');
+            const likeQ = `%${q}%`;
+            params.push(likeQ, likeQ, likeQ, likeQ, likeQ);
+        }
+        if (wasti)  { conditions.push('p.wastiName = ?');  params.push(wasti); }
+        if (khasra) { conditions.push('p.khasraNo = ?');   params.push(khasra); }
+        if (plotNo) { conditions.push('p.plotNo = ?');     params.push(plotNo); }
+        if (wardNo) { conditions.push('p.wardNo = ?');     params.push(wardNo); }
+        if (layout) { conditions.push('p.layoutName = ?'); params.push(layout); }
+
+        const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+
+        // Lightweight query: only essential columns (no heavy JOINs)
+        const dataQuery = `
+            SELECT
+                p.id, p.srNo, p.wardNo, p.khasraNo, p.layoutName, p.plotNo,
+                p.ownerName, p.occupantName, p.wastiName, p.contactNo,
+                p.hasConstruction, p.totalTaxAmount, p.arrearsAmount,
+                p.paidAmount, p.penaltyAmount, p.discountAmount,
+                p.buildingUsage, p.status, p.createdAt,
+                p.propertyLength, p.propertyWidth, p.totalAreaSqFt
+            FROM properties p
+            ${whereClause}
+            ORDER BY p.srNo ASC
+            LIMIT ? OFFSET ?
+        `;
+
+        const countQuery = `SELECT COUNT(*) AS total FROM properties p ${whereClause}`;
+
+        // Run both queries in parallel
+        const [[rows], [countRows]] = await Promise.all([
+            db.query(dataQuery, [...params, limit, offset]),
+            db.query(countQuery, params)
+        ]);
+
+        const total = countRows[0]?.total || 0;
+        const response = {
+            data: rows,
+            pagination: { total, page, limit, totalPages: Math.ceil(total / limit) || 1 }
+        };
+
+        // Cache result
+        try {
+            if (redis && typeof redis.setex === 'function') {
+                await redis.setex(cacheKey, SEARCH_CACHE_TTL, JSON.stringify(response));
+            }
+        } catch (_) { /* ignore */ }
+
+        res.json(response);
+    } catch (err) {
+        console.error('[PROPERTIES] searchProperties error:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+
+
+/**
  * Get all properties with their floor sections
  * सर्व मालमत्ता आणि त्यांच्या मजल्यांची माहिती मिळवणे (With Caching)
  */
 exports.getAllProperties = async (req, res) => {
-    console.log('[PROPERTIES] Fetching all properties...');
+    // API: GET /api/properties
+    // Returns: PropertyRecord[] with sections[] and prev_breakdown{}
+    // Auth: Bearer token required | Uses: ETag + Redis memory cache (2 min TTL)
 
     res.setHeader('Cache-Control', 'private, no-cache, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
@@ -180,7 +276,9 @@ exports.getAllProperties = async (req, res) => {
  */
 exports.getPropertyById = async (req, res) => {
     const { id } = req.params;
-    console.log(`[PROPERTIES] Fetching single property: ${id}`);
+    // API: GET /api/properties/:id
+    // Returns: Single PropertyRecord with sections[] joined from property_sections
+    // Auth: Bearer token required
 
     try {
         const query = `

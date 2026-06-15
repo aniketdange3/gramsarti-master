@@ -1,4 +1,4 @@
-import { jsPDF } from "jspdf"
+import type { jsPDF } from "jspdf"
 import { marathiFontBase64 } from "./marathiFontBase64"
 
 export const registerFonts = (doc: jsPDF) => {

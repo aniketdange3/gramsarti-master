@@ -34,6 +34,9 @@ export const useFerfarRequests = (page: number, limit: number, villageId?: numbe
   return useQuery<FerfarResponse>({
     queryKey: ['ferfar', page, limit, villageId],
     queryFn: async () => {
+      // API: GET /api/ferfar?page=N&limit=N[&village_id=N]
+      // Returns: FerfarResponse { data: FerfarRequest[], pagination: { total, page, limit, totalPages } }
+      // Auth: Bearer token required
       const url = new URL(`${API_BASE_URL}/api/ferfar`);
       url.searchParams.append('page', page.toString());
       url.searchParams.append('limit', limit.toString());
@@ -50,7 +53,7 @@ export const useFerfarRequests = (page: number, limit: number, villageId?: numbe
       }
       return response.json();
     },
-    staleTime: 0,               // Always refetch from server when explicitly called
+    staleTime: 30 * 1000,       // Cache for 30s – prevents re-fetching 1000 records on tab switch
     gcTime: 5 * 60 * 1000,      // Keep in cache for 5 minutes
     refetchOnWindowFocus: false, // Don't refetch when user switches windows
   });

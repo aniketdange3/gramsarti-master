@@ -131,11 +131,31 @@ exports.applyFerfar = async (req, res) => {
 
     try {
         // Check for pending dues
-        const [prop] = await db.query('SELECT ownerName, arrearsAmount, totalTaxAmount, paidAmount, srNo, wardNo, wastiName, plotNo FROM properties WHERE id = ?', [property_id]);
+        const [prop] = await db.query('SELECT ownerName, arrearsAmount, totalTaxAmount, paidAmount, srNo, wardNo, wastiName, plotNo, propertyTax, openSpaceTax, discountAmount, penaltyAmount FROM properties WHERE id = ?', [property_id]);
         if (prop.length === 0) return res.status(404).json({ error: 'मालमत्ता सापडली नाही' });
 
         const p = prop[0];
-        const pendingDues = (Number(p.arrearsAmount) + Number(p.totalTaxAmount)) - Number(p.paidAmount);
+        const arrears = Number(p.arrearsAmount) || 0;
+        const current = Number(p.totalTaxAmount) || 0;
+        const paid = Number(p.paidAmount) || 0;
+
+        const discountBase = (Number(p.propertyTax) > 0 || Number(p.openSpaceTax) > 0)
+            ? (Number(p.propertyTax) || 0) + (Number(p.openSpaceTax) || 0)
+            : current;
+        
+        const isEligibleNow = new Date().getMonth() >= 3 && new Date().getMonth() <= 8;
+        const calculatedDiscount = isEligibleNow ? Math.round(discountBase * 0.05) : 0;
+
+        const discount = (p.discountAmount !== undefined && p.discountAmount !== null && Number(p.discountAmount) > 0)
+            ? Number(p.discountAmount)
+            : calculatedDiscount;
+
+        const penalty = (paid > 0 || (p.penaltyAmount !== undefined && p.penaltyAmount !== null && Number(p.penaltyAmount) > 0))
+            ? (Number(p.penaltyAmount) || 0)
+            : Math.round(arrears * 0.05);
+
+        const demand = current + arrears + penalty - discount;
+        const pendingDues = Math.max(0, demand - paid);
         
         if (pendingDues > 0) {
             return res.status(400).json({ 
@@ -143,7 +163,6 @@ exports.applyFerfar = async (req, res) => {
                 pendingDues 
             });
         }
-
         // Check for existing pending request on same property
         const [existingPending] = await db.query(
             'SELECT id FROM ferfar_requests WHERE property_id = ? AND status = "PENDING"',
